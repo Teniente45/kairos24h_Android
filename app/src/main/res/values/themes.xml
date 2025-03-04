@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Estilo base de la aplicación -->
+    <style name="Theme.Kairos24h" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Estilo personalizado para TextInputLayout -->
+    <style name="CustomTextInputStyle" parent="Widget.MaterialComponents.TextInputLayout.FilledBox">
+        <!-- Color del borde en estado enfocado (cuando el campo es tocado) -->
+        <item name="boxStrokeColor">@color/custom_blue</item>  <!-- Usamos el color personalizado -->
+    </style>
+
+    <!-- Estilo personalizado para EditText dentro del TextInputLayout -->
+    <style name="CustomEditTextStyle" parent="Widget.MaterialComponents.TextInputEditText.FilledBox">
+        <item name="android:textColor">@android:color/black</item> <!-- Color del texto -->
+        <item name="android:cursorVisible">true</item> <!-- Asegura que el cursor sea visible -->
+        <item name="android:textColorHint">@color/custom_blue</item> <!-- Color del hint -->
+    </style>
+
+</resources>
