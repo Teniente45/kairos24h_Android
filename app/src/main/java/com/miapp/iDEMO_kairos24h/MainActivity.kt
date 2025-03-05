@@ -2,20 +2,37 @@ package com.miapp.iDEMO_kairos24h
 
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ActivityInfo
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Bundle
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,11 +45,15 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.compose.*
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.miapp.iDEMO_kairos24h.enlaces_internos.AuthManager
 import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 class MainActivity : ComponentActivity() {
 
@@ -63,10 +84,18 @@ class MainActivity : ComponentActivity() {
                         composable("login") {
                             DisplayLogo(
                                 onSubmit = { usuario: String, password: String ->
+                                    if (!isInternetAvailable(this@MainActivity)) {
+                                        Toast.makeText(
+                                            this@MainActivity,
+                                            "Compruebe su conexión a Internet",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                        return@DisplayLogo
+                                    }
+
                                     if (usuario.isNotEmpty() && password.isNotEmpty()) {
                                         lifecycleScope.launch(Dispatchers.IO) {
                                             try {
-                                                // Se llama a authenticateUser y se obtiene xEmpleado desde el JSON
                                                 val (success, xEmpleado) = AuthManager.authenticateUser(
                                                     this@MainActivity,
                                                     usuario,
@@ -75,7 +104,6 @@ class MainActivity : ComponentActivity() {
                                                 )
                                                 runOnUiThread {
                                                     if (success) {
-                                                        // Guardamos las credenciales incluyendo xEmpleado
                                                         AuthManager.saveUserCredentials(
                                                             this@MainActivity,
                                                             usuario,
@@ -110,7 +138,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 onForgotPassword = {
-                                    val url = WebViewURL.forgotPassword  // Usa la constante definida en URL.kt
+                                    val url = WebViewURL.forgotPassword
                                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                                     startActivity(intent)
                                 }
@@ -132,7 +160,7 @@ class MainActivity : ComponentActivity() {
         intent.putExtra("usuario", usuario)
         intent.putExtra("password", password)
         startActivity(intent)
-        finish() // Cierra MainActivity para evitar volver al login
+        finish()
     }
 
     private fun clearCredentials() {
@@ -144,7 +172,19 @@ class MainActivity : ComponentActivity() {
             apply()
         }
     }
+
+    // 📌 Función para verificar la conexión a Internet (WiFi o Datos Móviles)
+    private fun isInternetAvailable(context: Context): Boolean {
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+
+        return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+    }
 }
+
 
 // Función composable para la pantalla de login
 @Composable
