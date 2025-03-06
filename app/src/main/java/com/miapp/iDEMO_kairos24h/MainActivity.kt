@@ -147,7 +147,8 @@ class MainActivity : ComponentActivity() {
                         composable("fichar/{usuario}/{password}") { backStackEntry ->
                             val usuario = backStackEntry.arguments?.getString("usuario") ?: ""
                             val password = backStackEntry.arguments?.getString("password") ?: ""
-                            FicharScreen(usuario = usuario, password = password)
+
+                            FicharScreen(usuario = usuario, password = password, fichajesUrl = "") // 🔥 Se pasa un valor vacío
                         }
                     }
                 }
@@ -155,14 +156,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // 🔥 Redirige al usuario a la pantalla de fichaje pasando las credenciales como intent extras
     private fun navigateToFichar(usuario: String, password: String) {
         val intent = Intent(this, Fichar::class.java)
         intent.putExtra("usuario", usuario)
         intent.putExtra("password", password)
         startActivity(intent)
-        finish()
+        finish() // Finaliza la actividad actual para evitar volver atrás
     }
-
+    // 🔥 Borra las credenciales almacenadas en SharedPreferences
     private fun clearCredentials() {
         val sharedPreferences = getSharedPreferences("UserSession", Context.MODE_PRIVATE)
         with(sharedPreferences.edit()) {
@@ -172,8 +174,7 @@ class MainActivity : ComponentActivity() {
             apply()
         }
     }
-
-    // 📌 Función para verificar la conexión a Internet (WiFi o Datos Móviles)
+    // 📌 Función para verificar si hay conexión a Internet (WiFi o Datos Móviles)
     private fun isInternetAvailable(context: Context): Boolean {
         val connectivityManager =
             context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -185,160 +186,174 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
-// Función composable para la pantalla de login
-@Composable
-fun DisplayLogo(
-    onSubmit: (String, String) -> Unit,
-    onForgotPassword: () -> Unit
-) {
-    val usuario = remember { mutableStateOf("") }
-    val password = remember { mutableStateOf("") }
-
-    // Estado del CheckBox para guardar datos localmente
-    var isChecked by remember { mutableStateOf(false) }
-    // Estado del CheckBox para mostrar/ocultar contraseña
-    var passwordVisible by remember { mutableStateOf(false) }
-    // Mensaje de error
-    var errorMessage by remember { mutableStateOf("") }
-    // Contexto
-    val context = LocalContext.current
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    // 🔥 Pantalla de inicio de sesión con formulario de usuario y contraseña
+    @Composable
+    fun DisplayLogo(
+        onSubmit: (String, String) -> Unit,
+        onForgotPassword: () -> Unit
     ) {
-        Box(modifier = Modifier.padding(24.dp)) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Image(
-                    painter = painterResource(id = R.drawable.logo),
-                    contentDescription = "Logo",
-                    modifier = Modifier
-                        .width(200.dp)
-                        .height(60.dp)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                // Campo de usuario: el usuario ve su texto "normal"
-                OutlinedTextField(
-                    value = usuario.value,
-                    onValueChange = { newValue ->
-                        // Se eliminan los espacios, pero se permite cualquier otro carácter (como #, @, etc.)
-                        usuario.value = newValue.filter { it != ' ' }
-                    },
-                    label = { Text("Usuario") },
-                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                // Campo de contraseña
-                OutlinedTextField(
-                    value = password.value,
-                    onValueChange = { newValue ->
-                        password.value = newValue.filter { it != ' ' }
-                    },
-                    label = { Text("Contraseña") },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done)
-                )
-                // Checkbox para mostrar contraseña
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp)
-                ) {
-                    Checkbox(
-                        checked = passwordVisible,
-                        onCheckedChange = { passwordVisible = it }
+        val usuario = remember { mutableStateOf("") }
+        val password = remember { mutableStateOf("") }
+
+        // 🔥 Estados para gestionar la UI del login
+        var isChecked by remember { mutableStateOf(false) } // Estado del CheckBox para guardar datos localmente
+        var passwordVisible by remember { mutableStateOf(false) } // Estado para mostrar/ocultar la contraseña
+        var errorMessage by remember { mutableStateOf("") } // Mensaje de error
+        val context = LocalContext.current // Contexto de la app
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(modifier = Modifier.padding(24.dp)) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    // 🔥 Logo de la app
+                    Image(
+                        painter = painterResource(id = R.drawable.logo),
+                        contentDescription = "Logo",
+                        modifier = Modifier
+                            .width(200.dp)
+                            .height(60.dp)
                     )
-                    Text(
-                        text = "Mostrar contraseña",
-                        style = MaterialTheme.typography.bodySmall
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // 🔥 Campo de usuario
+                    OutlinedTextField(
+                        value = usuario.value,
+                        onValueChange = { newValue ->
+                            usuario.value = newValue.filter { it != ' ' } // Elimina espacios en blanco
+                        },
+                        label = { Text("Usuario") },
+                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
                     )
-                }
-                // CheckBox para dar consentimiento de guardar datos
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Checkbox(
-                        checked = isChecked,
-                        onCheckedChange = { isChecked = it }
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // 🔥 Campo de contraseña
+                    OutlinedTextField(
+                        value = password.value,
+                        onValueChange = { newValue ->
+                            password.value = newValue.filter { it != ' ' } // Elimina espacios en blanco
+                        },
+                        label = { Text("Contraseña") },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done)
                     )
-                    Text(
-                        text = "Doy mi consentimiento para guardar mis datos localmente en mi dispositivo.",
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
-                }
-                if (errorMessage.isNotEmpty()) {
-                    Text(
-                        text = errorMessage,
-                        color = Color.Red,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                // Botón de acceso: al pulsarlo se recortan y codifican los valores
-                Button(
-                    onClick = {
-                        val trimmedUsuario = usuario.value.trim()
-                        val trimmedPassword = password.value.trim()
-                        if (trimmedUsuario != usuario.value || trimmedPassword != password.value) {
-                            errorMessage = "No se permiten espacios al principio o al final"
-                            return@Button
-                        }
-                        if (trimmedUsuario.isNotEmpty() && trimmedPassword.isNotEmpty()) {
-                            // Codificar las credenciales para evitar problemas en la URL
-                            val encodedUsuario = URLEncoder.encode(trimmedUsuario, StandardCharsets.UTF_8.toString())
-                            val encodedPassword = URLEncoder.encode(trimmedPassword, StandardCharsets.UTF_8.toString())
-                            if (isChecked) {
-                                // Guardamos las credenciales sin xEmpleado (se actualizará tras autenticarse)
-                                AuthManager.saveUserCredentials(context, encodedUsuario, encodedPassword, null)
+
+                    // 🔥 Checkbox para mostrar contraseña
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                    ) {
+                        Checkbox(
+                            checked = passwordVisible,
+                            onCheckedChange = { passwordVisible = it }
+                        )
+                        Text(
+                            text = "Mostrar contraseña",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+
+                    // 🔥 Checkbox para guardar datos localmente
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Checkbox(
+                            checked = isChecked,
+                            onCheckedChange = { isChecked = it }
+                        )
+                        Text(
+                            text = "Doy mi consentimiento para guardar mis datos localmente en mi dispositivo.",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+
+                    // 🔥 Muestra mensaje de error si los datos son incorrectos
+                    if (errorMessage.isNotEmpty()) {
+                        Text(
+                            text = errorMessage,
+                            color = Color.Red,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 🔥 Botón de acceso
+                    Button(
+                        onClick = {
+                            val trimmedUsuario = usuario.value.trim()
+                            val trimmedPassword = password.value.trim()
+
+                            // Valida que no haya espacios en blanco al inicio o final
+                            if (trimmedUsuario != usuario.value || trimmedPassword != password.value) {
+                                errorMessage = "No se permiten espacios al principio o al final"
+                                return@Button
                             }
-                            onSubmit(encodedUsuario, encodedPassword)
-                        } else {
-                            errorMessage = "Por favor, completa ambos campos"
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7599B6)),
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = usuario.value.isNotEmpty() && password.value.isNotEmpty() && isChecked
-                ) {
-                    Text("Acceso", color = Color.White)
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "¿Olvidaste la contraseña?",
-                    color = Color(0xFF7599B6),
-                    textDecoration = TextDecoration.Underline,
-                    modifier = Modifier.clickable { onForgotPassword() }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = """
+
+                            // Si los campos están completos, codifica las credenciales y las envía
+                            if (trimmedUsuario.isNotEmpty() && trimmedPassword.isNotEmpty()) {
+                                val encodedUsuario = URLEncoder.encode(trimmedUsuario, StandardCharsets.UTF_8.toString())
+                                val encodedPassword = URLEncoder.encode(trimmedPassword, StandardCharsets.UTF_8.toString())
+
+                                if (isChecked) {
+                                    AuthManager.saveUserCredentials(context, encodedUsuario, encodedPassword, null)
+                                }
+                                onSubmit(encodedUsuario, encodedPassword)
+                            } else {
+                                errorMessage = "Por favor, completa ambos campos"
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7599B6)),
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = usuario.value.isNotEmpty() && password.value.isNotEmpty() && isChecked
+                    ) {
+                        Text("Acceso", color = Color.White)
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // 🔥 Botón de recuperación de contraseña
+                    Text(
+                        text = "¿Olvidaste la contraseña?",
+                        color = Color(0xFF7599B6),
+                        textDecoration = TextDecoration.Underline,
+                        modifier = Modifier.clickable { onForgotPassword() }
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // 🔥 Mensaje de trazabilidad
+                    Text(
+                        text = """
                         Para control de calidad y aumentar la seguridad de nuestro sistema, todos los accesos, acciones, consultas o cambios (Trazabilidad) que realice dentro de Kairos24h serán almacenados.
                         Les recordamos que la Empresa podrá auditar los medios técnicos que pone a disposición del Trabajador para el desempeño de sus funciones.
                     """.trimIndent(),
-                    color = Color(0xFF447094),
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 25.dp)
-                        .padding(horizontal = 16.dp)
-                )
+                        color = Color(0xFF447094),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 25.dp)
+                            .padding(horizontal = 16.dp)
+                    )
+                }
             }
         }
     }
-}
 
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    MaterialTheme {
-        DisplayLogo(onSubmit = { _: String, _: String -> }, onForgotPassword = {})
+    // 🔥 Vista previa para Android Studio
+    @Preview(showBackground = true)
+    @Composable
+    fun DefaultPreview() {
+        MaterialTheme {
+            DisplayLogo(onSubmit = { _: String, _: String -> }, onForgotPassword = {})
+        }
     }
-}
+

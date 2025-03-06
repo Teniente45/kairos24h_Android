@@ -27,6 +27,9 @@ object BuildURL {
     const val URL_BEIMAN = "https://beimancpp.tucitamedica.es/index.php?"
     const val URL_Kairos24h = "https://controlhorario.kairos24h.es/index.php?"
     const val URL_DEMO_Kairos24h = "https://democontrolhorario.kairos24h.es/index.php?"
+    const val urlServidor = "https://tuservidor.com/api/fichajes" //CAMBIAR POR URL PARA MOSTRAR LOS FICHAJES
+    const val FichSalida = "www.caca.es"
+    const val FichEntrada = "www.culo.es"
     /*==================================================================*/
     const val URL_USADA = URL_DEMO_Kairos24h
     /*--------------------------------------------------------*/
