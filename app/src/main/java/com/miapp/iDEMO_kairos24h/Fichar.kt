@@ -1,19 +1,40 @@
 package com.miapp.iDEMO_kairos24h
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.webkit.CookieManager
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.ImageView
+import android.widget.RelativeLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.Switch
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,34 +51,36 @@ import kotlinx.coroutines.delay
 class Fichar : ComponentActivity() {
 
     private val handler = Handler(Looper.getMainLooper())
+    // 2 horas en milisegundos
     private val sessionTimeoutMillis = 2 * 60 * 60 * 1000L
     private var lastInteractionTime = System.currentTimeMillis()
+    // Variable para almacenar el WebView creado en Compose
     private var webView: WebView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val (storedUser, storedPassword) = if (android.os.Build.VERSION.SDK_INT == 23) {
-            AuthManager.getUserCredentialsPair(this)
-        } else {
-            val (user, pass, _) = AuthManager.getUserCredentials(this)
-            Pair(user, pass)
-        }
+        val (storedUser, storedPassword, _) = AuthManager.getUserCredentials(this)
 
         if (storedUser.isEmpty() || storedPassword.isEmpty()) {
             navigateToLogin()
             return
         }
 
+        // Usamos las credenciales del Intent, o las almacenadas
         val usuario = intent.getStringExtra("usuario") ?: storedUser
         val password = intent.getStringExtra("password") ?: storedPassword
 
         setContent {
-            FicharScreen(usuario = usuario, password = password)
+            FicharScreen(
+                usuario = usuario,
+                password = password
+            )
         }
 
         startActivitySimulationTimer()
     }
+
     private fun startActivitySimulationTimer() {
         handler.postDelayed(object : Runnable {
             override fun run() {
@@ -100,6 +123,7 @@ class Fichar : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Comprobamos nuevamente las credenciales
         val (storedUser, storedPassword, _) = AuthManager.getUserCredentials(this)
         if (storedUser.isEmpty() || storedPassword.isEmpty()) {
             navigateToLogin()
@@ -147,12 +171,34 @@ class Fichar : ComponentActivity() {
         finish()
     }
 }
+
+private fun clearCredentials(context: Context) {
+    val sharedPreferences = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+    with(sharedPreferences.edit()) {
+        remove("usuario")
+        remove("password")
+        apply()
+    }
+}
+
+private fun clearCookiesAndClearCredentials(view: WebView?) {
+    val cookieManager = CookieManager.getInstance()
+    cookieManager.removeAllCookies(null)
+    cookieManager.flush()
+    clearCredentials(view?.context ?: return)
+    view.context?.let {
+        val intent = Intent(it, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        it.startActivity(intent)
+    }
+}
+
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun FicharScreen(usuario: String, password: String) {
     var isLoading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(true) {
         delay(6000)
         isLoading = false
     }
@@ -162,17 +208,66 @@ fun FicharScreen(usuario: String, password: String) {
             AndroidView(
                 factory = { context ->
                     WebView(context).apply {
+                        val handler = Handler(Looper.getMainLooper())
+                        var loginTimeoutRunnable: Runnable? = null
+
                         settings.javaScriptEnabled = true
                         settings.setSupportZoom(true)
                         settings.builtInZoomControls = true
                         settings.displayZoomControls = false
+
+                        webViewClient = object : WebViewClient() {
+                            override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                                super.onPageStarted(view, url, favicon)
+                                if (url != WebViewURL.LOGIN && loginTimeoutRunnable != null) {
+                                    handler.removeCallbacks(loginTimeoutRunnable!!)
+                                    loginTimeoutRunnable = null
+                                }
+                            }
+
+                            override fun onPageFinished(view: WebView?, url: String?) {
+                                super.onPageFinished(view, url)
+                                if (url == WebViewURL.LOGIN) {
+                                    loginTimeoutRunnable = Runnable {
+                                        clearCookiesAndClearCredentials(view)
+                                    }
+                                    handler.postDelayed(loginTimeoutRunnable!!, 4000)
+                                } else {
+                                    if (loginTimeoutRunnable != null) {
+                                        handler.removeCallbacks(loginTimeoutRunnable!!)
+                                        loginTimeoutRunnable = null
+                                    }
+                                }
+
+                                // 🔥 Inyectar JavaScript para autocompletar usuario y contraseña
+                                view?.evaluateJavascript(
+                                    """
+                                    (function() {
+                                        document.getElementsByName('LoginForm[username]')[0].value = '$usuario';
+                                        document.getElementsByName('LoginForm[password]')[0].value = '$password';
+                                        document.querySelector('form').submit();
+                                    })();
+                                    """.trimIndent(),
+                                    null
+                                )
+                            }
+
+                            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                                val url = request?.url.toString()
+                                if (url.contains("site/logout")) {
+                                    clearCookiesAndClearCredentials(view)
+                                    return true
+                                }
+                                return super.shouldOverrideUrlLoading(view, request)
+                            }
+                        }
                         loadUrl(WebViewURL.LOGIN)
                     }
                 },
                 modifier = Modifier.weight(1f)
             )
 
-            BottomNavigationBar()
+            BottomNavigationBar()  // 🔥 Se agregó la barra de navegación aquí
         }
 
         if (isLoading) {
@@ -190,6 +285,10 @@ fun FicharScreen(usuario: String, password: String) {
                             .load(R.drawable.version_2)
                             .apply(RequestOptions().placeholder(R.drawable.version_2))
                             .into(imageView)
+                        imageView.layoutParams = RelativeLayout.LayoutParams(
+                            RelativeLayout.LayoutParams.WRAP_CONTENT,
+                            RelativeLayout.LayoutParams.WRAP_CONTENT
+                        )
                         imageView
                     },
                     modifier = Modifier.size(100.dp)
@@ -215,11 +314,12 @@ fun BottomNavigationBar() {
             onCheckedChange = { isChecked = it }
         )
 
-        NavigationButton("Fichaje", WebViewURL.Fichaje, R.drawable.icon_fichaje)
-        NavigationButton("Incidencia", WebViewURL.Incidencia, R.drawable.icon_incidencia)
-        NavigationButton("Horarios", WebViewURL.Horarios, R.drawable.icon_horarios)
+        NavigationButton("Fichaje", WebViewURL.Fichaje, R.drawable.ic_fichajes)
+        NavigationButton("Incidencia", WebViewURL.Incidencia, R.drawable.ic_incidencia)
+        NavigationButton("Horarios", WebViewURL.Horarios, R.drawable.ic_horario)
     }
 }
+
 
 @Composable
 fun NavigationButton(text: String, url: String, iconResId: Int) {
@@ -240,3 +340,4 @@ fun NavigationButton(text: String, url: String, iconResId: Int) {
         Text(text)
     }
 }
+
