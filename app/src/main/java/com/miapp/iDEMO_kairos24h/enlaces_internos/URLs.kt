@@ -14,10 +14,8 @@ object WebViewURL {
     const val forgotPassword = URL_USADA + "r=site/solicitudRestablecerClave"
     const val Inicio = URL_USADA + "r=site/login&xEntidad=1002&cApp=APP_CPP"
     const val Fichaje = URL_USADA + "r=explotacion/consultarExplotacion&cTipExp=FICHAJE"
-    const val Incidencia =
-        URL_USADA + "r=explotacion/consultarExplotacion&cTipExp=INCIDENCIA&cOpcionVisual=INCBAN"
-    const val Horarios =
-        URL_USADA + "r=explotacion/consultarExplotacion&cTipExp=HORARIO&cModoVisual=HORMEN"
+    const val Incidencia = URL_USADA + "r=explotacion/consultarExplotacion&cTipExp=INCIDENCIA&cOpcionVisual=INCBAN"
+    const val Horarios = URL_USADA + "r=explotacion/consultarExplotacion&cTipExp=HORARIO&cModoVisual=HORMEN"
     /*--------------------------------------------------------*/
 }
 

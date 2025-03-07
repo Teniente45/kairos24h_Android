@@ -1,6 +1,4 @@
 package com.miapp.iDEMO_kairos24h
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
@@ -41,7 +39,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
@@ -50,13 +47,14 @@ import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.FichEntrada
 import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.FichSalida
 import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.urlServidor
 import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.json.JSONArray
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import okhttp3.Response
+import org.json.JSONArray
 
 
 class Fichar : ComponentActivity() {
@@ -236,8 +234,11 @@ suspend fun obtenerFichajesDesdeServidor(url: String): List<String> {
 @Composable
 fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
     var isLoading by remember { mutableStateOf(true) }
-    var showCuadroParaFichar by remember { mutableStateOf(true) }
-    var fichajes by remember { mutableStateOf<List<String>>(emptyList()) } // 🔥 Estado para los fichajes
+    var showCuadroParaFichar by remember { mutableStateOf(true) } // 🔥 Controla si se muestra el cuadro para fichar
+    var fichajes by remember { mutableStateOf<List<String>>(emptyList()) }
+
+    // ✅ Guardamos la referencia del WebView
+    val webViewState = remember { mutableStateOf<WebView?>(null) }
 
     // 🔥 Cargar fichajes desde la URL del servidor
     LaunchedEffect(fichajesUrl) {
@@ -297,6 +298,9 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
                         }
                     }
                     loadUrl(WebViewURL.LOGIN)
+
+                    // ✅ Guardamos la referencia del WebView
+                    webViewState.value = this
                 }
             },
             modifier = Modifier
@@ -314,6 +318,7 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
 
         // 🔥 Barra de navegación (Siempre visible en la parte superior)
         BottomNavigationBar(
+            onNavigate = { url -> webViewState.value?.loadUrl(url) },
             onToggleFichar = { showCuadroParaFichar = !showCuadroParaFichar },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -422,7 +427,7 @@ fun CuadroParaFichar(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "Fichajes del Día",
-                            color = Color.Black,
+                            color = Color.Blue,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
 
@@ -438,7 +443,11 @@ fun CuadroParaFichar(
 }
 
 @Composable
-fun BottomNavigationBar(onToggleFichar: () -> Unit, modifier: Modifier = Modifier) {
+fun BottomNavigationBar(
+    onNavigate: (String) -> Unit,
+    onToggleFichar: () -> Unit, // ✅ Se añade esta función para alternar el cuadro de fichar
+    modifier: Modifier = Modifier
+) {
     var isChecked by remember { mutableStateOf(false) }
 
     Row(
@@ -454,12 +463,12 @@ fun BottomNavigationBar(onToggleFichar: () -> Unit, modifier: Modifier = Modifie
             IconButton(
                 onClick = {
                     isChecked = !isChecked
-                    onToggleFichar()
+                    onToggleFichar() // ✅ Ahora alterna la visibilidad del cuadro de fichar
                 }
             ) {
                 Icon(
                     painter = painterResource(id = if (isChecked) R.drawable.ic_home32 else R.drawable.ic_home32_2),
-                    contentDescription = "Inicio",
+                    contentDescription = "Fichar",
                     modifier = Modifier.size(32.dp),
                     tint = Color.Unspecified
                 )
@@ -470,20 +479,19 @@ fun BottomNavigationBar(onToggleFichar: () -> Unit, modifier: Modifier = Modifie
                 modifier = Modifier.padding(top = 4.dp)
             )
         }
-
-        NavigationButton("Fichajes", R.drawable.ic_fichajes32)
-        NavigationButton("Incidencias", R.drawable.ic_incidencia32)
-        NavigationButton("Horarios", R.drawable.ic_horario32)
+        NavigationButton("Fichajes", R.drawable.ic_fichajes32) { onNavigate(WebViewURL.Fichaje) }
+        NavigationButton("Incidencias", R.drawable.ic_incidencia32) { onNavigate(WebViewURL.Incidencia) }
+        NavigationButton("Horarios", R.drawable.ic_horario32) { onNavigate(WebViewURL.Horarios) }
     }
 }
 
+
 // 🔥 Botón de navegación con ícono e interacción
+// ✅ Se añade `onClick` como parámetro para los botones de navegación
 @Composable
-fun NavigationButton(text: String, iconResId: Int) {
+fun NavigationButton(text: String, iconResId: Int, onClick: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        IconButton(
-            onClick = { /* Acción del botón */ }
-        ) {
+        IconButton(onClick = onClick) {
             Icon(
                 painter = painterResource(id = iconResId),
                 contentDescription = text,
@@ -499,11 +507,6 @@ fun NavigationButton(text: String, iconResId: Int) {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewBottomNavigationBar() {
-    BottomNavigationBar(onToggleFichar = {}) // 🔥 Se pasa una lambda vacía
-}
 
 
 
