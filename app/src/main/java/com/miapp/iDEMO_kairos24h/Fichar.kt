@@ -8,6 +8,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.webkit.CookieManager
+import androidx.compose.material3.CircularProgressIndicator
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
@@ -43,7 +44,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
-import coil.compose.AsyncImage
 import com.miapp.iDEMO_kairos24h.enlaces_internos.AuthManager
 import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.FichEntrada
 import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.FichSalida
@@ -71,6 +71,12 @@ class Fichar : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d("Fichar", "onCreate iniciado")
+
+        setContent {
+            Log.d("Fichar", "setContent ejecutándose")
+            Text("Hola, esto es una prueba") // Esto debería aparecer en pantalla
+        }
 
         val (storedUser, storedPassword, _) = AuthManager.getUserCredentials(this)
 
@@ -243,7 +249,6 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
     // ✅ Guardamos la referencia del WebView
     val webViewState = remember { mutableStateOf<WebView?>(null) }
 
-    // Lista de todas las imagenes que se iránn intercambiando
     val imageList = listOf(
         R.drawable.cliente32,
         R.drawable.cliente32_2,
@@ -258,6 +263,7 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
 
     // 🔥 Cargar fichajes desde la URL del servidor
     LaunchedEffect(fichajesUrl) {
+        Log.d("FicharScreen", "Obteniendo fichajes desde: $fichajesUrl")
         fichajes = obtenerFichajesDesdeServidor(fichajesUrl)
         isLoading = false
     }
@@ -315,6 +321,8 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
                         webViewClient = object : WebViewClient() {
                             override fun onPageFinished(view: WebView?, url: String?) {
                                 super.onPageFinished(view, url)
+                                Log.d("FicharScreen", "WebView ha terminado de cargar: $url")
+
                                 view?.evaluateJavascript(
                                     """
                                     (function() {
@@ -325,6 +333,7 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
                                     """.trimIndent(),
                                     null
                                 )
+                                isLoading = false // ✅ Se desactiva la pantalla de carga
                             }
                         }
                         loadUrl(WebViewURL.LOGIN)
@@ -333,6 +342,11 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
                 },
                 modifier = Modifier.fillMaxSize().zIndex(1f)
             )
+
+            // 🔥 Pantalla de carga mientras WebView carga
+            if (isLoading) {
+                LoadingScreen(isLoading = isLoading)
+            }
 
             // 🔥 Cuadro para Fichar
             if (showCuadroParaFichar) {
@@ -346,36 +360,21 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
 
             // 🔥 Barra de navegación inferior
             BottomNavigationBar(
-                onNavigate = { url -> webViewState.value?.loadUrl(url) },
+                onNavigate = { url ->
+                    showCuadroParaFichar = false // ✅ Oculta el cuadro al navegar
+                    webViewState.value?.loadUrl(url)
+                },
                 onToggleFichar = { showCuadroParaFichar = !showCuadroParaFichar },
+                hideCuadroParaFichar = { showCuadroParaFichar = false }, // ✅ Se pasa correctamente
                 modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().zIndex(3f)
             )
-
-            // 🔥 Animación de carga con GIF
-            if (isLoading) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.White)
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        AsyncImage(
-                            model = R.drawable.version_2,
-                            contentDescription = "Cargando...",
-                            modifier = Modifier.size(100.dp)
-                        )
-                    }
-                }
-            }
 
         }
     }
 }
+
+
+
 
 suspend fun enviarFichaje(url: String) {
     withContext(Dispatchers.IO) {
@@ -481,8 +480,9 @@ fun CuadroParaFichar(
 @Composable
 fun BottomNavigationBar(
     onNavigate: (String) -> Unit,
-    onToggleFichar: () -> Unit, // ✅ Se añade esta función para alternar el cuadro de fichar
-    modifier: Modifier = Modifier
+    onToggleFichar: () -> Unit,
+    modifier: Modifier = Modifier,
+    hideCuadroParaFichar: () -> Unit // 🔥 Nueva función para ocultar el cuadro
 ) {
     var isChecked by remember { mutableStateOf(false) }
 
@@ -499,27 +499,35 @@ fun BottomNavigationBar(
             IconButton(
                 onClick = {
                     isChecked = !isChecked
-                    onToggleFichar() // ✅ Ahora alterna la visibilidad del cuadro de fichar
+                    onToggleFichar() // ✅ Alterna la visibilidad del cuadro de fichar
                 }
             ) {
                 Icon(
-                    painter = painterResource(id = if (isChecked) R.drawable.ic_home32 else R.drawable.ic_home32_2),
+                    painter = painterResource(id = R.drawable.ic_home32_2),
                     contentDescription = "Fichar",
                     modifier = Modifier.size(32.dp),
                     tint = Color.Unspecified
                 )
             }
-            Text(
-                text = "Fichar",
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 4.dp)
-            )
+            Text(text = "Fichar", textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp))
         }
-        NavigationButton("Fichajes", R.drawable.ic_fichajes32) { onNavigate(WebViewURL.Fichaje) }
-        NavigationButton("Incidencias", R.drawable.ic_incidencia32) { onNavigate(WebViewURL.Incidencia) }
-        NavigationButton("Horarios", R.drawable.ic_horario32) { onNavigate(WebViewURL.Horarios) }
+
+        // 🔥 Modificamos las funciones de navegación para ocultar el cuadro
+        NavigationButton("Fichajes", R.drawable.ic_fichajes32) {
+            hideCuadroParaFichar()
+            onNavigate(WebViewURL.Fichaje)
+        }
+        NavigationButton("Incidencias", R.drawable.ic_incidencia32) {
+            hideCuadroParaFichar()
+            onNavigate(WebViewURL.Incidencia)
+        }
+        NavigationButton("Horarios", R.drawable.ic_horario32) {
+            hideCuadroParaFichar()
+            onNavigate(WebViewURL.Horarios)
+        }
     }
 }
+
 
 
 // 🔥 Botón de navegación con ícono e interacción
@@ -540,6 +548,21 @@ fun NavigationButton(text: String, iconResId: Int, onClick: () -> Unit) {
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 4.dp)
         )
+    }
+}
+
+@Composable
+fun LoadingScreen(isLoading: Boolean) {
+    if (isLoading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White.copy(alpha = 0.8f))
+                .zIndex(2f),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = Color(0xFF7599B6)) // Indicador de carga
+        }
     }
 }
 
