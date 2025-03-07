@@ -1,4 +1,5 @@
 package com.miapp.iDEMO_kairos24h
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
@@ -7,11 +8,11 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.webkit.CookieManager
-import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -24,7 +25,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -37,11 +37,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
+import coil.compose.AsyncImage
 import com.miapp.iDEMO_kairos24h.enlaces_internos.AuthManager
 import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.FichEntrada
 import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.FichSalida
@@ -49,6 +51,7 @@ import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.urlServidor
 import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -207,7 +210,6 @@ private fun clearCookiesAndClearCredentials(view: WebView?) {
         it.startActivity(intent)
     }
 }
-
 suspend fun obtenerFichajesDesdeServidor(url: String): List<String> {
     return withContext(Dispatchers.IO) {
         try {
@@ -236,9 +238,23 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
     var isLoading by remember { mutableStateOf(true) }
     var showCuadroParaFichar by remember { mutableStateOf(true) } // 🔥 Controla si se muestra el cuadro para fichar
     var fichajes by remember { mutableStateOf<List<String>>(emptyList()) }
+    var imageIndex by remember { mutableStateOf(0) }
 
     // ✅ Guardamos la referencia del WebView
     val webViewState = remember { mutableStateOf<WebView?>(null) }
+
+    // Lista de todas las imagenes que se iránn intercambiando
+    val imageList = listOf(
+        R.drawable.cliente32,
+        R.drawable.cliente32_2,
+        R.drawable.cliente32_3,
+        R.drawable.cliente32_4,
+        R.drawable.cliente32_5,
+        R.drawable.cliente32_6
+    )
+
+    val sharedPreferences = LocalContext.current.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+    val cUsuario = sharedPreferences.getString("usuario", "Usuario") ?: "Usuario"
 
     // 🔥 Cargar fichajes desde la URL del servidor
     LaunchedEffect(fichajesUrl) {
@@ -246,97 +262,117 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
         isLoading = false
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // 🔥 WebView con menor z-index (al fondo)
-        AndroidView(
-            factory = { context ->
-                WebView(context).apply {
-                    val handler = Handler(Looper.getMainLooper())
-                    var loginTimeoutRunnable: Runnable? = null
-
-                    settings.javaScriptEnabled = true
-                    settings.setSupportZoom(true)
-                    settings.builtInZoomControls = true
-                    settings.displayZoomControls = false
-
-                    webViewClient = object : WebViewClient() {
-                        override fun onPageFinished(view: WebView?, url: String?) {
-                            super.onPageFinished(view, url)
-
-                            if (url == WebViewURL.LOGIN) {
-                                loginTimeoutRunnable = Runnable {
-                                    clearCookiesAndClearCredentials(view)
-                                }
-                                handler.postDelayed(loginTimeoutRunnable!!, 4000)
-                            } else {
-                                if (loginTimeoutRunnable != null) {
-                                    handler.removeCallbacks(loginTimeoutRunnable!!)
-                                    loginTimeoutRunnable = null
-                                }
-                            }
-
-                            // 🔥 Inyectar JavaScript para autocompletar usuario y contraseña
-                            view?.evaluateJavascript(
-                                """
-                                (function() {
-                                    document.getElementsByName('LoginForm[username]')[0].value = '$usuario';
-                                    document.getElementsByName('LoginForm[password]')[0].value = '$password';
-                                    document.querySelector('form').submit();
-                                })();
-                                """.trimIndent(),
-                                null
-                            )
-                        }
-
-                        override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                            val url = request?.url.toString()
-                            if (url.contains("site/logout")) {
-                                clearCookiesAndClearCredentials(view)
-                                return true
-                            }
-                            return super.shouldOverrideUrlLoading(view, request)
-                        }
-                    }
-                    loadUrl(WebViewURL.LOGIN)
-
-                    // ✅ Guardamos la referencia del WebView
-                    webViewState.value = this
-                }
-            },
+    Column(modifier = Modifier.fillMaxSize()) {
+        // 🔥 Barra superior
+        Row(
             modifier = Modifier
-                .fillMaxSize()
-                .zIndex(1f) // 🔥 Capa más baja (fondo)
-        )
-
-        // 🔥 Cuadro para Fichar (Visible al inicio, sobre WebView, pero debajo de la barra de navegación)
-        CuadroParaFichar(
-            isVisible = showCuadroParaFichar,
-            onDismiss = { showCuadroParaFichar = false },
-            fichajes = fichajes, // 🔥 Pasamos los fichajes obtenidos del servidor
-            modifier = Modifier.zIndex(2f)
-        )
-
-        // 🔥 Barra de navegación (Siempre visible en la parte superior)
-        BottomNavigationBar(
-            onNavigate = { url -> webViewState.value?.loadUrl(url) },
-            onToggleFichar = { showCuadroParaFichar = !showCuadroParaFichar },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .zIndex(3f)
-        )
-
-        // 🔥 Animación de carga
-        if (isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.White)
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
+                .background(Color(0xFFE2E4E5))
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Contenedor izquierdo (Imagen intercambiable + Usuario)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = { imageIndex = (imageIndex + 1) % imageList.size }
+                ) {
+                    Icon(
+                        painter = painterResource(id = imageList[imageIndex]),
+                        contentDescription = "Usuario",
+                        modifier = Modifier.size(32.dp),
+                        tint = Color.Unspecified
+                    )
+                }
+                Text(
+                    text = cUsuario,
+                    color = Color(0xFF7599B6),
+                    modifier = Modifier.padding(start = 8.dp)
+                )
             }
+
+            // Contenedor derecho (Botón de cierre de sesión)
+            IconButton(onClick = { clearCookiesAndClearCredentials(webViewState.value) }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_cerrar32),
+                    contentDescription = "Cerrar sesión",
+                    modifier = Modifier.size(32.dp),
+                    tint = Color.Unspecified
+                )
+            }
+        }
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            // 🔥 WebView con menor z-index (al fondo)
+            AndroidView(
+                factory = { context ->
+                    WebView(context).apply {
+                        settings.javaScriptEnabled = true
+                        settings.setSupportZoom(true)
+                        settings.builtInZoomControls = true
+                        settings.displayZoomControls = false
+
+                        webViewClient = object : WebViewClient() {
+                            override fun onPageFinished(view: WebView?, url: String?) {
+                                super.onPageFinished(view, url)
+                                view?.evaluateJavascript(
+                                    """
+                                    (function() {
+                                        document.getElementsByName('LoginForm[username]')[0].value = '$usuario';
+                                        document.getElementsByName('LoginForm[password]')[0].value = '$password';
+                                        document.querySelector('form').submit();
+                                    })();
+                                    """.trimIndent(),
+                                    null
+                                )
+                            }
+                        }
+                        loadUrl(WebViewURL.LOGIN)
+                        webViewState.value = this
+                    }
+                },
+                modifier = Modifier.fillMaxSize().zIndex(1f)
+            )
+
+            // 🔥 Cuadro para Fichar
+            if (showCuadroParaFichar) {
+                CuadroParaFichar(
+                    isVisible = showCuadroParaFichar,
+                    onDismiss = { showCuadroParaFichar = false },
+                    fichajes = fichajes,
+                    modifier = Modifier.zIndex(2f)
+                )
+            }
+
+            // 🔥 Barra de navegación inferior
+            BottomNavigationBar(
+                onNavigate = { url -> webViewState.value?.loadUrl(url) },
+                onToggleFichar = { showCuadroParaFichar = !showCuadroParaFichar },
+                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().zIndex(3f)
+            )
+
+            // 🔥 Animación de carga con GIF
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.White)
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        AsyncImage(
+                            model = R.drawable.version_2,
+                            contentDescription = "Cargando...",
+                            modifier = Modifier.size(100.dp)
+                        )
+                    }
+                }
+            }
+
         }
     }
 }
