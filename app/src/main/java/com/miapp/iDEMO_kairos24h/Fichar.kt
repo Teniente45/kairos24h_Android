@@ -1,21 +1,22 @@
 package com.miapp.iDEMO_kairos24h
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.webkit.CookieManager
-import androidx.compose.material3.CircularProgressIndicator
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Image
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,8 +25,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -44,14 +47,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.google.android.gms.location.LocationServices
 import com.miapp.iDEMO_kairos24h.enlaces_internos.AuthManager
-import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.FichEntrada
-import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.FichSalida
+import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL
 import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.urlServidor
 import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -397,12 +400,11 @@ suspend fun enviarFichaje(url: String) {
     }
 }
 
-
 @Composable
 fun CuadroParaFichar(
     isVisible: Boolean,
     onDismiss: () -> Unit,
-    fichajes: List<String>,
+    fichajes: List<String>,  // parameter
     modifier: Modifier = Modifier
 ) {
     if (isVisible) {
@@ -420,62 +422,153 @@ fun CuadroParaFichar(
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp)
             ) {
-                // 🔥 Botón Verde "Fichaje Entrada"
-                Button(
-                    onClick = {
-                        CoroutineScope(Dispatchers.IO).launch {
-                            enviarFichaje(FichEntrada) // 🔥 Usa la variable en lugar de la URL directa
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)), // Color verde
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 10.dp)
-                ) {
-                    Text("Fichaje Entrada", color = Color.White)
-                }
-
-                // 🔥 Botón Rojo "Fichaje Salida"
-                Button(
-                    onClick = {
-                        CoroutineScope(Dispatchers.IO).launch {
-                            enviarFichaje(FichSalida) // 🔥 Usa la variable en lugar de la URL directa
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)), // Color rojo
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 10.dp)
-                ) {
-                    Text("Fichaje Salida", color = Color.White)
-                }
-
-                // 🔥 Contenedor para "Fichajes del Día"
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color.White)
-                        .border(width = 2.dp, color = Color.Blue)
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "Fichajes del Día",
-                            color = Color.Blue,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-
-                        // 🔥 Lista de fichajes
-                        fichajes.forEach { fichaje ->
-                            Text(text = fichaje, color = Color.DarkGray)
-                        }
+                // 1) Muestra la lista de fichajes, para usar el parámetro
+                if (fichajes.isNotEmpty()) {
+                    Text(text = "Fichajes del Día", color = Color.Blue)
+                    fichajes.forEach { fichaje ->
+                        Text(text = fichaje, color = Color.DarkGray)
                     }
                 }
+
+                // 2) Llama a la función que dibuja los dos botones
+                BotonesFichajeConPermisos()
             }
         }
     }
 }
+
+@Composable
+fun BotonesFichajeConPermisos() {
+    val context = LocalContext.current
+
+    // Guardamos si el usuario pulsó "ENTRADA" o "SALIDA" cuando no haya permiso
+    var pendingFichaje by remember { mutableStateOf<String?>(null) }
+
+    // Launcher que muestra el diálogo para un permiso
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // El usuario concedió el permiso
+            pendingFichaje?.let { tipo ->
+                fichar(context, tipo)
+            }
+        } else {
+            // El usuario denegó el permiso
+            // Puedes mostrar un Toast o un mensaje aquí
+        }
+        pendingFichaje = null
+    }
+
+
+    // BOTÓN ENTRADA
+    Button(
+        onClick = {
+            val hasPermission = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (hasPermission) {
+                fichar(context, "ENTRADA")
+            } else {
+                pendingFichaje = "ENTRADA"
+                requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
+        },
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)), // color verde
+        modifier = Modifier
+            // Ocupa todo el ancho
+            .fillMaxWidth()
+            // Separación de 20.dp a izquierda y derecha, 10.dp arriba y abajo
+            .padding(horizontal = 20.dp, vertical = 10.dp),
+        shape = RoundedCornerShape(10.dp) // Esquinas redondeadas de 10.dp
+    ) {
+        Text("Fichaje Entrada", color = Color.White)
+    }
+
+
+    // BOTÓN SALIDA
+    Button(
+        onClick = {
+            val hasPermission = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (hasPermission) {
+                fichar(context, "SALIDA")
+            } else {
+                pendingFichaje = "SALIDA"
+                requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
+        },
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD51010)), // color verde
+        modifier = Modifier
+            // Ocupa todo el ancho
+            .fillMaxWidth()
+            // Separación de 20.dp a izquierda y derecha, 10.dp arriba y abajo
+            .padding(horizontal = 20.dp, vertical = 10.dp),
+        shape = RoundedCornerShape(10.dp) // Esquinas redondeadas de 10.dp
+    ) {
+        Text("Fichaje SALIDA", color = Color.White)
+    }
+
+}
+
+/** Función auxiliar para construir la URL y llamar a enviarFichaje(...) */
+private fun fichar(context: android.content.Context, tipo: String) {
+    // 1) Obten xEmpleado
+    val (_, _, xEmpleado) = AuthManager.getUserCredentials(context)
+    if (xEmpleado.isNullOrBlank()) {
+        // Maneja el caso de credenciales nulas
+        return
+    }
+
+    // 2) Chequea permiso para evitar SecurityException
+    val hasPermission = ActivityCompat.checkSelfPermission(
+        context, Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+
+    if (!hasPermission) {
+        // No tenemos permiso => salimos o lo pedimos en otro sitio
+        return
+    }
+
+    // 3) Tenemos permiso => pedimos la última localización
+    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+        if (location != null) {
+            val lat = location.latitude
+            val lon = location.longitude
+
+            // 4) Construimos la URL con los parámetros
+            val urlFichaje = BuildURL.crearFichaje +
+                    "&xEmpleado=$xEmpleado" +
+                    "&cDomTipFic=$tipo" +
+                    "&cDomFicOri=APP" +
+                    "&tCoordX=$lat" +
+                    "&tCoordY=$lon"
+
+            // Aquí puedes añadir un log para debug
+            Log.d("Fichar", "URL que se va a enviar: $urlFichaje")
+
+            // 5) Llama a enviarFichaje(...) en un hilo de IO
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                enviarFichaje(urlFichaje)
+            }
+        } else {
+            // Si location es null => muestra un Toast (GPS desactivado o sin cobertura)
+            android.widget.Toast.makeText(
+                context,
+                "Active su GPS y revise su cobertura",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+}
+
+
 
 @Composable
 fun BottomNavigationBar(

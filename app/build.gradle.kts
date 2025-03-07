@@ -60,6 +60,7 @@ dependencies {
     implementation (libs.androidx.ui.tooling.preview.v178)
     implementation (libs.androidx.lifecycle.runtime.ktx)
 
+
     // Material Components (Material Design 2)
     implementation (libs.material) // Verifica que tengas esta versión o superior
 
