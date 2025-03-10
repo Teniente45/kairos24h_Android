@@ -16,35 +16,47 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import androidx.core.app.ActivityCompat
@@ -55,12 +67,15 @@ import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL
 import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.urlServidor
 import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import org.json.JSONArray
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 class Fichar : ComponentActivity() {
@@ -245,13 +260,12 @@ suspend fun obtenerFichajesDesdeServidor(url: String): List<String> {
 @Composable
 fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
     var isLoading by remember { mutableStateOf(true) }
-    var showCuadroParaFichar by remember { mutableStateOf(true) } // 🔥 Controla si se muestra el cuadro para fichar
+    var showCuadroParaFichar by remember { mutableStateOf(true) }
     var fichajes by remember { mutableStateOf<List<String>>(emptyList()) }
     var imageIndex by remember { mutableStateOf(0) }
+    val scope = rememberCoroutineScope()
 
-    // ✅ Guardamos la referencia del WebView
-    val webViewState = remember { mutableStateOf<WebView?>(null) }
-
+    // Lista de imágenes para el usuario
     val imageList = listOf(
         R.drawable.cliente32,
         R.drawable.cliente32_2,
@@ -261,18 +275,25 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
         R.drawable.cliente32_6
     )
 
-    val sharedPreferences = LocalContext.current.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+    val webViewState = remember { mutableStateOf<WebView?>(null) }
+    val context = LocalContext.current
+    val sharedPreferences = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
     val cUsuario = sharedPreferences.getString("usuario", "Usuario") ?: "Usuario"
 
-    // 🔥 Cargar fichajes desde la URL del servidor
-    LaunchedEffect(fichajesUrl) {
-        Log.d("FicharScreen", "Obteniendo fichajes desde: $fichajesUrl")
-        fichajes = obtenerFichajesDesdeServidor(fichajesUrl)
+    // Al iniciar la pantalla se muestra la pestaña de carga durante 4 segundos
+    LaunchedEffect(Unit) {
+        isLoading = true
+        delay(4000)
         isLoading = false
     }
 
+    // Cargar fichajes desde el servidor
+    LaunchedEffect(fichajesUrl) {
+        fichajes = obtenerFichajesDesdeServidor(fichajesUrl)
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
-        // 🔥 Barra superior
+        // Barra superior
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -299,7 +320,6 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
                     modifier = Modifier.padding(start = 8.dp)
                 )
             }
-
             // Contenedor derecho (Botón de cierre de sesión)
             IconButton(onClick = { clearCookiesAndClearCredentials(webViewState.value) }) {
                 Icon(
@@ -312,7 +332,7 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
         }
 
         Box(modifier = Modifier.fillMaxSize()) {
-            // 🔥 WebView con menor z-index (al fondo)
+            // WebView de fondo
             AndroidView(
                 factory = { context ->
                     WebView(context).apply {
@@ -324,8 +344,7 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
                         webViewClient = object : WebViewClient() {
                             override fun onPageFinished(view: WebView?, url: String?) {
                                 super.onPageFinished(view, url)
-                                Log.d("FicharScreen", "WebView ha terminado de cargar: $url")
-
+                                // Utilizamos los parámetros usuario y password para prellenar y enviar el formulario
                                 view?.evaluateJavascript(
                                     """
                                     (function() {
@@ -336,22 +355,22 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
                                     """.trimIndent(),
                                     null
                                 )
-                                isLoading = false // ✅ Se desactiva la pantalla de carga
+                                // En este caso, dejamos que la pantalla de carga se oculte por el delay de 4s
                             }
                         }
                         loadUrl(WebViewURL.LOGIN)
                         webViewState.value = this
                     }
                 },
-                modifier = Modifier.fillMaxSize().zIndex(1f)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(1f)
             )
 
-            // 🔥 Pantalla de carga mientras WebView carga
-            if (isLoading) {
-                LoadingScreen(isLoading = isLoading)
-            }
+            // Pantalla de carga
+            LoadingScreen(isLoading = isLoading)
 
-            // 🔥 Cuadro para Fichar
+            // Cuadro para Fichar
             if (showCuadroParaFichar) {
                 CuadroParaFichar(
                     isVisible = showCuadroParaFichar,
@@ -361,22 +380,28 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
                 )
             }
 
-            // 🔥 Barra de navegación inferior
+            // Barra de navegación inferior
             BottomNavigationBar(
                 onNavigate = { url ->
-                    showCuadroParaFichar = false // ✅ Oculta el cuadro al navegar
+                    // Al pulsar un enlace se muestra la pantalla de carga durante 4s
+                    isLoading = true
+                    showCuadroParaFichar = false // Oculta el cuadro de fichar
                     webViewState.value?.loadUrl(url)
+                    scope.launch {
+                        delay(4000)
+                        isLoading = false
+                    }
                 },
                 onToggleFichar = { showCuadroParaFichar = !showCuadroParaFichar },
-                hideCuadroParaFichar = { showCuadroParaFichar = false }, // ✅ Se pasa correctamente
-                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().zIndex(3f)
+                hideCuadroParaFichar = { showCuadroParaFichar = false },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .zIndex(3f)
             )
-
         }
     }
 }
-
-
 
 
 suspend fun enviarFichaje(url: String) {
@@ -404,7 +429,7 @@ suspend fun enviarFichaje(url: String) {
 fun CuadroParaFichar(
     isVisible: Boolean,
     onDismiss: () -> Unit,
-    fichajes: List<String>,  // parameter
+    fichajes: List<String>,
     modifier: Modifier = Modifier
 ) {
     if (isVisible) {
@@ -412,16 +437,15 @@ fun CuadroParaFichar(
             modifier = modifier
                 .fillMaxSize()
                 .background(Color.White)
-                .zIndex(2f),
-            contentAlignment = Alignment.Center
+                .zIndex(2f)
         ) {
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
+                // Se eliminó horizontalAlignment
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp)
-            ) {
+            )  {
                 // 1) Muestra la lista de fichajes, para usar el parámetro
                 if (fichajes.isNotEmpty()) {
                     Text(text = "Fichajes del Día", color = Color.Blue)
@@ -430,10 +454,75 @@ fun CuadroParaFichar(
                     }
                 }
 
-                // 2) Llama a la función que dibuja los dos botones
+                Logo_empresa()
+                MiHorario()
                 BotonesFichajeConPermisos()
+                RecuadroFichajesDia()
+                AlertasSistema()
             }
         }
+    }
+}
+
+@Composable
+fun Logo_empresa() {
+    Box(modifier = Modifier
+        .padding(top = 20.dp,
+            bottom = 10.dp,
+            start = 40.dp,
+            end = 40.dp
+        )
+        )
+    {
+        Image(
+            painter = painterResource(id = R.drawable.logo_i3data),
+            contentDescription = "Logo i3data",
+            contentScale = ContentScale.Fit, // Ajusta la imagen para que se vea completa
+            modifier = Modifier
+                .fillMaxWidth() // La imagen ocupa todo el ancho disponible
+                .height(140.dp)  // Altura fija de 140dp
+        )
+    }
+}
+
+@Composable
+fun MiHorario() {
+    // Calculamos la fecha actual y la formateamos en español
+    val currentDateString = remember {
+        val currentDate = Date()
+        // Formato: día de la semana, día de mes de mes de año (por ejemplo: "Lunes, 10 de Marzo de 2025")
+        val sdf = SimpleDateFormat("EEEE, dd 'de' MMMM 'de' yyyy", Locale("es", "ES"))
+        // La primera letra del día se puede poner en mayúscula si es necesario:
+        sdf.format(currentDate).replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(5.dp)
+            .border(width = 1.dp, color = Color(0xFFC0C0C0))
+            .background(Color.White)
+            .padding(0.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Primer renglón: fecha actual centrada
+        Text(
+            text = currentDateString,
+            color = Color(0xFF7599B6),
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+        // Segundo renglón: "No Horario" centrado (se puede personalizar según la lógica)
+        Text(
+            text = "No Horario",
+            color = Color.Red,
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
     }
 }
 
@@ -449,75 +538,234 @@ fun BotonesFichajeConPermisos() {
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            // El usuario concedió el permiso
             pendingFichaje?.let { tipo ->
                 fichar(context, tipo)
             }
         } else {
-            // El usuario denegó el permiso
-            // Puedes mostrar un Toast o un mensaje aquí
+            // Aquí puedes mostrar un Toast o mensaje de error
         }
         pendingFichaje = null
     }
 
-
     // BOTÓN ENTRADA
-    Button(
-        onClick = {
-            val hasPermission = ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-
-            if (hasPermission) {
-                fichar(context, "ENTRADA")
-            } else {
-                pendingFichaje = "ENTRADA"
-                requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            }
-        },
-        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)), // color verde
+    Surface(
         modifier = Modifier
-            // Ocupa todo el ancho
             .fillMaxWidth()
-            // Separación de 20.dp a izquierda y derecha, 10.dp arriba y abajo
-            .padding(horizontal = 20.dp, vertical = 10.dp),
-        shape = RoundedCornerShape(10.dp) // Esquinas redondeadas de 10.dp
-    ) {
-        Text("Fichaje Entrada", color = Color.White)
-    }
+            .padding(horizontal = 20.dp, vertical = 5.dp)
+            .height(50.dp)
+            .clickable {
+                val hasPermission = ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
 
+                if (hasPermission) {
+                    fichar(context, "ENTRADA")
+                } else {
+                    pendingFichaje = "ENTRADA"
+                    requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                }
+            },
+        color = Color(0xFF4CAF50), // Color verde
+        shape = RoundedCornerShape(10.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Imagen alineada a la izquierda que ocupará como máximo 20.dp de altura
+            Image(
+                painter = painterResource(id = R.drawable.fichajeetrada32), // Reemplaza con tu recurso
+                contentDescription = "Imagen Fichaje Entrada",
+                modifier = Modifier
+                    .padding(start = 15.dp)
+                    .height(40.dp)
+                    .aspectRatio(1f), // Mantiene una imagen cuadrada
+                contentScale = ContentScale.Crop
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Fichaje Entrada",
+                color = Color.White,
+                modifier = Modifier.align(Alignment.CenterVertically)
+            )
+        }
+    }
 
     // BOTÓN SALIDA
-    Button(
-        onClick = {
-            val hasPermission = ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-
-            if (hasPermission) {
-                fichar(context, "SALIDA")
-            } else {
-                pendingFichaje = "SALIDA"
-                requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            }
-        },
-        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD51010)), // color verde
+    Surface(
         modifier = Modifier
-            // Ocupa todo el ancho
             .fillMaxWidth()
-            // Separación de 20.dp a izquierda y derecha, 10.dp arriba y abajo
-            .padding(horizontal = 20.dp, vertical = 10.dp),
-        shape = RoundedCornerShape(10.dp) // Esquinas redondeadas de 10.dp
-    ) {
-        Text("Fichaje SALIDA", color = Color.White)
-    }
+            .padding(horizontal = 20.dp, vertical = 10.dp)
+            .height(50.dp)
+            .clickable {
+                val hasPermission = ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
 
+                if (hasPermission) {
+                    fichar(context, "SALIDA")
+                } else {
+                    pendingFichaje = "SALIDA"
+                    requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                }
+            },
+        color = Color(0xFFD51010), // Color para Salida
+        shape = RoundedCornerShape(10.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.fichajesalida32), // Reemplaza por otro recurso si es necesario
+                contentDescription = "Imagen Fichaje Salida",
+                modifier = Modifier
+                    .padding(start = 15.dp)
+                    .height(40.dp)
+                    .aspectRatio(1f),
+                contentScale = ContentScale.Crop
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Fichaje Salida",
+                color = Color.White,
+                modifier = Modifier.align(Alignment.CenterVertically)
+            )
+        }
+    }
 }
 
+@Composable
+fun RecuadroFichajesDia() {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Fichajes Día",
+            color = Color(0xFF7599B6),
+            fontSize = 20.sp, // "medium"
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "?",
+                color = Color(0xFF7599B6),
+                fontSize = 20.sp
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = "?",
+                color = Color(0xFF7599B6),
+                fontSize = 20.sp
+            )
+        }
+    }
+}
+
+@Composable  // Agregar los botones faltantes cuando se solucoione
+fun AlertasSistema(
+    onRedireccionar: () -> Unit = {}
+) {
+    // Variable para controlar la expansión/colapso del contenido
+    var isExpanded by remember { mutableStateOf(false) }
+
+    // Contenedor principal con padding, borde y fondo blanco
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(5.dp)
+            .border(BorderStroke(1.dp, Color(0xFFC0C0C0)), RoundedCornerShape(4.dp))
+            .background(Color.White)
+    ) {
+        // Encabezado: Título con fondo azul y botón a la derecha
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF7599B6))
+                .clickable { /* Puedes expandir/colapsar aquí si lo deseas */ }
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Avisos / Alertas",
+                color = Color.White,
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            // Botón para redireccionar a solucionar alerta
+            IconButton(onClick = onRedireccionar) {
+                Icon(
+                    painter = painterResource(id = R.drawable.cliente32_3),
+                    contentDescription = "Redireccionar a solucionar alerta",
+                    tint = Color.Unspecified,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+
+        // Contenedor del contenido de avisos
+        Column(modifier = Modifier.padding(8.dp)) {
+            // Fila que muestra el título del aviso y permite expandir o colapsar el contenido
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(BorderStroke(1.dp, Color(0xFFDDDDDD)))
+                    .clickable { isExpanded = !isExpanded }
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Icono para abrir el detalle
+                Icon(
+                    painter = painterResource(id = R.drawable.cliente32_2),
+                    contentDescription = "Abrir Detalle",
+                    tint = Color.Unspecified,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(15.dp))
+                Text(
+                    text = "Solicitudes pendientes de tramitar.",
+                    color = Color(0xFF7599B6),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                // Botón de redirección (opcional)
+                IconButton(onClick = onRedireccionar) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.cliente32_3),
+                        contentDescription = "Redireccionar a solucionar alerta",
+                        tint = Color.Unspecified,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            // Contenido expandible (inicialmente oculto)
+            if (isExpanded) {
+                Text(
+                    text = "Solicitudes pendientes de tramitar",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+    }
+}
+
+
+
+
+// ================== DEJAR DE MOMENTO ===================================== //
 /** Función auxiliar para construir la URL y llamar a enviarFichaje(...) */
-private fun fichar(context: android.content.Context, tipo: String) {
+private fun fichar(context: Context, tipo: String) {
     // 1) Obten xEmpleado
     val (_, _, xEmpleado) = AuthManager.getUserCredentials(context)
     if (xEmpleado.isNullOrBlank()) {
@@ -554,7 +802,7 @@ private fun fichar(context: android.content.Context, tipo: String) {
             Log.d("Fichar", "URL que se va a enviar: $urlFichaje")
 
             // 5) Llama a enviarFichaje(...) en un hilo de IO
-            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
                 enviarFichaje(urlFichaje)
             }
         } else {
@@ -567,6 +815,8 @@ private fun fichar(context: android.content.Context, tipo: String) {
         }
     }
 }
+// ================== DEJAR DE MOMENTO ===================================== //
+
 
 
 
