@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -75,7 +76,8 @@ import okhttp3.Request
 import okhttp3.Response
 import org.json.JSONArray
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 
 class Fichar : ComponentActivity() {
@@ -234,27 +236,29 @@ private fun clearCookiesAndClearCredentials(view: WebView?) {
         it.startActivity(intent)
     }
 }
+
 suspend fun obtenerFichajesDesdeServidor(url: String): List<String> {
     return withContext(Dispatchers.IO) {
         try {
             val client = OkHttpClient()
             val request = Request.Builder().url(url).build()
-            val response = client.newCall(request).execute()
-            val responseBody = response.body?.string()
-
-            if (!response.isSuccessful || responseBody.isNullOrEmpty()) {
-                return@withContext emptyList() // Si falla, devuelve lista vacía
+            client.newCall(request).execute().use { response ->
+                val responseBody = response.body?.string()
+                if (!response.isSuccessful || responseBody.isNullOrEmpty()) {
+                    Log.e("Fichaje", "Error en la respuesta: ${response.code} - ${response.message}")
+                    return@withContext emptyList()
+                }
+                // Convertimos la respuesta JSON en una lista de Strings
+                val jsonArray = JSONArray(responseBody)
+                List(jsonArray.length()) { index -> jsonArray.getString(index) }
             }
-
-            // 🔥 Convertimos la respuesta JSON en una lista de Strings
-            val jsonArray = JSONArray(responseBody)
-            List(jsonArray.length()) { index -> jsonArray.getString(index) }
         } catch (e: Exception) {
-            e.printStackTrace()
-            emptyList() // En caso de error, devolvemos lista vacía
+            Log.e("Fichaje", "Error al obtener fichajes: ${e.message}", e)
+            emptyList()
         }
     }
 }
+
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -530,19 +534,20 @@ fun MiHorario() {
 fun BotonesFichajeConPermisos() {
     val context = LocalContext.current
 
-    // Guardamos si el usuario pulsó "ENTRADA" o "SALIDA" cuando no haya permiso
+    // Estado para guardar si el usuario pulsó "ENTRADA" o "SALIDA" sin permiso
     var pendingFichaje by remember { mutableStateOf<String?>(null) }
 
-    // Launcher que muestra el diálogo para un permiso
+    // Launcher para solicitar el permiso de ubicación
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
             pendingFichaje?.let { tipo ->
+                Log.d("Fichaje", "Permiso concedido. Procesando fichaje de: $tipo")
                 fichar(context, tipo)
             }
         } else {
-            // Aquí puedes mostrar un Toast o mensaje de error
+            Log.d("Fichaje", "Permiso denegado para ACCESS_FINE_LOCATION")
         }
         pendingFichaje = null
     }
@@ -560,27 +565,28 @@ fun BotonesFichajeConPermisos() {
                 ) == PackageManager.PERMISSION_GRANTED
 
                 if (hasPermission) {
+                    Log.d("Fichaje", "Fichaje Entrada: Permiso ya concedido. Procesando fichaje de ENTRADA")
                     fichar(context, "ENTRADA")
                 } else {
+                    Log.d("Fichaje", "Fichaje Entrada: No tiene permiso. Solicitando permiso...")
                     pendingFichaje = "ENTRADA"
                     requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                 }
             },
-        color = Color(0xFF4CAF50), // Color verde
+        color = Color(0xFF4CAF50), // Verde para entrada
         shape = RoundedCornerShape(10.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxSize()
         ) {
-            // Imagen alineada a la izquierda que ocupará como máximo 20.dp de altura
             Image(
-                painter = painterResource(id = R.drawable.fichajeetrada32), // Reemplaza con tu recurso
+                painter = painterResource(id = R.drawable.fichajeetrada32),
                 contentDescription = "Imagen Fichaje Entrada",
                 modifier = Modifier
                     .padding(start = 15.dp)
                     .height(40.dp)
-                    .aspectRatio(1f), // Mantiene una imagen cuadrada
+                    .aspectRatio(1f),
                 contentScale = ContentScale.Crop
             )
             Spacer(modifier = Modifier.width(8.dp))
@@ -605,13 +611,15 @@ fun BotonesFichajeConPermisos() {
                 ) == PackageManager.PERMISSION_GRANTED
 
                 if (hasPermission) {
+                    Log.d("Fichaje", "Fichaje Salida: Permiso ya concedido. Procesando fichaje de SALIDA")
                     fichar(context, "SALIDA")
                 } else {
+                    Log.d("Fichaje", "Fichaje Salida: No tiene permiso. Solicitando permiso...")
                     pendingFichaje = "SALIDA"
                     requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                 }
             },
-        color = Color(0xFFD51010), // Color para Salida
+        color = Color(0xFFD51010), // Color para salida
         shape = RoundedCornerShape(10.dp)
     ) {
         Row(
@@ -619,7 +627,7 @@ fun BotonesFichajeConPermisos() {
             modifier = Modifier.fillMaxSize()
         ) {
             Image(
-                painter = painterResource(id = R.drawable.fichajesalida32), // Reemplaza por otro recurso si es necesario
+                painter = painterResource(id = R.drawable.fichajesalida32),
                 contentDescription = "Imagen Fichaje Salida",
                 modifier = Modifier
                     .padding(start = 15.dp)
@@ -636,6 +644,7 @@ fun BotonesFichajeConPermisos() {
         }
     }
 }
+
 
 @Composable
 fun RecuadroFichajesDia() {
@@ -766,10 +775,10 @@ fun AlertasSistema(
 // ================== DEJAR DE MOMENTO ===================================== //
 /** Función auxiliar para construir la URL y llamar a enviarFichaje(...) */
 private fun fichar(context: Context, tipo: String) {
-    // 1) Obten xEmpleado
+    // 1) Obtener xEmpleado (suponiendo que AuthManager devuelve (usuario, password, xEmpleado))
     val (_, _, xEmpleado) = AuthManager.getUserCredentials(context)
     if (xEmpleado.isNullOrBlank()) {
-        // Maneja el caso de credenciales nulas
+        Log.e("Fichar", "xEmpleado es nulo o vacío")
         return
     }
 
@@ -779,34 +788,35 @@ private fun fichar(context: Context, tipo: String) {
     ) == PackageManager.PERMISSION_GRANTED
 
     if (!hasPermission) {
-        // No tenemos permiso => salimos o lo pedimos en otro sitio
+        Log.e("Fichar", "No se cuenta con el permiso ACCESS_FINE_LOCATION")
         return
     }
 
-    // 3) Tenemos permiso => pedimos la última localización
+    // 3) Obtener la última ubicación
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
     fusedLocationClient.lastLocation.addOnSuccessListener { location ->
         if (location != null) {
+            // 4) Construir la URL usando el servidor base, xEmpleado y el tipo (ENTRADA o SALIDA)
+            // También se incluyen latitud y longitud; si no las necesitas, puedes dejarlas vacías.
             val lat = location.latitude
             val lon = location.longitude
+            // Puedes formatear la fecha o dejar fFichaje vacío según tu lógica.
+            val fechaFichaje = "" // o SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
 
-            // 4) Construimos la URL con los parámetros
-            val urlFichaje = BuildURL.crearFichaje +
-                    "&xEmpleado=$xEmpleado" +
-                    "&cDomTipFic=$tipo" +
-                    "&cDomFicOri=APP" +
-                    "&tCoordX=$lat" +
-                    "&tCoordY=$lon"
+            val urlFichaje = BuildURL.urlServidor +
+                    "&cEmpCppExt=$xEmpleado" +
+                    "&cTipFic=$tipo" +
+                    "&fFichaje=$fechaFichaje" +
+                    "&tGpsLat=$lat" +
+                    "&tGpsLon=$lon"
 
-            // Aquí puedes añadir un log para debug
             Log.d("Fichar", "URL que se va a enviar: $urlFichaje")
 
-            // 5) Llama a enviarFichaje(...) en un hilo de IO
+            // 5) Llama a enviarFichaje(...) en un hilo IO
             kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
                 enviarFichaje(urlFichaje)
             }
         } else {
-            // Si location es null => muestra un Toast (GPS desactivado o sin cobertura)
             android.widget.Toast.makeText(
                 context,
                 "Active su GPS y revise su cobertura",
@@ -815,6 +825,7 @@ private fun fichar(context: Context, tipo: String) {
         }
     }
 }
+
 // ================== DEJAR DE MOMENTO ===================================== //
 
 
