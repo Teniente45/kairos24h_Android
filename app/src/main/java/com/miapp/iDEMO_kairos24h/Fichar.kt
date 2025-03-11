@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -486,24 +487,23 @@ fun CuadroParaFichar(
 
 @Composable
 fun Logo_empresa() {
-    Box(modifier = Modifier
-        .padding(top = 20.dp,
-            bottom = 10.dp,
-            start = 40.dp,
-            end = 40.dp
-        )
-        )
-    {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .offset(y = (-10).dp),
+        contentAlignment = Alignment.Center
+    ) {
         Image(
             painter = painterResource(id = R.drawable.logo_i3data),
             contentDescription = "Logo i3data",
             contentScale = ContentScale.Fit, // Ajusta la imagen para que se vea completa
             modifier = Modifier
-                .fillMaxWidth() // La imagen ocupa todo el ancho disponible
-                .height(140.dp)  // Altura fija de 140dp
+                .width(140.dp)
+                .height(100.dp)
         )
     }
 }
+
 @Composable
 fun MiHorario() {
     // Calculamos la fecha actual y la formateamos en español
@@ -517,10 +517,9 @@ fun MiHorario() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(5.dp)
+            .offset(y = (-40).dp)
             .border(width = 1.dp, color = Color(0xFFC0C0C0))
-            .background(Color.White)
-            .padding(0.dp),
+            .background(Color.White),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Primer renglón: fecha actual centrada
@@ -571,7 +570,8 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 5.dp)
-            .height(50.dp)
+            .height(70.dp)
+            .offset(y = (-20).dp)
             .clickable {
                 val hasPermission = ContextCompat.checkSelfPermission(
                     context,
@@ -600,7 +600,7 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
                 contentDescription = "Imagen Fichaje Entrada",
                 modifier = Modifier
                     .padding(start = 15.dp)
-                    .height(40.dp)
+                    .height(50.dp)
                     .aspectRatio(1f),
                 contentScale = ContentScale.Crop
             )
@@ -608,6 +608,7 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
             Text(
                 text = "Fichaje Entrada",
                 color = Color.White,
+                fontSize = 20.sp,
                 modifier = Modifier.align(Alignment.CenterVertically)
             )
         }
@@ -620,7 +621,8 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 5.dp)
-            .height(50.dp)
+            .offset(y = (-20).dp)
+            .height(70.dp)
             .clickable {
                 val hasPermission = ContextCompat.checkSelfPermission(
                     context,
@@ -649,7 +651,7 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
                 contentDescription = "Imagen Fichaje Salida",
                 modifier = Modifier
                     .padding(start = 15.dp)
-                    .height(40.dp)
+                    .height(50.dp)
                     .aspectRatio(1f),
                 contentScale = ContentScale.Crop
             )
@@ -657,6 +659,7 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
             Text(
                 text = "Fichaje Salida",
                 color = Color.White,
+                fontSize = 20.sp,
                 modifier = Modifier.align(Alignment.CenterVertically)
             )
         }
