@@ -76,6 +76,8 @@ dependencies {
     // Dependencia del compilador de Compose (requerido en Kotlin 2.0)
     implementation(libs.androidx.compiler)
     implementation(libs.androidx.ui.tooling.preview.android)
+    implementation(libs.volley)
+    implementation(libs.androidx.espresso.core)
 
     // Dependencias de pruebas
     testImplementation(libs.junit)
@@ -86,6 +88,10 @@ dependencies {
     androidTestImplementation(libs.ui.test.junit4)
 
     implementation(libs.okhttp)
+
+    // Dependencias para añadir gif animados
+    implementation(libs.coil.compose.v222)
+    implementation(libs.coil.gif)
 
     implementation(libs.coil.compose)
 

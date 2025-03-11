@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -13,6 +12,7 @@ import android.util.Log
 import android.webkit.CookieManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -35,7 +35,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -59,12 +60,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import coil.ImageLoader
+import coil.compose.AsyncImage
+import coil.decode.ImageDecoderDecoder
+import coil.request.ImageRequest
 import com.google.android.gms.location.LocationServices
 import com.miapp.iDEMO_kairos24h.enlaces_internos.AuthManager
-import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL
+import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.prueba
 import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.urlServidor
 import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL
 import kotlinx.coroutines.Dispatchers
@@ -97,18 +104,15 @@ class Fichar : ComponentActivity() {
             Log.d("Fichar", "setContent ejecutándose")
             Text("Hola, esto es una prueba") // Esto debería aparecer en pantalla
         }
-
         val (storedUser, storedPassword, _) = AuthManager.getUserCredentials(this)
 
         if (storedUser.isEmpty() || storedPassword.isEmpty()) {
             navigateToLogin()
             return
         }
-
         // Usamos las credenciales del Intent, o las almacenadas
         val usuario = intent.getStringExtra("usuario") ?: storedUser
         val password = intent.getStringExtra("password") ?: storedPassword
-
         setContent {
             FicharScreen(
                 usuario = usuario,
@@ -236,7 +240,7 @@ private fun clearCookiesAndClearCredentials(view: WebView?) {
         it.startActivity(intent)
     }
 }
-
+// Funcion para obtener los fichajes del dia
 suspend fun obtenerFichajesDesdeServidor(url: String): List<String> {
     return withContext(Dispatchers.IO) {
         try {
@@ -267,6 +271,8 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
     var showCuadroParaFichar by remember { mutableStateOf(true) }
     var fichajes by remember { mutableStateOf<List<String>>(emptyList()) }
     var imageIndex by remember { mutableStateOf(0) }
+    // Estado para almacenar el tipo de fichaje realizado (null = sin alerta)
+    var fichajeAlertTipo by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     // Lista de imágenes para el usuario
@@ -284,10 +290,10 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
     val sharedPreferences = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
     val cUsuario = sharedPreferences.getString("usuario", "Usuario") ?: "Usuario"
 
-    // Al iniciar la pantalla se muestra la pestaña de carga durante 4 segundos
+    // Se muestra la pantalla de carga durante 4 segundos
     LaunchedEffect(Unit) {
         isLoading = true
-        delay(4000)
+        delay(3000)
         isLoading = false
     }
 
@@ -324,7 +330,7 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
                     modifier = Modifier.padding(start = 8.dp)
                 )
             }
-            // Contenedor derecho (Botón de cierre de sesión)
+            // Botón de cierre de sesión
             IconButton(onClick = { clearCookiesAndClearCredentials(webViewState.value) }) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_cerrar32),
@@ -348,7 +354,7 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
                         webViewClient = object : WebViewClient() {
                             override fun onPageFinished(view: WebView?, url: String?) {
                                 super.onPageFinished(view, url)
-                                // Utilizamos los parámetros usuario y password para prellenar y enviar el formulario
+                                // Autocompletamos el formulario de login
                                 view?.evaluateJavascript(
                                     """
                                     (function() {
@@ -359,7 +365,6 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
                                     """.trimIndent(),
                                     null
                                 )
-                                // En este caso, dejamos que la pantalla de carga se oculte por el delay de 4s
                             }
                         }
                         loadUrl(WebViewURL.LOGIN)
@@ -374,25 +379,35 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
             // Pantalla de carga
             LoadingScreen(isLoading = isLoading)
 
-            // Cuadro para Fichar
+            // Cuadro para fichar (se pasa el callback onFichaje)
             if (showCuadroParaFichar) {
                 CuadroParaFichar(
                     isVisible = showCuadroParaFichar,
                     onDismiss = { showCuadroParaFichar = false },
                     fichajes = fichajes,
+                    onFichaje = { tipo ->
+                        fichajeAlertTipo = tipo
+                    },
                     modifier = Modifier.zIndex(2f)
+                )
+            }
+
+            // Mostrar alerta solo si se ha realizado un fichaje
+            fichajeAlertTipo?.let { tipo ->
+                MensajeAlerta(
+                    tipo = tipo,
+                    onClose = { fichajeAlertTipo = null }
                 )
             }
 
             // Barra de navegación inferior
             BottomNavigationBar(
                 onNavigate = { url ->
-                    // Al pulsar un enlace se muestra la pantalla de carga durante 4s
                     isLoading = true
                     showCuadroParaFichar = false // Oculta el cuadro de fichar
                     webViewState.value?.loadUrl(url)
                     scope.launch {
-                        delay(4000)
+                        delay(3000)
                         isLoading = false
                     }
                 },
@@ -408,6 +423,7 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
 }
 
 
+// MIRAR BIEN
 suspend fun enviarFichaje(url: String) {
     withContext(Dispatchers.IO) {
         try {
@@ -420,6 +436,7 @@ suspend fun enviarFichaje(url: String) {
 
             if (response.isSuccessful) {
                 Log.d("Fichaje", "Fichaje registrado con éxito en: $url")
+
             } else {
                 Log.e("Fichaje", "Error en fichaje: ${response.code}")
             }
@@ -434,6 +451,7 @@ fun CuadroParaFichar(
     isVisible: Boolean,
     onDismiss: () -> Unit,
     fichajes: List<String>,
+    onFichaje: (tipo: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (isVisible) {
@@ -444,29 +462,27 @@ fun CuadroParaFichar(
                 .zIndex(2f)
         ) {
             Column(
-                // Se eliminó horizontalAlignment
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp)
-            )  {
-                // 1) Muestra la lista de fichajes, para usar el parámetro
+            ) {
+                // Mostrar lista de fichajes si existe
                 if (fichajes.isNotEmpty()) {
                     Text(text = "Fichajes del Día", color = Color.Blue)
                     fichajes.forEach { fichaje ->
                         Text(text = fichaje, color = Color.DarkGray)
                     }
                 }
-
                 Logo_empresa()
                 MiHorario()
-                BotonesFichajeConPermisos()
+                BotonesFichajeConPermisos(onFichaje = onFichaje)
                 RecuadroFichajesDia()
-                AlertasSistema()
             }
         }
     }
 }
+
 
 @Composable
 fun Logo_empresa() {
@@ -488,7 +504,6 @@ fun Logo_empresa() {
         )
     }
 }
-
 @Composable
 fun MiHorario() {
     // Calculamos la fecha actual y la formateamos en español
@@ -499,7 +514,6 @@ fun MiHorario() {
         // La primera letra del día se puede poner en mayúscula si es necesario:
         sdf.format(currentDate).replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
     }
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -519,6 +533,7 @@ fun MiHorario() {
             textAlign = TextAlign.Center
         )
         // Segundo renglón: "No Horario" centrado (se puede personalizar según la lógica)
+        // Se tendrá que meter aqui la lógics para que pille los fichajes del servidor
         Text(
             text = "No Horario",
             color = Color.Red,
@@ -531,10 +546,8 @@ fun MiHorario() {
 }
 
 @Composable
-fun BotonesFichajeConPermisos() {
+fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
     val context = LocalContext.current
-
-    // Estado para guardar si el usuario pulsó "ENTRADA" o "SALIDA" sin permiso
     var pendingFichaje by remember { mutableStateOf<String?>(null) }
 
     // Launcher para solicitar el permiso de ubicación
@@ -545,6 +558,7 @@ fun BotonesFichajeConPermisos() {
             pendingFichaje?.let { tipo ->
                 Log.d("Fichaje", "Permiso concedido. Procesando fichaje de: $tipo")
                 fichar(context, tipo)
+                onFichaje(tipo)
             }
         } else {
             Log.d("Fichaje", "Permiso denegado para ACCESS_FINE_LOCATION")
@@ -567,6 +581,7 @@ fun BotonesFichajeConPermisos() {
                 if (hasPermission) {
                     Log.d("Fichaje", "Fichaje Entrada: Permiso ya concedido. Procesando fichaje de ENTRADA")
                     fichar(context, "ENTRADA")
+                    onFichaje("ENTRADA")
                 } else {
                     Log.d("Fichaje", "Fichaje Entrada: No tiene permiso. Solicitando permiso...")
                     pendingFichaje = "ENTRADA"
@@ -598,11 +613,13 @@ fun BotonesFichajeConPermisos() {
         }
     }
 
+    Spacer(modifier = Modifier.height(10.dp))
+
     // BOTÓN SALIDA
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 10.dp)
+            .padding(horizontal = 20.dp, vertical = 5.dp)
             .height(50.dp)
             .clickable {
                 val hasPermission = ContextCompat.checkSelfPermission(
@@ -613,13 +630,14 @@ fun BotonesFichajeConPermisos() {
                 if (hasPermission) {
                     Log.d("Fichaje", "Fichaje Salida: Permiso ya concedido. Procesando fichaje de SALIDA")
                     fichar(context, "SALIDA")
+                    onFichaje("SALIDA")
                 } else {
                     Log.d("Fichaje", "Fichaje Salida: No tiene permiso. Solicitando permiso...")
                     pendingFichaje = "SALIDA"
                     requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                 }
             },
-        color = Color(0xFFD51010), // Color para salida
+        color = Color(0xFFD51010), // Rojo para salida
         shape = RoundedCornerShape(10.dp)
     ) {
         Row(
@@ -644,7 +662,6 @@ fun BotonesFichajeConPermisos() {
         }
     }
 }
-
 
 @Composable
 fun RecuadroFichajesDia() {
@@ -679,101 +696,83 @@ fun RecuadroFichajesDia() {
     }
 }
 
-@Composable  // Agregar los botones faltantes cuando se solucoione
-fun AlertasSistema(
-    onRedireccionar: () -> Unit = {}
+@Composable
+fun MensajeAlerta(
+    tipo: String = "ENTRADA",
+    onClose: () -> Unit = {}
 ) {
-    // Variable para controlar la expansión/colapso del contenido
-    var isExpanded by remember { mutableStateOf(false) }
+    // Se obtiene la fecha y hora actual formateada
+    val currentDateTime = SimpleDateFormat("dd/MM/yyyy HH:mm'h'", Locale.getDefault()).format(Date())
 
-    // Contenedor principal con padding, borde y fondo blanco
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(5.dp)
-            .border(BorderStroke(1.dp, Color(0xFFC0C0C0)), RoundedCornerShape(4.dp))
-            .background(Color.White)
+    // Se define el mensaje en función del tipo de fichaje
+    val mensaje = when(tipo.uppercase()) {
+        "ENTRADA" -> "Fichaje de Entrada realizado correctamente"
+        "SALIDA" -> "Fichaje de Salida realizado correctamente"
+        else -> "Fichaje de $tipo realizado correctamente"
+    }
+
+    // Usamos un Dialog para mostrar el contenido centrado en la pantalla
+    Dialog(
+        onDismissRequest = onClose,
+        properties = DialogProperties(dismissOnClickOutside = true)
     ) {
-        // Encabezado: Título con fondo azul y botón a la derecha
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFF7599B6))
-                .clickable { /* Puedes expandir/colapsar aquí si lo deseas */ }
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
+        // Puedes usar Surface o Card para darle estilo al cuadro
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(1.dp, Color.LightGray),
+            color = Color.White
         ) {
-            Text(
-                text = "Avisos / Alertas",
-                color = Color.White,
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            // Botón para redireccionar a solucionar alerta
-            IconButton(onClick = onRedireccionar) {
-                Icon(
-                    painter = painterResource(id = R.drawable.cliente32_3),
-                    contentDescription = "Redireccionar a solucionar alerta",
-                    tint = Color.Unspecified,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
-
-        // Contenedor del contenido de avisos
-        Column(modifier = Modifier.padding(8.dp)) {
-            // Fila que muestra el título del aviso y permite expandir o colapsar el contenido
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(BorderStroke(1.dp, Color(0xFFDDDDDD)))
-                    .clickable { isExpanded = !isExpanded }
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Icono para abrir el detalle
-                Icon(
-                    painter = painterResource(id = R.drawable.cliente32_2),
-                    contentDescription = "Abrir Detalle",
-                    tint = Color.Unspecified,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(15.dp))
-                Text(
-                    text = "Solicitudes pendientes de tramitar.",
-                    color = Color(0xFF7599B6),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                // Botón de redirección (opcional)
-                IconButton(onClick = onRedireccionar) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.cliente32_3),
-                        contentDescription = "Redireccionar a solucionar alerta",
-                        tint = Color.Unspecified,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-            // Contenido expandible (inicialmente oculto)
-            if (isExpanded) {
-                Text(
-                    text = "Solicitudes pendientes de tramitar",
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Encabezado del cuadro
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp),
-                    style = MaterialTheme.typography.bodySmall
+                        .background(Color(0xFF7599B6))
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        text = "Información",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                // Mensaje de fichaje
+                Text(
+                    text = mensaje,
+                    color = Color.Black,
+                    style = MaterialTheme.typography.bodyMedium
                 )
+                Spacer(modifier = Modifier.height(16.dp))
+                // Fecha y hora actual
+                Text(
+                    text = currentDateTime,
+                    color = Color.Black,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                // Botón para cerrar la alerta
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Button(
+                        onClick = onClose,
+                        shape = RoundedCornerShape(4.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7599B6))
+                    ) {
+                        Text(text = "Cerrar")
+                    }
+
+                }
             }
         }
     }
 }
 
 
-
-
-// ================== DEJAR DE MOMENTO ===================================== //
-/** Función auxiliar para construir la URL y llamar a enviarFichaje(...) */
 private fun fichar(context: Context, tipo: String) {
     // 1) Obtener xEmpleado (suponiendo que AuthManager devuelve (usuario, password, xEmpleado))
     val (_, _, xEmpleado) = AuthManager.getUserCredentials(context)
@@ -789,6 +788,7 @@ private fun fichar(context: Context, tipo: String) {
 
     if (!hasPermission) {
         Log.e("Fichar", "No se cuenta con el permiso ACCESS_FINE_LOCATION")
+        Toast.makeText(context, "Debe de aceptar los permisos de localización GPS para poder fichar en la aplicación" , Toast.LENGTH_SHORT).show()
         return
     }
 
@@ -796,37 +796,44 @@ private fun fichar(context: Context, tipo: String) {
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
     fusedLocationClient.lastLocation.addOnSuccessListener { location ->
         if (location != null) {
-            // 4) Construir la URL usando el servidor base, xEmpleado y el tipo (ENTRADA o SALIDA)
-            // También se incluyen latitud y longitud; si no las necesitas, puedes dejarlas vacías.
             val lat = location.latitude
             val lon = location.longitude
-            // Puedes formatear la fecha o dejar fFichaje vacío según tu lógica.
-            val fechaFichaje = "" // o SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
 
-            val urlFichaje = BuildURL.urlServidor +
+            // 4) Construir la fecha y hora actual en formato datetime
+            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+            val fechaFichaje = sdf.format(Date())
+
+            // 5) Construir la URL usando el servidor base, xEmpleado, el tipo (ENTRADA o SALIDA) y la fecha/hora
+            val urlFichaje = prueba +
+                    "&cTipFic=$tipo" +
+                    "&tGpsLat=$lat" +
+                    "&tGpsLon=$lon"
+
+            /*
+            val urlFichaje = urlServidor +
                     "&cEmpCppExt=$xEmpleado" +
                     "&cTipFic=$tipo" +
                     "&fFichaje=$fechaFichaje" +
                     "&tGpsLat=$lat" +
                     "&tGpsLon=$lon"
 
+             */
+
             Log.d("Fichar", "URL que se va a enviar: $urlFichaje")
 
-            // 5) Llama a enviarFichaje(...) en un hilo IO
+            // 6) Llama a enviarFichaje(...) en un hilo IO
             kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
                 enviarFichaje(urlFichaje)
             }
         } else {
-            android.widget.Toast.makeText(
+            Toast.makeText(
                 context,
                 "Active su GPS y revise su cobertura",
-                android.widget.Toast.LENGTH_LONG
+                Toast.LENGTH_LONG
             ).show()
         }
     }
 }
-
-// ================== DEJAR DE MOMENTO ===================================== //
 
 
 
@@ -908,17 +915,36 @@ fun NavigationButton(text: String, iconResId: Int, onClick: () -> Unit) {
 @Composable
 fun LoadingScreen(isLoading: Boolean) {
     if (isLoading) {
+        val context = LocalContext.current
+        val imageLoader = ImageLoader.Builder(context)
+            .components {
+                add(ImageDecoderDecoder.Factory())
+            }
+            .build()
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White.copy(alpha = 0.8f))
+                .background(Color.White)
                 .zIndex(2f),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator(color = Color(0xFF7599B6)) // Indicador de carga
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(R.drawable.version_2)
+                    .crossfade(true)
+                    .build(),
+                imageLoader = imageLoader,
+                contentDescription = "Loading GIF",
+                modifier = Modifier.size(200.dp)
+            )
         }
     }
 }
+
+
+
+
 
 
 

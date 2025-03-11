@@ -3,6 +3,7 @@
 activityComposeVersion = "1.10.0"
 androidxUi = "1.7.8"
 coilCompose = "2.1.0"
+coilComposeVersion = "2.2.2"
 compiler = "1.5.15"
 foundationVersion = "1.7.8"
 glide = "4.15.1"
@@ -35,6 +36,7 @@ uiToolingPreviewVersion = "1.7.8"
 uiToolingVersion = "1.7.8"
 uiVersion = "1.7.8"
 uiToolingPreviewAndroid = "1.7.8"
+volley = "1.2.1"
 
 [libraries]
 #noinspection SimilarGradleDependency
@@ -63,6 +65,8 @@ androidx-ui-v105 = { module = "androidx.compose.ui:ui", version.ref = "uiVersion
 #noinspection SimilarGradleDependency
 androidx-ui-v178 = { module = "androidx.compose.ui:ui", version.ref = "androidxUi" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
+coil-compose-v222 = { module = "io.coil-kt:coil-compose", version.ref = "coilComposeVersion" }
+coil-gif = { module = "io.coil-kt:coil-gif", version.ref = "coilComposeVersion" }
 compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -95,6 +99,7 @@ ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "uiTooli
 #noinspection SimilarGradleDependency
 ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "uiToolingPreview" }
 androidx-ui-tooling-preview-android = { group = "androidx.compose.ui", name = "ui-tooling-preview-android", version.ref = "uiToolingPreviewAndroid" }
+volley = { group = "com.android.volley", name = "volley", version.ref = "volley" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
