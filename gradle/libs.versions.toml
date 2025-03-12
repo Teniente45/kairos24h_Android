@@ -1,7 +1,9 @@
 [versions]
 
 activityComposeVersion = "1.10.0"
+androidxMaterial = "1.4.3"
 androidxUi = "1.7.8"
+animation = "1.7.8"
 coilCompose = "2.1.0"
 coilComposeVersion = "2.2.2"
 compiler = "1.5.15"
@@ -22,6 +24,7 @@ composeBom = "2025.02.00"
 junitJunit = "4.13.2"
 material = "1.12.0"
 material3 = "1.3.1"
+materialIconsExtended = "1.7.8"
 materialVersion = "1.7.8"
 navigationCompose = "2.8.7"
 navigationComposeVersion = "2.8.7"
@@ -43,6 +46,7 @@ volley = "1.2.1"
 androidx-activity-compose-v1100 = { module = "androidx.activity:activity-compose", version.ref = "activityComposeVersion" }
 #noinspection SimilarGradleDependency
 androidx-activity-compose-v140 = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+androidx-animation = { module = "androidx.compose.animation:animation", version.ref = "animation" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 androidx-compiler = { module = "androidx.compose.compiler:compiler", version.ref = "compiler" }
 androidx-core = { module = "androidx.core:core", version.ref = "coreKtx" }
@@ -53,6 +57,9 @@ androidx-foundation = { module = "androidx.compose.foundation:foundation", versi
 androidx-foundation-v178 = { module = "androidx.compose.foundation:foundation", version.ref = "foundationVersion" }
 androidx-material = { module = "androidx.compose.material:material", version.ref = "materialVersion" }
 #noinspection SimilarGradleDependency
+androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "androidxMaterial" }
+androidx-material-icons-extended-v178 = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
+androidx-material-v143 = { module = "androidx.compose.material:material", version.ref = "androidxMaterial" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 #noinspection SimilarGradleDependency
 androidx-navigation-compose-v287 = { module = "androidx.navigation:navigation-compose", version.ref = "navigationComposeVersion" }

@@ -67,6 +67,15 @@ dependencies {
     // Material3 (si usas Material Design 3)
     implementation (libs.material3) // Solo si usas Material3
 
+    implementation(libs.androidx.material)
+    implementation(libs.androidx.material.icons.extended.v178)
+    implementation(libs.androidx.animation)
+
+
+
+    implementation(libs.androidx.material.v143)
+    implementation(libs.androidx.material.icons.extended)
+
     // Dependencias adicionales
     implementation(libs.okhttp)
     implementation(libs.play.services.location)

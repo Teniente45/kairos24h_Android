@@ -17,39 +17,31 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -465,7 +457,9 @@ fun CuadroParaFichar(
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxSize()
+                    // Habilita el scroll vertical:
+                    .verticalScroll(rememberScrollState())
                     .padding(horizontal = 20.dp)
             ) {
                 // Mostrar lista de fichajes si existe
@@ -479,10 +473,12 @@ fun CuadroParaFichar(
                 MiHorario()
                 BotonesFichajeConPermisos(onFichaje = onFichaje)
                 RecuadroFichajesDia()
+                AlertasDiarias()
             }
         }
     }
 }
+
 
 
 @Composable
@@ -695,6 +691,138 @@ fun RecuadroFichajesDia() {
                 color = Color(0xFF7599B6),
                 fontSize = 20.sp
             )
+        }
+    }
+}
+
+@Composable
+fun AlertasDiarias() {
+    // Control para expandir/colapsar el detalle de avisos
+    var expanded by remember { mutableStateOf(false) }
+
+    // Card principal que imita el "jumbotron" con borde y fondo blanco
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        border = BorderStroke(1.dp, Color.LightGray),
+        shape = RoundedCornerShape(4.dp),
+        backgroundColor = Color.White
+    ) {
+        Column(modifier = Modifier.padding(8.dp)) {
+
+            // Encabezado que imita la barra "Avisos / Alertas"
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF7599B6)) // color aproximado #7599B6
+                    .clickable {
+                        // Si quisieras permitir que hacer click en toda la barra
+                        // despliegue/colapse, puedes usar expanded = !expanded
+                    }
+                    .padding(8.dp)
+            ) {
+                Text(
+                    text = "Avisos / Alertas",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.CenterStart)
+                )
+
+                Row(modifier = Modifier.align(Alignment.CenterEnd)) {
+                    // Botón "Mostrar Avisos/Alertas"
+                    IconButton(
+                        onClick = {
+                            // Lógica para mostrarExplotacion(1, true, 'AVISO', ...).
+                            // Aquí pones tu función o acción correspondiente.
+                        }
+                    ) {
+                        // Usa tu icono o imagen. Ej. painterResource(R.drawable.mostrar20)
+                        Icon(
+                            imageVector = Icons.Default.Visibility,
+                            contentDescription = "Mostrar Avisos",
+                            tint = Color.White
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // Botón "Nuevo Aviso"
+                    IconButton(
+                        onClick = {
+                            // Lógica para createExplotacion('AVISO', '').
+                        }
+                    ) {
+                        // Usa tu icono o imagen. Ej. painterResource(R.drawable.nuevo20)
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Nuevo Aviso",
+                            tint = Color.White
+                        )
+                    }
+                }
+            }
+
+            // Cuerpo de la tarjeta (similar al panel-body del HTML)
+            Column(modifier = Modifier.padding(top = 8.dp)) {
+
+                // Fila que muestra "Solicitudes pendientes de tramitar"
+                // y que al hacer click despliega la zona de detalle
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, Color.LightGray)
+                        .clickable {
+                            expanded = !expanded
+                        }
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Icono de "más" o "menos" para expandir
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.Remove else Icons.Default.Add,
+                        contentDescription = "Expandir / Colapsar",
+                        modifier = Modifier.size(20.dp),
+                        tint = Color(0xFF7599B6)
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = "Solicitudes pendientes de tramitar.",
+                        fontSize = 14.sp,
+                        color = Color(0xFF7599B6)
+                    )
+
+                    // Icono a la derecha para "redireccionar"
+                    Spacer(modifier = Modifier.weight(1f))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Redireccionar",
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clickable {
+                                // Llamada a urlDireccionar(...) o la función que corresponda
+                            },
+                        tint = Color(0xFF7599B6)
+                    )
+                }
+
+                // Zona colapsable que imita el <textarea readonly="readonly">
+                AnimatedVisibility(visible = expanded) {
+                    Column(modifier = Modifier.padding(top = 8.dp)) {
+                        // Si deseas un aspecto de "textarea":
+                        OutlinedTextField(
+                            value = "Solicitudes pendientes de tramitar",
+                            onValueChange = { /* sin cambio, es solo lectura */ },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp),
+                            readOnly = true
+                        )
+                    }
+                }
+            }
         }
     }
 }
