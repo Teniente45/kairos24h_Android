@@ -24,7 +24,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -40,8 +42,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -300,8 +300,9 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .height(30.dp)
                 .background(Color(0xFFE2E4E5))
-                .padding(8.dp),
+                .padding(2.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -313,14 +314,14 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
                     Icon(
                         painter = painterResource(id = imageList[imageIndex]),
                         contentDescription = "Usuario",
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(30.dp),
                         tint = Color.Unspecified
                     )
                 }
                 Text(
                     text = cUsuario,
                     color = Color(0xFF7599B6),
-                    modifier = Modifier.padding(start = 8.dp)
+                    fontSize = 18.sp
                 )
             }
             // Botón de cierre de sesión
@@ -328,7 +329,7 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_cerrar32),
                     contentDescription = "Cerrar sesión",
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier.size(30.dp),
                     tint = Color.Unspecified
                 )
             }
@@ -565,8 +566,8 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 5.dp)
-            .height(70.dp)
+            .padding(horizontal = 20.dp)
+            .height(55.dp)
             .offset(y = (-20).dp)
             .clickable {
                 val hasPermission = ContextCompat.checkSelfPermission(
@@ -575,7 +576,10 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
                 ) == PackageManager.PERMISSION_GRANTED
 
                 if (hasPermission) {
-                    Log.d("Fichaje", "Fichaje Entrada: Permiso ya concedido. Procesando fichaje de ENTRADA")
+                    Log.d(
+                        "Fichaje",
+                        "Fichaje Entrada: Permiso ya concedido. Procesando fichaje de ENTRADA"
+                    )
                     fichar(context, "ENTRADA")
                     onFichaje("ENTRADA")
                 } else {
@@ -584,26 +588,28 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
                     requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                 }
             },
-        color = Color(0xFF4CAF50), // Verde para entrada
-        shape = RoundedCornerShape(10.dp)
+        color = Color(0xFFFFFFFF),
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(2.dp, Color(0xFF7599B6))
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxSize()
+
         ) {
             Image(
                 painter = painterResource(id = R.drawable.fichajeetrada32),
                 contentDescription = "Imagen Fichaje Entrada",
                 modifier = Modifier
                     .padding(start = 15.dp)
-                    .height(50.dp)
+                    .height(40.dp)
                     .aspectRatio(1f),
                 contentScale = ContentScale.Crop
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "Fichaje Entrada",
-                color = Color.White,
+                color = Color(0xFF7599B6),
                 fontSize = 20.sp,
                 modifier = Modifier.align(Alignment.CenterVertically)
             )
@@ -616,9 +622,9 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 5.dp)
-            .offset(y = (-20).dp)
-            .height(70.dp)
+            .padding(horizontal = 20.dp)
+            .offset(y = (-40).dp)
+            .height(55.dp)
             .clickable {
                 val hasPermission = ContextCompat.checkSelfPermission(
                     context,
@@ -626,7 +632,10 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
                 ) == PackageManager.PERMISSION_GRANTED
 
                 if (hasPermission) {
-                    Log.d("Fichaje", "Fichaje Salida: Permiso ya concedido. Procesando fichaje de SALIDA")
+                    Log.d(
+                        "Fichaje",
+                        "Fichaje Salida: Permiso ya concedido. Procesando fichaje de SALIDA"
+                    )
                     fichar(context, "SALIDA")
                     onFichaje("SALIDA")
                 } else {
@@ -635,8 +644,9 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
                     requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                 }
             },
-        color = Color(0xFFD51010), // Rojo para salida
-        shape = RoundedCornerShape(10.dp)
+        color = Color(0xFFFFFFFF),
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(2.dp, Color(0xFF7599B6))
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -647,14 +657,14 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
                 contentDescription = "Imagen Fichaje Salida",
                 modifier = Modifier
                     .padding(start = 15.dp)
-                    .height(50.dp)
+                    .height(40.dp)
                     .aspectRatio(1f),
                 contentScale = ContentScale.Crop
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "Fichaje Salida",
-                color = Color.White,
+                color = Color(0xFF7599B6),
                 fontSize = 20.sp,
                 modifier = Modifier.align(Alignment.CenterVertically)
             )
@@ -671,12 +681,15 @@ fun RecuadroFichajesDia() {
         Text(
             text = "Fichajes Día",
             color = Color(0xFF7599B6),
-            fontSize = 20.sp, // "medium"
+            fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            modifier = Modifier.offset(y = (-20).dp)
         )
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset(y = (-15).dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
@@ -982,7 +995,7 @@ fun BottomNavigationBar(
         modifier = modifier
             .fillMaxWidth()
             .background(Color(0xFFE2E4E5))
-            .padding(8.dp)
+            .padding(2.dp)
             .zIndex(3f),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
@@ -1001,7 +1014,7 @@ fun BottomNavigationBar(
                     tint = Color.Unspecified
                 )
             }
-            Text(text = "Fichar", textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp))
+            Text(text = "Fichar", textAlign = TextAlign.Center, modifier = Modifier.padding(top = 2.dp))
         }
 
         // 🔥 Modificamos las funciones de navegación para ocultar el cuadro
