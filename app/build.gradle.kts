@@ -53,6 +53,9 @@ dependencies {
     implementation(libs.material3)
     implementation(libs.androidx.foundation.v178)
     implementation(libs.androidx.navigation.compose.v287)
+
+    implementation (libs.play.services.location.v2101)
+
     // Dependencias de Jetpack Compose
     implementation (libs.androidx.ui.v178)
     implementation (libs.material3)  // Para Material3

@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
+import android.provider.Settings
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -33,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -52,8 +54,15 @@ import com.miapp.iDEMO_kairos24h.enlaces_internos.AuthManager
 import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import androidx.compose.runtime.LaunchedEffect
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.Manifest
 
 class MainActivity : ComponentActivity() {
 
@@ -66,7 +75,7 @@ class MainActivity : ComponentActivity() {
         if (isFirstRun) {
             // Limpiamos las credenciales para que se muestre siempre la pantalla de login en el primer arranque
             clearCredentials()
-            prefs.edit().putBoolean("first_run", false).apply()
+            prefs.edit { putBoolean("first_run", false) }
         }
 
         // Obtenemos las credenciales almacenadas (usuario, password y xEmpleado)
@@ -139,7 +148,7 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onForgotPassword = {
                                     val url = WebViewURL.forgotPassword
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                    val intent = Intent(Intent.ACTION_VIEW, url.toUri())
                                     startActivity(intent)
                                 }
                             )
@@ -200,6 +209,26 @@ class MainActivity : ComponentActivity() {
         var passwordVisible by remember { mutableStateOf(false) } // Estado para mostrar/ocultar la contraseña
         var errorMessage by remember { mutableStateOf("") } // Mensaje de error
         val context = LocalContext.current // Contexto de la app
+        var isLocationChecked by remember { mutableStateOf(false) }
+        var locationPermissionDeniedCount by remember { mutableStateOf(0) }
+        val requestPermissionLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        isLocationChecked = isGranted
+        if (!isGranted) {
+            locationPermissionDeniedCount++
+            if (locationPermissionDeniedCount >= 3) {
+                Toast.makeText(context, "Debe habilitar los permisos de GPS manualmente en los ajustes.", Toast.LENGTH_LONG).show()
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", context.packageName, null)
+                }
+                context.startActivity(intent)
+            } else {
+                Toast.makeText(context, "Debe aceptar los permisos de GPS para continuar.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
 
         Column(
             modifier = Modifier
@@ -270,8 +299,7 @@ class MainActivity : ComponentActivity() {
                         )
                         Text(
                             text = "Doy mi consentimiento para guardar mis datos localmente en mi dispositivo.",
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(start = 8.dp)
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
 
@@ -284,19 +312,33 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.padding(top = 8.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 🔥 Checkbox obligatorio para aceptar permisos de ubicación
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 16.dp)
+                    ) {
+                        Checkbox(
+                            checked = isLocationChecked,
+                            onCheckedChange = { checked ->
+                                if (checked) {
+                                    requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                                } else {
+                                    isLocationChecked = false
+                                }
+                            }
+                        )
+                        Text(
+                            text = "Acepto que la app acceda a la ubicación donde ficho",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
 
                     // 🔥 Botón de acceso
                     Button(
                         onClick = {
                             val trimmedUsuario = usuario.value.trim()
                             val trimmedPassword = password.value.trim()
-
-                            // Valida que no haya espacios en blanco al inicio o final
-                            if (trimmedUsuario != usuario.value || trimmedPassword != password.value) {
-                                errorMessage = "No se permiten espacios al principio o al final"
-                                return@Button
-                            }
 
                             // Si los campos están completos, codifica las credenciales y las envía
                             if (trimmedUsuario.isNotEmpty() && trimmedPassword.isNotEmpty()) {
@@ -307,13 +349,11 @@ class MainActivity : ComponentActivity() {
                                     AuthManager.saveUserCredentials(context, encodedUsuario, encodedPassword, null)
                                 }
                                 onSubmit(encodedUsuario, encodedPassword)
-                            } else {
-                                errorMessage = "Por favor, completa ambos campos"
                             }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7599B6)),
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = usuario.value.isNotEmpty() && password.value.isNotEmpty() && isChecked
+                        enabled = usuario.value.isNotEmpty() && password.value.isNotEmpty() && isChecked && isLocationChecked
                     ) {
                         Text("Acceso", color = Color.White)
                     }

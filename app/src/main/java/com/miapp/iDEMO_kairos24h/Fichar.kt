@@ -1,4 +1,5 @@
 package com.miapp.iDEMO_kairos24h
+import android.location.LocationManager
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -23,11 +24,22 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
@@ -41,7 +53,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -56,7 +76,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import coil.ImageLoader
 import coil.compose.AsyncImage
@@ -75,10 +94,46 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import org.json.JSONArray
+import java.net.NetworkInterface
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+
+// 🚨 Verificar si el dispositivo usa una VPN
+private fun isUsingVPN(): Boolean {
+    return try {
+        NetworkInterface.getNetworkInterfaces().toList().any {
+            it.name.equals("tun0", ignoreCase = true) || it.name.equals("ppp0", ignoreCase = true)
+        }
+    } catch (e: Exception) {
+        false
+    }
+}
+
+// 🚨 Detectar si el usuario tiene activadas ubicaciones falsas
+private fun isMockLocationEnabled(context: Context): Boolean {
+    val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return false
+
+    val hasPermission = ContextCompat.checkSelfPermission(
+        context, Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+
+    if (!hasPermission) {
+        Log.e("Seguridad", "No se cuenta con el permiso ACCESS_FINE_LOCATION")
+        return false
+    }
+
+    return try {
+        locationManager.getProviders(true).any { provider ->
+            val location = locationManager.getLastKnownLocation(provider)
+            location?.isFromMockProvider == true
+        }
+    } catch (e: SecurityException) {
+        Log.e("Seguridad", "Error al verificar ubicación simulada: ${e.message}")
+        false
+    }
+}
 
 class Fichar : ComponentActivity() {
 
@@ -206,31 +261,30 @@ class Fichar : ComponentActivity() {
         val intent = Intent(this, MainActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
-        finish() // Finaliza la actividad actual para evitar volver atrás
+        finish()
     }
 }
 
 // 🔥 Borra las credenciales almacenadas en SharedPreferences
-private fun clearCredentials(context: Context) {
-    val sharedPreferences = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
-    with(sharedPreferences.edit()) {
-        remove("usuario")
-        remove("password")
-        apply()
-    }
-}
 // 🔥 Elimina las cookies y credenciales antes de redirigir al usuario al login
 private fun clearCookiesAndClearCredentials(view: WebView?) {
     val cookieManager = CookieManager.getInstance()
     cookieManager.removeAllCookies(null)
     cookieManager.flush()
-    clearCredentials(view?.context ?: return) // Borra credenciales si la vista es válida
 
-    // Redirige al usuario a la pantalla de inicio de sesión
-    view.context?.let {
-        val intent = Intent(it, MainActivity::class.java)
+    view?.context?.let { context ->
+        // Eliminar credenciales almacenadas
+        val sharedPreferences = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+        with(sharedPreferences.edit()) {
+            remove("usuario")
+            remove("password")
+            apply()
+        }
+
+        // Redirigir al usuario al login
+        val intent = Intent(context, MainActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        it.startActivity(intent)
+        context.startActivity(intent)
     }
 }
 // Funcion para obtener los fichajes del dia
@@ -380,7 +434,13 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
                     onDismiss = { showCuadroParaFichar = false },
                     fichajes = fichajes,
                     onFichaje = { tipo ->
-                        fichajeAlertTipo = tipo
+                        obtenerCoord(context) { lat, lon ->
+                            if (lat == 0.0 || lon == 0.0) {
+                                Log.e("Fichar", "Ubicación inválida, no se enviará el fichaje ni se mostrará la alerta")
+                                return@obtenerCoord
+                            }
+                            fichajeAlertTipo = tipo
+                        }
                     },
                     modifier = Modifier.zIndex(2f)
                 )
@@ -440,6 +500,8 @@ suspend fun enviarFichaje(url: String) {
     }
 }
 
+
+//============================== CUADRO PARA FICHAR ======================================
 @Composable
 fun CuadroParaFichar(
     isVisible: Boolean,
@@ -479,7 +541,6 @@ fun CuadroParaFichar(
         }
     }
 }
-
 
 
 @Composable
@@ -570,10 +631,31 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
             .height(55.dp)
             .offset(y = (-20).dp)
             .clickable {
+                if (isUsingVPN()) {
+                    Toast.makeText(context, "No se permite el uso de VPN en esta aplicación.", Toast.LENGTH_LONG).show()
+                    Log.e("Seguridad", "Intento de fichaje con VPN activa")
+                    return@clickable
+                }
+                if (isMockLocationEnabled(context)) {
+                    Toast.makeText(context, "Ubicación falsa detectada. No se permite el uso de ubicaciones simuladas.", Toast.LENGTH_LONG).show()
+                    Log.e("Seguridad", "Intento de fichaje con ubicación simulada")
+                    return@clickable
+                }
                 val hasPermission = ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.ACCESS_FINE_LOCATION
+                    context, Manifest.permission.ACCESS_FINE_LOCATION
                 ) == PackageManager.PERMISSION_GRANTED
+
+                if (!hasPermission) {
+                    Log.e("Fichar", "No se cuenta con el permiso ACCESS_FINE_LOCATION")
+                    Toast.makeText(context, "Debe aceptar los permisos de localización GPS para poder fichar en la aplicación", Toast.LENGTH_SHORT).show()
+                    return@clickable
+                }
+
+                try {
+                    // Código que accede a la ubicación
+                } catch (e: SecurityException) {
+                    Log.e("Fichar", "Error de seguridad al acceder a la ubicación: ${e.message}")
+                }
 
                 if (hasPermission) {
                     Log.d(
@@ -626,6 +708,16 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
             .offset(y = (-40).dp)
             .height(55.dp)
             .clickable {
+                if (isUsingVPN()) {
+                    Toast.makeText(context, "No se permite el uso de VPN en esta aplicación.", Toast.LENGTH_LONG).show()
+                    Log.e("Seguridad", "Intento de fichaje con VPN activa")
+                    return@clickable
+                }
+                if (isMockLocationEnabled(context)) {
+                    Toast.makeText(context, "Ubicación falsa detectada. No se permite el uso de ubicaciones simuladas.", Toast.LENGTH_LONG).show()
+                    Log.e("Seguridad", "Intento de fichaje con ubicación simulada")
+                    return@clickable
+                }
                 val hasPermission = ContextCompat.checkSelfPermission(
                     context,
                     Manifest.permission.ACCESS_FINE_LOCATION
@@ -720,7 +812,7 @@ fun AlertasDiarias() {
             .padding(8.dp),
         border = BorderStroke(1.dp, Color.LightGray),
         shape = RoundedCornerShape(4.dp),
-        backgroundColor = Color.White
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(8.dp)) {
 
@@ -843,7 +935,7 @@ fun AlertasDiarias() {
 @Composable
 fun MensajeAlerta(
     tipo: String = "ENTRADA",
-    onClose: () -> Unit = {}
+    onClose: () -> Unit
 ) {
     // Se obtiene la fecha y hora actual formateada
     val currentDateTime = SimpleDateFormat("dd/MM/yyyy HH:mm'h'", Locale.getDefault()).format(Date())
@@ -916,71 +1008,74 @@ fun MensajeAlerta(
     }
 }
 
-
+//============================================== FICHAJE DE LA APP =====================================
 private fun fichar(context: Context, tipo: String) {
-    // 1) Obtener xEmpleado (suponiendo que AuthManager devuelve (usuario, password, xEmpleado))
-    val (_, _, xEmpleado) = AuthManager.getUserCredentials(context)
-    if (xEmpleado.isNullOrBlank()) {
-        Log.e("Fichar", "xEmpleado es nulo o vacío")
-        return
-    }
-
-    // 2) Chequea permiso para evitar SecurityException
-    val hasPermission = ActivityCompat.checkSelfPermission(
+    val hasPermission = ContextCompat.checkSelfPermission(
         context, Manifest.permission.ACCESS_FINE_LOCATION
     ) == PackageManager.PERMISSION_GRANTED
 
     if (!hasPermission) {
         Log.e("Fichar", "No se cuenta con el permiso ACCESS_FINE_LOCATION")
-        Toast.makeText(context, "Debe de aceptar los permisos de localización GPS para poder fichar en la aplicación" , Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "Debe aceptar los permisos de GPS para poder fichar.", Toast.LENGTH_SHORT).show()
         return
     }
 
-    // 3) Obtener la última ubicación
-    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-        if (location != null) {
-            val lat = location.latitude
-            val lon = location.longitude
+    try {
+        obtenerCoord(context) { lat, lon ->
+            if (lat == 0.0 || lon == 0.0) {
+                Log.e("Fichar", "Ubicación inválida, no se enviará el fichaje")
+                return@obtenerCoord
+            }
 
-            // 4) Construir la fecha y hora actual en formato datetime
-            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-            val fechaFichaje = sdf.format(Date())
-
-            // 5) Construir la URL usando el servidor base, xEmpleado, el tipo (ENTRADA o SALIDA) y la fecha/hora
             val urlFichaje = prueba +
                     "&cTipFic=$tipo" +
                     "&tGpsLat=$lat" +
                     "&tGpsLon=$lon"
 
-            /*
-            val urlFichaje = urlServidor +
-                    "&cEmpCppExt=$xEmpleado" +
-                    "&cTipFic=$tipo" +
-                    "&fFichaje=$fechaFichaje" +
-                    "&tGpsLat=$lat" +
-                    "&tGpsLon=$lon"
-
-             */
-
             Log.d("Fichar", "URL que se va a enviar: $urlFichaje")
 
-            // 6) Llama a enviarFichaje(...) en un hilo IO
             kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
                 enviarFichaje(urlFichaje)
             }
-        } else {
-            Toast.makeText(
-                context,
-                "Active su GPS y revise su cobertura",
-                Toast.LENGTH_LONG
-            ).show()
         }
+    } catch (e: SecurityException) {
+        Log.e("Fichar", "Error de seguridad al acceder a la ubicación: ${e.message}")
     }
 }
+private fun obtenerCoord(context: Context, onLocationObtained: (lat: Double, lon: Double) -> Unit) {
+    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
+    val hasPermission = ContextCompat.checkSelfPermission(
+        context, Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
 
+    if (!hasPermission) {
+        Log.e("ObtenerCoord", "No se cuenta con el permiso ACCESS_FINE_LOCATION")
+        Toast.makeText(context, "Debe aceptar los permisos de GPS.", Toast.LENGTH_SHORT).show()
+        return
+    }
 
+    try {
+        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            if (location == null) {
+                Log.e("ObtenerCoord", "Ubicación no disponible.")
+                Toast.makeText(context, "No se ha podido obtener la ubicación.", Toast.LENGTH_LONG).show()
+                return@addOnSuccessListener
+            }
+
+            if (location.isFromMockProvider) {
+                Log.e("ObtenerCoord", "Ubicación simulada detectada.")
+                Toast.makeText(context, "No se permiten ubicaciones falsas.", Toast.LENGTH_LONG).show()
+                return@addOnSuccessListener
+            }
+
+            onLocationObtained(location.latitude, location.longitude)
+        }
+    } catch (e: SecurityException) {
+        Log.e("ObtenerCoord", "Error de seguridad al acceder a la ubicación: ${e.message}")
+    }
+}
+//============================================== FICHAJE DE LA APP =====================================
 
 @Composable
 fun BottomNavigationBar(
@@ -1016,7 +1111,6 @@ fun BottomNavigationBar(
             }
             Text(text = "Fichar", textAlign = TextAlign.Center, modifier = Modifier.padding(top = 2.dp))
         }
-
         // 🔥 Modificamos las funciones de navegación para ocultar el cuadro
         NavigationButton("Fichajes", R.drawable.ic_fichajes32) {
             hideCuadroParaFichar()
@@ -1034,9 +1128,6 @@ fun BottomNavigationBar(
 }
 
 
-
-// 🔥 Botón de navegación con ícono e interacción
-// ✅ Se añade `onClick` como parámetro para los botones de navegación
 @Composable
 fun NavigationButton(text: String, iconResId: Int, onClick: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1055,6 +1146,7 @@ fun NavigationButton(text: String, iconResId: Int, onClick: () -> Unit) {
         )
     }
 }
+//============================== CUADRO PARA FICHAR ======================================
 
 @Composable
 fun LoadingScreen(isLoading: Boolean) {
@@ -1085,15 +1177,4 @@ fun LoadingScreen(isLoading: Boolean) {
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
 
