@@ -1,15 +1,18 @@
 package com.miapp.iDEMO_kairos24h
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
-import android.provider.Settings
 import android.os.Bundle
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -34,7 +37,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,6 +48,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -54,15 +58,8 @@ import com.miapp.iDEMO_kairos24h.enlaces_internos.AuthManager
 import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
-import androidx.compose.runtime.LaunchedEffect
-import androidx.core.content.edit
-import androidx.core.net.toUri
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import android.Manifest
 
 class MainActivity : ComponentActivity() {
 
@@ -157,12 +154,28 @@ class MainActivity : ComponentActivity() {
                             val usuario = backStackEntry.arguments?.getString("usuario") ?: ""
                             val password = backStackEntry.arguments?.getString("password") ?: ""
 
-                            FicharScreen(usuario = usuario, password = password, fichajesUrl = "") // 🔥 Se pasa un valor vacío
+                            FicharScreen(
+                                usuario = usuario,
+                                password = password,
+                                fichajesUrl = "",
+                                onLogout = { navigateToLogin() }
+                            ) // 🔥 Se pasa un valor vacío
                         }
                     }
                 }
             }
         }
+    }
+
+    private fun navigateToLogin() {
+        val sharedPreferences = getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+        with(sharedPreferences.edit()) {
+            clear()
+            apply()
+        }
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
     }
 
     // 🔥 Redirige al usuario a la pantalla de fichaje pasando las credenciales como intent extras
@@ -207,7 +220,7 @@ class MainActivity : ComponentActivity() {
         // 🔥 Estados para gestionar la UI del login
         var isChecked by remember { mutableStateOf(false) } // Estado del CheckBox para guardar datos localmente
         var passwordVisible by remember { mutableStateOf(false) } // Estado para mostrar/ocultar la contraseña
-        var errorMessage by remember { mutableStateOf("") } // Mensaje de error
+        val errorMessage by remember { mutableStateOf("") } // Mensaje de error
         val context = LocalContext.current // Contexto de la app
         var isLocationChecked by remember { mutableStateOf(false) }
         var locationPermissionDeniedCount by remember { mutableStateOf(0) }

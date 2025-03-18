@@ -1,6 +1,6 @@
 package com.miapp.iDEMO_kairos24h
-import android.location.LocationManager
 
+import android.location.LocationManager
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
+import androidx.core.app.ActivityCompat
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -165,7 +166,8 @@ class Fichar : ComponentActivity() {
             FicharScreen(
                 usuario = usuario,
                 password = password,
-                fichajesUrl = urlServidor
+                fichajesUrl = urlServidor,
+                onLogout = { navigateToLogin() }
             )
         }
         startActivitySimulationTimer()
@@ -176,29 +178,12 @@ class Fichar : ComponentActivity() {
         handler.postDelayed(object : Runnable {
             override fun run() {
                 Log.d("Fichar", "Simulando actividad en WebView después de 2 horas de inactividad")
-                simulateActivityInWebView() // Llama a la función que simula actividad en la WebView
+                simularActividadWebView()
                 handler.postDelayed(this, sessionTimeoutMillis) // Repite la acción cada 2 horas
             }
         }, sessionTimeoutMillis)
     }
-    // Simula actividad en la WebView moviendo el cursor en la página
-    private fun simulateActivityInWebView() {
-        webView?.evaluateJavascript(
-            """
-        (function() {
-            var event = new MouseEvent('mousemove', {
-                bubbles: true,
-                cancelable: true,
-                view: window,
-                clientX: 1,
-                clientY: 1
-            });
-            document.body.dispatchEvent(event);
-        })();
-        """.trimIndent(),
-            null
-        )
-    }
+
     // Se ejecuta cuando la actividad entra en pausa, guardando el tiempo de la última interacción
     override fun onPause() {
         super.onPause()
@@ -228,36 +213,43 @@ class Fichar : ComponentActivity() {
                 navigateToLogin()
             } else {
                 Log.d("Fichar", "onResume: Detectada actividad reciente, simulando movimiento del mouse.")
-                simulateMouseMovementInWebView() // Simula movimiento del mouse en la WebView
+                simularActividadWebView()
             }
         }
     }
-    // Simula movimiento del mouse en la WebView para evitar la expiración de sesión
-    private fun simulateMouseMovementInWebView() {
-        handler.postDelayed(object : Runnable {
-            override fun run() {
-                Log.d("Fichar", "Simulando movimiento del mouse para evitar la expiración de sesión.")
-                webView?.evaluateJavascript(
-                    """
-                (function() {
-                    var event = new MouseEvent('mousemove', {
-                        bubbles: true,
-                        cancelable: true,
-                        view: window,
-                        clientX: Math.random() * window.innerWidth,
-                        clientY: Math.random() * window.innerHeight
-                    });
-                    document.body.dispatchEvent(event);
-                })();
-                """.trimIndent(),
-                    null
-                )
-                handler.postDelayed(this, 5000) // Repite la acción cada 5 segundos
-            }
-        }, 5000)
+
+    private fun simularActividadWebView(intervalo: Long = 5000) {
+        webView?.evaluateJavascript(
+            """
+        (function() {
+            var event = new MouseEvent('mousemove', {
+                bubbles: true,
+                cancelable: true,
+                view: window,
+                clientX: Math.random() * window.innerWidth,
+                clientY: Math.random() * window.innerHeight
+            });
+            document.body.dispatchEvent(event);
+        })();
+        """.trimIndent(),
+            null
+        )
+        handler.postDelayed({ simularActividadWebView(intervalo) }, intervalo)
     }
+
     // Redirige al usuario a la pantalla de login y limpia la actividad actual
     private fun navigateToLogin() {
+        val cookieManager = CookieManager.getInstance()
+        cookieManager.removeAllCookies(null)
+        cookieManager.flush()
+
+        val sharedPreferences = getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+        with(sharedPreferences.edit()) {
+            remove("usuario")
+            remove("password")
+            apply()
+        }
+
         val intent = Intent(this, MainActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
@@ -265,28 +257,6 @@ class Fichar : ComponentActivity() {
     }
 }
 
-// 🔥 Borra las credenciales almacenadas en SharedPreferences
-// 🔥 Elimina las cookies y credenciales antes de redirigir al usuario al login
-private fun clearCookiesAndClearCredentials(view: WebView?) {
-    val cookieManager = CookieManager.getInstance()
-    cookieManager.removeAllCookies(null)
-    cookieManager.flush()
-
-    view?.context?.let { context ->
-        // Eliminar credenciales almacenadas
-        val sharedPreferences = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
-        with(sharedPreferences.edit()) {
-            remove("usuario")
-            remove("password")
-            apply()
-        }
-
-        // Redirigir al usuario al login
-        val intent = Intent(context, MainActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        context.startActivity(intent)
-    }
-}
 // Funcion para obtener los fichajes del dia
 suspend fun obtenerFichajesDesdeServidor(url: String): List<String> {
     return withContext(Dispatchers.IO) {
@@ -313,7 +283,7 @@ suspend fun obtenerFichajesDesdeServidor(url: String): List<String> {
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
+fun FicharScreen(usuario: String, password: String, fichajesUrl: String, onLogout: () -> Unit) {
     var isLoading by remember { mutableStateOf(true) }
     var showCuadroParaFichar by remember { mutableStateOf(true) }
     var fichajes by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -379,7 +349,7 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String) {
                 )
             }
             // Botón de cierre de sesión
-            IconButton(onClick = { clearCookiesAndClearCredentials(webViewState.value) }) {
+            IconButton(onClick = onLogout) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_cerrar32),
                     contentDescription = "Cerrar sesión",
@@ -535,7 +505,7 @@ fun CuadroParaFichar(
                 Logo_empresa()
                 MiHorario()
                 BotonesFichajeConPermisos(onFichaje = onFichaje)
-                RecuadroFichajesDia()
+                RecuadroFichajesDia(fichajes)
                 AlertasDiarias()
             }
         }
@@ -637,7 +607,7 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
                     return@clickable
                 }
                 if (isMockLocationEnabled(context)) {
-                    Toast.makeText(context, "Ubicación falsa detectada. No se permite el uso de ubicaciones simuladas.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Ha falseado la ubicación, active su ubicación real y vuelva a intentarlo.", Toast.LENGTH_LONG).show()
                     Log.e("Seguridad", "Intento de fichaje con ubicación simulada")
                     return@clickable
                 }
@@ -765,7 +735,7 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
 }
 
 @Composable
-fun RecuadroFichajesDia() {
+fun RecuadroFichajesDia(fichajes: List<String>) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -778,24 +748,20 @@ fun RecuadroFichajesDia() {
             textAlign = TextAlign.Center,
             modifier = Modifier.offset(y = (-20).dp)
         )
-        Row(
+
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .offset(y = (-15).dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "?",
-                color = Color(0xFF7599B6),
-                fontSize = 20.sp
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = "?",
-                color = Color(0xFF7599B6),
-                fontSize = 20.sp
-            )
+            if (fichajes.isNotEmpty()) {
+                fichajes.forEach { fichaje ->
+                    Text(text = fichaje, color = Color(0xFF7599B6), fontSize = 18.sp)
+                }
+            } else {
+                Text(text = "No hay fichajes hoy", color = Color.Gray, fontSize = 18.sp)
+            }
         }
     }
 }
@@ -1042,37 +1008,41 @@ private fun fichar(context: Context, tipo: String) {
         Log.e("Fichar", "Error de seguridad al acceder a la ubicación: ${e.message}")
     }
 }
+
 private fun obtenerCoord(context: Context, onLocationObtained: (lat: Double, lon: Double) -> Unit) {
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
-    val hasPermission = ContextCompat.checkSelfPermission(
-        context, Manifest.permission.ACCESS_FINE_LOCATION
-    ) == PackageManager.PERMISSION_GRANTED
+    // 🔍 Verificar si los permisos de ubicación están concedidos
+    if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+        ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
-    if (!hasPermission) {
-        Log.e("ObtenerCoord", "No se cuenta con el permiso ACCESS_FINE_LOCATION")
-        Toast.makeText(context, "Debe aceptar los permisos de GPS.", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "Debe otorgar permisos de ubicación para poder fichar. Solución: vaya a Configuración > Permisos y habilite la ubicación.", Toast.LENGTH_LONG).show()
         return
     }
 
-    try {
-        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-            if (location == null) {
-                Log.e("ObtenerCoord", "Ubicación no disponible.")
-                Toast.makeText(context, "No se ha podido obtener la ubicación.", Toast.LENGTH_LONG).show()
-                return@addOnSuccessListener
-            }
+    // 🔍 Verificar si el GPS está activado
+    val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+    if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+        Toast.makeText(context, "Debe activar el GPS para poder fichar. Solución: active el GPS en la configuración del dispositivo.", Toast.LENGTH_LONG).show()
+        return
+    }
 
-            if (location.isFromMockProvider) {
-                Log.e("ObtenerCoord", "Ubicación simulada detectada.")
-                Toast.makeText(context, "No se permiten ubicaciones falsas.", Toast.LENGTH_LONG).show()
-                return@addOnSuccessListener
-            }
-
-            onLocationObtained(location.latitude, location.longitude)
+    // 🔍 Intentar obtener la última ubicación conocida
+    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+        if (location == null) {
+            Toast.makeText(context, "No se pudo obtener la ubicación, intente de nuevo en unos segundos o muévase a un área con mejor señal.", Toast.LENGTH_LONG).show()
+            return@addOnSuccessListener
         }
-    } catch (e: SecurityException) {
-        Log.e("ObtenerCoord", "Error de seguridad al acceder a la ubicación: ${e.message}")
+
+        if (location.isFromMockProvider) {
+            Toast.makeText(context, "Ubicación falsa detectada. Desactive las apps de ubicación simulada en Opciones de Desarrollador.", Toast.LENGTH_LONG).show()
+            return@addOnSuccessListener
+        }
+
+        // ✅ Ubicación válida
+        onLocationObtained(location.latitude, location.longitude)
+    }.addOnFailureListener {
+        Toast.makeText(context, "Error obteniendo ubicación: ${it.message}. Solución: revise el GPS, los permisos y la conexión a Internet.", Toast.LENGTH_LONG).show()
     }
 }
 //============================================== FICHAJE DE LA APP =====================================
