@@ -112,6 +112,13 @@ private fun isUsingVPN(): Boolean {
     }
 }
 
+// 🚨 Detectar si el usuario est´á conectado a Internet
+fun isInternetAvailable(context: Context): Boolean {
+    val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+    val activeNetwork = connectivityManager.activeNetworkInfo
+    return activeNetwork != null && activeNetwork.isConnected
+}
+
 // 🚨 Detectar si el usuario tiene activadas ubicaciones falsas
 private fun isMockLocationEnabled(context: Context): Boolean {
     val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return false
@@ -404,13 +411,23 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String, onLogou
                     onDismiss = { showCuadroParaFichar = false },
                     fichajes = fichajes,
                     onFichaje = { tipo ->
-                        obtenerCoord(context) { lat, lon ->
-                            if (lat == 0.0 || lon == 0.0) {
-                                Log.e("Fichar", "Ubicación inválida, no se enviará el fichaje ni se mostrará la alerta")
-                                return@obtenerCoord
+                        obtenerCoord(
+                            context,
+                            onLocationObtained = { lat, lon ->
+                                if (lat == 0.0 || lon == 0.0) {
+                                    Log.e("Fichar", "Ubicación inválida, no se enviará el fichaje")
+                                    fichajeAlertTipo = "Ubicación inválida"
+                                    return@obtenerCoord
+                                }
+                                fichajeAlertTipo = tipo
+                            },
+                            onShowAlert = { alertTipo ->
+                                fichajeAlertTipo = alertTipo
                             }
-                            fichajeAlertTipo = tipo
-                        }
+                        )
+                    },
+                    onShowAlert = { alertTipo ->
+                        fichajeAlertTipo = alertTipo
                     },
                     modifier = Modifier.zIndex(2f)
                 )
@@ -478,6 +495,7 @@ fun CuadroParaFichar(
     onDismiss: () -> Unit,
     fichajes: List<String>,
     onFichaje: (tipo: String) -> Unit,
+    onShowAlert: (String) -> Unit, // ✅ Se agregó correctamente
     modifier: Modifier = Modifier
 ) {
     if (isVisible) {
@@ -504,7 +522,10 @@ fun CuadroParaFichar(
                 }
                 Logo_empresa()
                 MiHorario()
-                BotonesFichajeConPermisos(onFichaje = onFichaje)
+                BotonesFichajeConPermisos(
+                    onFichaje = onFichaje,
+                    onShowAlert = onShowAlert
+                )
                 RecuadroFichajesDia(fichajes)
                 AlertasDiarias()
             }
@@ -573,7 +594,9 @@ fun MiHorario() {
 }
 
 @Composable
-fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
+fun BotonesFichajeConPermisos(
+    onFichaje: (tipo: String) -> Unit,
+    onShowAlert: (String) -> Unit) {
     val context = LocalContext.current
     var pendingFichaje by remember { mutableStateOf<String?>(null) }
 
@@ -593,7 +616,7 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
         pendingFichaje = null
     }
 
-    // BOTÓN ENTRADA
+// BOTÓN ENTRADA
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -601,44 +624,33 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
             .height(55.dp)
             .offset(y = (-20).dp)
             .clickable {
-                if (isUsingVPN()) {
-                    Toast.makeText(context, "No se permite el uso de VPN en esta aplicación.", Toast.LENGTH_LONG).show()
-                    Log.e("Seguridad", "Intento de fichaje con VPN activa")
-                    return@clickable
+                when {
+                    isUsingVPN() -> {
+                        Log.e("Seguridad", "Intento de fichaje con VPN activa")
+                onShowAlert("VPN DETECTADA")
+                        return@clickable
+                    }
+                    isMockLocationEnabled(context) -> {
+                        Log.e("Seguridad", "Intento de fichaje con ubicación simulada")
+                        onShowAlert("POSIBLE UBI FALSA")
+                        return@clickable
+                    }
+                    !isInternetAvailable(context) -> {
+                        Log.e("Fichar", "No hay conexión a Internet")
+                        onShowAlert("PROBLEMA INTERNET")
+                        return@clickable
+                    }
+                    ContextCompat.checkSelfPermission(
+                        context, Manifest.permission.ACCESS_FINE_LOCATION
+                    ) != PackageManager.PERMISSION_GRANTED -> {
+                        Log.e("Fichar", "No se cuenta con el permiso ACCESS_FINE_LOCATION")
+                        onShowAlert("PROBLEMA GPS")
+                        return@clickable
+                    }
                 }
-                if (isMockLocationEnabled(context)) {
-                    Toast.makeText(context, "Ha falseado la ubicación, active su ubicación real y vuelva a intentarlo.", Toast.LENGTH_LONG).show()
-                    Log.e("Seguridad", "Intento de fichaje con ubicación simulada")
-                    return@clickable
-                }
-                val hasPermission = ContextCompat.checkSelfPermission(
-                    context, Manifest.permission.ACCESS_FINE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
-
-                if (!hasPermission) {
-                    Log.e("Fichar", "No se cuenta con el permiso ACCESS_FINE_LOCATION")
-                    Toast.makeText(context, "Debe aceptar los permisos de localización GPS para poder fichar en la aplicación", Toast.LENGTH_SHORT).show()
-                    return@clickable
-                }
-
-                try {
-                    // Código que accede a la ubicación
-                } catch (e: SecurityException) {
-                    Log.e("Fichar", "Error de seguridad al acceder a la ubicación: ${e.message}")
-                }
-
-                if (hasPermission) {
-                    Log.d(
-                        "Fichaje",
-                        "Fichaje Entrada: Permiso ya concedido. Procesando fichaje de ENTRADA"
-                    )
-                    fichar(context, "ENTRADA")
-                    onFichaje("ENTRADA")
-                } else {
-                    Log.d("Fichaje", "Fichaje Entrada: No tiene permiso. Solicitando permiso...")
-                    pendingFichaje = "ENTRADA"
-                    requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                }
+                Log.d("Fichaje", "Fichaje Entrada: Permiso concedido. Procesando fichaje de ENTRADA")
+                fichar(context, "ENTRADA")
+                onFichaje("ENTRADA")
             },
         color = Color(0xFFFFFFFF),
         shape = RoundedCornerShape(10.dp),
@@ -647,7 +659,6 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxSize()
-
         ) {
             Image(
                 painter = painterResource(id = R.drawable.fichajeetrada32),
@@ -670,7 +681,7 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
 
     Spacer(modifier = Modifier.height(10.dp))
 
-    // BOTÓN SALIDA
+// BOTÓN SALIDA
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -678,33 +689,33 @@ fun BotonesFichajeConPermisos(onFichaje: (tipo: String) -> Unit) {
             .offset(y = (-40).dp)
             .height(55.dp)
             .clickable {
-                if (isUsingVPN()) {
-                    Toast.makeText(context, "No se permite el uso de VPN en esta aplicación.", Toast.LENGTH_LONG).show()
-                    Log.e("Seguridad", "Intento de fichaje con VPN activa")
-                    return@clickable
+                when {
+                    isUsingVPN() -> {
+                        Log.e("Seguridad", "Intento de fichaje con VPN activa")
+                        onShowAlert("VPN DETECTADA")
+                        return@clickable
+                    }
+                    isMockLocationEnabled(context) -> {
+                        Log.e("Seguridad", "Intento de fichaje con ubicación simulada")
+                        onShowAlert("POSIBLE UBI FALSA")
+                        return@clickable
+                    }
+                    !isInternetAvailable(context) -> {
+                        Log.e("Fichar", "No hay conexión a Internet")
+                        onShowAlert("PROBLEMA INTERNET")
+                        return@clickable
+                    }
+                    ContextCompat.checkSelfPermission(
+                        context, Manifest.permission.ACCESS_FINE_LOCATION
+                    ) != PackageManager.PERMISSION_GRANTED -> {
+                        Log.e("Fichar", "No se cuenta con el permiso ACCESS_FINE_LOCATION")
+                        onShowAlert("PROBLEMA GPS")
+                        return@clickable
+                    }
                 }
-                if (isMockLocationEnabled(context)) {
-                    Toast.makeText(context, "Ubicación falsa detectada. No se permite el uso de ubicaciones simuladas.", Toast.LENGTH_LONG).show()
-                    Log.e("Seguridad", "Intento de fichaje con ubicación simulada")
-                    return@clickable
-                }
-                val hasPermission = ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
-
-                if (hasPermission) {
-                    Log.d(
-                        "Fichaje",
-                        "Fichaje Salida: Permiso ya concedido. Procesando fichaje de SALIDA"
-                    )
-                    fichar(context, "SALIDA")
-                    onFichaje("SALIDA")
-                } else {
-                    Log.d("Fichaje", "Fichaje Salida: No tiene permiso. Solicitando permiso...")
-                    pendingFichaje = "SALIDA"
-                    requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                }
+                Log.d("Fichaje", "Fichaje Salida: Permiso concedido. Procesando fichaje de SALIDA")
+                fichar(context, "SALIDA")
+                onFichaje("SALIDA")
             },
         color = Color(0xFFFFFFFF),
         shape = RoundedCornerShape(10.dp),
@@ -910,6 +921,10 @@ fun MensajeAlerta(
     val mensaje = when(tipo.uppercase()) {
         "ENTRADA" -> "Fichaje de Entrada realizado correctamente"
         "SALIDA" -> "Fichaje de Salida realizado correctamente"
+        "PROBLEMA GPS" -> "No se detecta el GPS. Por favor, active el GPS para poder fichar."
+        "PROBLEMA INTERNET" -> "El dispositivo no está conectado a la red. Revise su conexión a Internet."
+        "POSIBLE UBI FALSA" -> "Se detectó una posible ubicación falsa. Reinicie su GPS y vuelva a intentarlo en unos minutos"
+        "VPN DETECTADA" -> "VPN detectada. Desactive la VPN para continuar y vuelva a de intentarlo en unos minutos."
         else -> "Fichaje de $tipo realizado correctamente"
     }
 
@@ -967,7 +982,6 @@ fun MensajeAlerta(
                     ) {
                         Text(text = "Cerrar")
                     }
-
                 }
             }
         }
@@ -987,62 +1001,77 @@ private fun fichar(context: Context, tipo: String) {
     }
 
     try {
-        obtenerCoord(context) { lat, lon ->
-            if (lat == 0.0 || lon == 0.0) {
-                Log.e("Fichar", "Ubicación inválida, no se enviará el fichaje")
-                return@obtenerCoord
+        obtenerCoord(
+            context,
+            onLocationObtained = { lat, lon ->
+                if (lat == 0.0 || lon == 0.0) {
+                    Log.e("Fichar", "Ubicación inválida, no se enviará el fichaje")
+                    return@obtenerCoord
+                }
+
+                val urlFichaje = prueba +
+                        "&cTipFic=$tipo" +
+                        "&tGpsLat=$lat" +
+                        "&tGpsLon=$lon"
+
+                Log.d("Fichar", "URL que se va a enviar: $urlFichaje")
+
+                kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
+                    enviarFichaje(urlFichaje)
+                }
+            },
+            onShowAlert = { alertTipo ->
+                Log.e("Fichar", "Alerta: $alertTipo")
             }
-
-            val urlFichaje = prueba +
-                    "&cTipFic=$tipo" +
-                    "&tGpsLat=$lat" +
-                    "&tGpsLon=$lon"
-
-            Log.d("Fichar", "URL que se va a enviar: $urlFichaje")
-
-            kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
-                enviarFichaje(urlFichaje)
-            }
-        }
+        )
     } catch (e: SecurityException) {
         Log.e("Fichar", "Error de seguridad al acceder a la ubicación: ${e.message}")
     }
 }
 
-private fun obtenerCoord(context: Context, onLocationObtained: (lat: Double, lon: Double) -> Unit) {
+fun obtenerCoord(
+    context: Context,
+    onLocationObtained: (lat: Double, lon: Double) -> Unit,
+    onShowAlert: (String) -> Unit
+) {
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
     // 🔍 Verificar si los permisos de ubicación están concedidos
     if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
         ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
-        Toast.makeText(context, "Debe otorgar permisos de ubicación para poder fichar. Solución: vaya a Configuración > Permisos y habilite la ubicación.", Toast.LENGTH_LONG).show()
+        Log.e("Fichar", "No se cuenta con los permisos de ubicación.")
+        onShowAlert("PROBLEMA GPS") // Muestra mensaje de alerta
         return
     }
 
     // 🔍 Verificar si el GPS está activado
     val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
     if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-        Toast.makeText(context, "Debe activar el GPS para poder fichar. Solución: active el GPS en la configuración del dispositivo.", Toast.LENGTH_LONG).show()
+        Log.e("Fichar", "GPS desactivado.")
+        onShowAlert("PROBLEMA GPS") // Muestra mensaje de alerta
         return
     }
 
     // 🔍 Intentar obtener la última ubicación conocida
     fusedLocationClient.lastLocation.addOnSuccessListener { location ->
         if (location == null) {
-            Toast.makeText(context, "No se pudo obtener la ubicación, intente de nuevo en unos segundos o muévase a un área con mejor señal.", Toast.LENGTH_LONG).show()
+            Log.e("Fichar", "No se pudo obtener la ubicación.")
+            onShowAlert("PROBLEMA GPS") // Muestra mensaje de alerta
             return@addOnSuccessListener
         }
 
         if (location.isFromMockProvider) {
-            Toast.makeText(context, "Ubicación falsa detectada. Desactive las apps de ubicación simulada en Opciones de Desarrollador.", Toast.LENGTH_LONG).show()
+            Log.e("Fichar", "Ubicación falsa detectada.")
+            onShowAlert("POSIBLE UBI FALSA") // Muestra mensaje de alerta
             return@addOnSuccessListener
         }
 
         // ✅ Ubicación válida
         onLocationObtained(location.latitude, location.longitude)
-    }.addOnFailureListener {
-        Toast.makeText(context, "Error obteniendo ubicación: ${it.message}. Solución: revise el GPS, los permisos y la conexión a Internet.", Toast.LENGTH_LONG).show()
+    }.addOnFailureListener { e ->
+        Log.e("Fichar", "Error obteniendo ubicación: ${e.message}")
+        onShowAlert("PROBLEMA GPS") // Muestra mensaje de alerta
     }
 }
 //============================================== FICHAJE DE LA APP =====================================
