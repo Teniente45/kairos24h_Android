@@ -201,23 +201,25 @@ class Fichar : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         Log.d("Fichar", "onStop: La actividad se detuvo, redirigiendo a Login.")
-        navigateToLogin()
+        webView?.loadUrl(WebViewURL.LOGIN) ?:
+        Log.e("Fichar", "Error: WebView no inicializado en onStop()")
     }
+
     // Se ejecuta cuando la actividad se reanuda. Comprueba las credenciales y la actividad reciente
     override fun onResume() {
         super.onResume()
         // Recupera las credenciales almacenadas
         val (storedUser, storedPassword, _) = AuthManager.getUserCredentials(this)
         if (storedUser.isEmpty() || storedPassword.isEmpty()) {
-            navigateToLogin() // Si no hay credenciales, redirige al login
+            webView?.loadUrl(WebViewURL.LOGIN)
         } else {
             val currentTime = System.currentTimeMillis()
             Log.d("Fichar", "onResume: Tiempo actual: $currentTime, Última interacción: $lastInteractionTime")
 
             // Si han pasado más de 30 segundos desde la última interacción, redirige al login
             if (currentTime - lastInteractionTime > 30000) {
-                Log.d("Fichar", "onResume: Ha pasado más de un segundo desde la última interacción. Redirigiendo a Login.")
-                navigateToLogin()
+                Log.d("Fichar", "onResume: Ha pasado más de 30 segundos desde la última interacción. Redirigiendo a Login.")
+                webView?.loadUrl(WebViewURL.LOGIN)
             } else {
                 Log.d("Fichar", "onResume: Detectada actividad reciente, simulando movimiento del mouse.")
                 simularActividadWebView()
@@ -317,7 +319,7 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String, onLogou
     // Se muestra la pantalla de carga durante 4 segundos
     LaunchedEffect(Unit) {
         isLoading = true
-        delay(3000)
+        delay(1500)
         isLoading = false
     }
 
@@ -448,7 +450,7 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String, onLogou
                     showCuadroParaFichar = false // Oculta el cuadro de fichar
                     webViewState.value?.loadUrl(url)
                     scope.launch {
-                        delay(3000)
+                        delay(1500)
                         isLoading = false
                     }
                 },
@@ -921,9 +923,9 @@ fun MensajeAlerta(
     val mensaje = when(tipo.uppercase()) {
         "ENTRADA" -> "Fichaje de Entrada realizado correctamente"
         "SALIDA" -> "Fichaje de Salida realizado correctamente"
-        "PROBLEMA GPS" -> "No se detecta el GPS. Por favor, active el GPS para poder fichar."
+        "PROBLEMA GPS" -> "No se detecta la geolocalizacion gps. Por favor, active la geolocalizacion gps para poder fichar."
         "PROBLEMA INTERNET" -> "El dispositivo no está conectado a la red. Revise su conexión a Internet."
-        "POSIBLE UBI FALSA" -> "Se detectó una posible ubicación falsa. Reinicie su GPS y vuelva a intentarlo en unos minutos"
+        "POSIBLE UBI FALSA" -> "Se detectó una posible ubicación falsa. Reinicie su geolocalizacion gps y vuelva a intentarlo en unos minutos"
         "VPN DETECTADA" -> "VPN detectada. Desactive la VPN para continuar y vuelva a de intentarlo en unos minutos."
         else -> "Fichaje de $tipo realizado correctamente"
     }
@@ -933,7 +935,6 @@ fun MensajeAlerta(
         onDismissRequest = onClose,
         properties = DialogProperties(dismissOnClickOutside = true)
     ) {
-        // Puedes usar Surface o Card para darle estilo al cuadro
         Surface(
             shape = RoundedCornerShape(8.dp),
             border = BorderStroke(1.dp, Color.LightGray),
@@ -944,7 +945,12 @@ fun MensajeAlerta(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFF7599B6))
+                        .background(
+                            if (tipo.uppercase() == "ENTRADA" || tipo.uppercase() == "SALIDA")
+                                Color(0xFF7599B6) // 🔵 Azul para fichajes correctos
+                            else
+                                Color(0xFFFF0101) // 🔴 Rojo para errores
+                        )
                         .padding(8.dp)
                 ) {
                     Text(
@@ -952,6 +958,7 @@ fun MensajeAlerta(
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
+                        fontSize = 18.sp,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -960,13 +967,16 @@ fun MensajeAlerta(
                 Text(
                     text = mensaje,
                     color = Color.Black,
-                    style = MaterialTheme.typography.bodyMedium
+                    fontSize = 18.sp,
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 // Fecha y hora actual
                 Text(
                     text = currentDateTime,
                     color = Color.Black,
+                    fontSize = 18.sp,
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -978,9 +988,17 @@ fun MensajeAlerta(
                     Button(
                         onClick = onClose,
                         shape = RoundedCornerShape(4.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7599B6))
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (tipo.uppercase() == "ENTRADA" || tipo.uppercase() == "SALIDA")
+                                Color(0xFF7599B6) // 🔵 Azul para fichajes correctos
+                            else
+                                Color(0xFFFF0000) // 🔴 Rojo para errores
+                        )
                     ) {
-                        Text(text = "Cerrar")
+                        Text(
+                            text = "Cerrar",
+                            fontSize = 18.sp
+                        )
                     }
                 }
             }
