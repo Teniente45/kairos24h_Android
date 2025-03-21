@@ -1,4 +1,5 @@
 package com.miapp.iDEMO_kairos24h
+import com.miapp.iDEMO_kairos24h.enlaces_internos.ManejoDeSesion
 
 import android.location.LocationManager
 import android.Manifest
@@ -87,6 +88,10 @@ import com.miapp.iDEMO_kairos24h.enlaces_internos.AuthManager
 import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.prueba
 import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.urlServidor
 import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL
+import com.miapp.iDEMO_kairos24h.enlaces_internos.SeguridadUtils
+import com.miapp.iDEMO_kairos24h.enlaces_internos.SeguridadUtils.isInternetAvailable
+import com.miapp.iDEMO_kairos24h.enlaces_internos.SeguridadUtils.isMockLocationEnabled
+import com.miapp.iDEMO_kairos24h.enlaces_internos.SeguridadUtils.isUsingVPN
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -101,47 +106,6 @@ import java.util.Date
 import java.util.Locale
 
 
-// 🚨 Verificar si el dispositivo usa una VPN
-private fun isUsingVPN(): Boolean {
-    return try {
-        NetworkInterface.getNetworkInterfaces().toList().any {
-            it.name.equals("tun0", ignoreCase = true) || it.name.equals("ppp0", ignoreCase = true)
-        }
-    } catch (e: Exception) {
-        false
-    }
-}
-
-// 🚨 Detectar si el usuario est´á conectado a Internet
-fun isInternetAvailable(context: Context): Boolean {
-    val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
-    val activeNetwork = connectivityManager.activeNetworkInfo
-    return activeNetwork != null && activeNetwork.isConnected
-}
-
-// 🚨 Detectar si el usuario tiene activadas ubicaciones falsas
-private fun isMockLocationEnabled(context: Context): Boolean {
-    val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return false
-
-    val hasPermission = ContextCompat.checkSelfPermission(
-        context, Manifest.permission.ACCESS_FINE_LOCATION
-    ) == PackageManager.PERMISSION_GRANTED
-
-    if (!hasPermission) {
-        Log.e("Seguridad", "No se cuenta con el permiso ACCESS_FINE_LOCATION")
-        return false
-    }
-
-    return try {
-        locationManager.getProviders(true).any { provider ->
-            val location = locationManager.getLastKnownLocation(provider)
-            location?.isFromMockProvider == true
-        }
-    } catch (e: SecurityException) {
-        Log.e("Seguridad", "Error al verificar ubicación simulada: ${e.message}")
-        false
-    }
-}
 
 class Fichar : ComponentActivity() {
 
@@ -154,6 +118,9 @@ class Fichar : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Verificaciones de seguridad
+        ManejoDeSesion.verificarSeguridadAlIniciar(this)
+
         Log.d("Fichar", "onCreate iniciado")
 
         setContent {
@@ -170,12 +137,22 @@ class Fichar : ComponentActivity() {
         val usuario = intent.getStringExtra("usuario") ?: storedUser
         val password = intent.getStringExtra("password") ?: storedPassword
         setContent {
-            FicharScreen(
-                usuario = usuario,
-                password = password,
-                fichajesUrl = urlServidor,
-                onLogout = { navigateToLogin() }
-            )
+            var mostrarPantallaCarga by remember { mutableStateOf(true) }
+
+            if (mostrarPantallaCarga) {
+                LoadingScreen(isLoading = true, zIndex = 100f)
+                LaunchedEffect(Unit) {
+                    delay(2000) // 2 segundos de carga
+                    mostrarPantallaCarga = false
+                }
+            } else {
+                FicharScreen(
+                    usuario = usuario,
+                    password = password,
+                    fichajesUrl = urlServidor,
+                    onLogout = { navigateToLogin() }
+                )
+            }
         }
         startActivitySimulationTimer()
     }
@@ -189,42 +166,6 @@ class Fichar : ComponentActivity() {
                 handler.postDelayed(this, sessionTimeoutMillis) // Repite la acción cada 2 horas
             }
         }, sessionTimeoutMillis)
-    }
-
-    // Se ejecuta cuando la actividad entra en pausa, guardando el tiempo de la última interacción
-    override fun onPause() {
-        super.onPause()
-        lastInteractionTime = System.currentTimeMillis()
-        Log.d("Fichar", "onPause: Tiempo de última interacción guardado: $lastInteractionTime")
-    }
-    // Se ejecuta cuando la actividad se detiene, redirigiendo al usuario a la pantalla de login
-    override fun onStop() {
-        super.onStop()
-        Log.d("Fichar", "onStop: La actividad se detuvo, redirigiendo a Login.")
-        webView?.loadUrl(WebViewURL.LOGIN) ?:
-        Log.e("Fichar", "Error: WebView no inicializado en onStop()")
-    }
-
-    // Se ejecuta cuando la actividad se reanuda. Comprueba las credenciales y la actividad reciente
-    override fun onResume() {
-        super.onResume()
-        // Recupera las credenciales almacenadas
-        val (storedUser, storedPassword, _) = AuthManager.getUserCredentials(this)
-        if (storedUser.isEmpty() || storedPassword.isEmpty()) {
-            webView?.loadUrl(WebViewURL.LOGIN)
-        } else {
-            val currentTime = System.currentTimeMillis()
-            Log.d("Fichar", "onResume: Tiempo actual: $currentTime, Última interacción: $lastInteractionTime")
-
-            // Si han pasado más de 30 segundos desde la última interacción, redirige al login
-            if (currentTime - lastInteractionTime > 30000) {
-                Log.d("Fichar", "onResume: Ha pasado más de 30 segundos desde la última interacción. Redirigiendo a Login.")
-                webView?.loadUrl(WebViewURL.LOGIN)
-            } else {
-                Log.d("Fichar", "onResume: Detectada actividad reciente, simulando movimiento del mouse.")
-                simularActividadWebView()
-            }
-        }
     }
 
     private fun simularActividadWebView(intervalo: Long = 5000) {
@@ -245,6 +186,22 @@ class Fichar : ComponentActivity() {
         )
         handler.postDelayed({ simularActividadWebView(intervalo) }, intervalo)
     }
+
+    override fun onPause() {
+        super.onPause()
+        ManejoDeSesion.onPause()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        ManejoDeSesion.onStop(webView)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        ManejoDeSesion.onResume(this, webView)
+    }
+
 
     // Redirige al usuario a la pantalla de login y limpia la actividad actual
     private fun navigateToLogin() {
@@ -1166,7 +1123,7 @@ fun NavigationButton(text: String, iconResId: Int, onClick: () -> Unit) {
 //============================== CUADRO PARA FICHAR ======================================
 
 @Composable
-fun LoadingScreen(isLoading: Boolean) {
+fun LoadingScreen(isLoading: Boolean, zIndex: Float = 2f) {
     if (isLoading) {
         val context = LocalContext.current
         val imageLoader = ImageLoader.Builder(context)
@@ -1179,7 +1136,7 @@ fun LoadingScreen(isLoading: Boolean) {
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.White)
-                .zIndex(2f),
+                .zIndex(zIndex),
             contentAlignment = Alignment.Center
         ) {
             AsyncImage(

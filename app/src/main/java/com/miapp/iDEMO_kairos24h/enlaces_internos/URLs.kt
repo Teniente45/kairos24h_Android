@@ -27,7 +27,7 @@ object BuildURL {
     const val URL_DEMO_Kairos24h = "https://democontrolhorario.kairos24h.es/index.php?"
     const val prueba = "http://192.168.25.67:8008/kairos24h/index.php?r=citaRedWeb/crearFichajeExterno&xGrupo=&xEntidad=3&cKiosko=&cFicOri=APP&cEmpCppExt=135&fFichaje="
 
-    const val urlServidor = URL_DEMO_Kairos24h + "r=citaRedWeb/crearFichajeExterno&xGrupo=&xEntidad=1002&cKiosko=&cFicOri=APP" //CAMBIAR POR URL PARA MOSTRAR LOS FICHAJES
+    const val urlServidor = URL_DEMO_Kairos24h + "r=citaRedWeb/crearFichajeExterno&xGrupo=&xEntidad=1002&cKiosko=&cFicOri=APP"
     /*==================================================================*/
     const val URL_USADA = URL_DEMO_Kairos24h
     /*--------------------------------------------------------*/
@@ -35,23 +35,24 @@ object BuildURL {
     const val crearFichaje = URL_USADA + "r=explotacion/creaFichaje"
 }
 
-    /*
-    http://192.168.25.47:8008/kairos24h/index.php?r=citaRedWeb/crearFichajeExterno&xGrupo=&xEntidad=3&cKiosko=&cFicOri=APP&cEmpCppExt=135&cTipFic=ENTRADA&fFichaje=2025-03-01 08:00&tGpsLat=$tGpsLon=
+// Aquí están las URLs que se encargarán de recoger los valores del servidor para los fichajes, horarios y alertas
+object RecogedorURL {
+    const val host = "http://192.168.25.67:8008/kairos24h/"
+    const val action = "index.php?r=wsExterno/"
+    const val PLogin = "loginExterno&cUsuario=comadmin&tPassword=i3data1"
+    const val PFichaje = "consultarFichajesExterno&xEntidad=3&xEmpleado=413&fecha=2025-03-19"
+    const val PHorario = "consultarHorarioExterno&xEntidad=3&xEmpleado=413&fecha=2025-03-19"
+    const val PAlerta = "consultarAlertasExterno&xEntidad=3&xEmpleado=413&fecha=2025-03-19"
 
+//====================================================
+    const val Login = host + action + PLogin
+    const val Fichaje = host + action + PFichaje
+    const val Horario = host + action + PHorario
+    const val Alerta = host + action + PAlerta
+//====================================================
 
-    /*
-const val urlServidor = "http://192.168.25.47:8008/kairos24h/index.php?r=citaRedWeb/crearFichajeExterno&xGrupo=&xEntidad=3&cKiosko=&cFicOri=APP&cEmpCppExt=135" //CAMBIAR POR URL PARA MOSTRAR LOS FICHAJES
- val url_entrada = "http://192.168.25.47:8008/kairos24h/index.php?r=citaRedWeb/crearFichajeExterno&xGrupo=&xEntidad=3&cKiosko=&cFicOri=APP&cEmpCppExt=135&cTipFic=ENTRADA&fFichaje=&tGpsLat=&tGpsLon="
-val url_salida =
-    "http://192.168.25.47:8008/kairos24h/index.php?r=citaRedWeb/crearFichajeExterno&xGrupo=&xEntidad=3&cKiosko=&cFicOri=APP&cEmpCppExt=135&cTipFic=ENTRADA&fFichaje=&tGpsLat=&tGpsLon="
-
- */
-            val urlFichaje = urlServidor +
-                    "&cEmpCppExt=$xEmpleado" +
-                    "&cTipFic=$tipo" +
-                    "&fFichaje=$fechaFichaje" +
-                    "&tGpsLat=$lat" +
-                    "&tGpsLon=$lon"
-    /*--------------------------------------------------------*/
 }
-*/
+
+
+
+
