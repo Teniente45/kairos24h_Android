@@ -35,7 +35,12 @@ object BuildURL {
      * Kairos24h = https://controlhorario.kairos24h.es
      * Máquina = http://localhost:8008/kairos24h
      */
-
+    /**
+    https://democontrolhorario.kairos24h.es/index.php?r=wsExterno/consultarHorarioExterno&xGrupo=&xEntidad=1002&cKiosko=&cDomFicOri=APP
+    http://localhost:8008/kairos24h/index.php?r=wsExterno/consultarFichajesExterno&xEntidad=3&xEmpleado=413&fecha=2025-03-19
+    http://localhost:8008/kairos24h/index.php?r=wsExterno/consultarHorarioExterno&xEntidad=3&xEmpleado=413&fecha=2025-03-19
+    http://localhost:8008/kairos24h/index.php?r=wsExterno/consultarAlertasExterno&xEntidad=3&xEmpleado=413&fecha=2025-03-19
+    */
     /*==================================================================*/
     const val HOST = "https://democontrolhorario.kairos24h.es"
     const val ENTRY_POINT = "/index.php"
@@ -50,25 +55,27 @@ object BuildURL {
     const val C_KIOSKO = ""
     const val C_FIC_ORI = "APP"
 
+    const val staticParams =
+            "&xGrupo=$X_GRUPO" +
+            "&xEntidad=$X_ENTIDAD" +
+            "&cKiosko=$C_KIOSKO" +
+            "&cDomFicOri=$C_FIC_ORI"
+
     const val URL_USADA = "$HOST$ENTRY_POINT?"
     const val urlServidor = ""
     /*==================================================================*/
 
     /*--------------------------------------------------------*/
     const val LOGIN = URL_USADA + ACTION_LOGIN
-    const val crearFichaje = URL_USADA + ACTION_FICHAJE +
-                "&xGrupo=$X_GRUPO" +
-                "&xEntidad=$X_ENTIDAD" +
-                "&cKiosko=$C_KIOSKO" +
-                "&cDomFicOri=$C_FIC_ORI"
-    const val mostrarHorarios = URL_USADA + ACTION_CONSULTHORARIO +
-                "&xEntidad=$X_ENTIDAD" +
+    const val crearFichaje = URL_USADA + ACTION_FICHAJE + staticParams
+
+    const val mostrarHorarios = URL_USADA + ACTION_CONSULTHORARIO + staticParams +
                 "&xEmpleado="
-    const val mostrarFichajes = URL_USADA + ACTION_CONSULTFIC_DIA +
-                "&xEntidad=$X_ENTIDAD" +
+
+    const val mostrarFichajes = URL_USADA + ACTION_CONSULTFIC_DIA + staticParams +
                 "&xEmpleado="
-    const val mostrarAlertas = ACTION_CONSULT_ALERTAS +
-                "&xEntidad=$X_ENTIDAD" +
+
+    const val mostrarAlertas = ACTION_CONSULT_ALERTAS + staticParams +
                 "&xEmpleado="
 
     // horqrio
