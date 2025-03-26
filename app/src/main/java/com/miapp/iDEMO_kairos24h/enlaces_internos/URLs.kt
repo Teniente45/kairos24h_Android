@@ -1,57 +1,76 @@
 package com.miapp.iDEMO_kairos24h.enlaces_internos
 
 // Estás son las URL que se nos mostrarán en el WebView
-object WebViewURL {
-    /*==================================================================*/
-    const val URL_BEIMAN = "https://beimancpp.tucitamedica.es/index.php?"
-    const val URL_Kairos24h = "https://controlhorario.kairos24h.es/index.php?"
-    const val URL_DEMO_Kairos24h = "https://democontrolhorario.kairos24h.es/index.php?"
-    /*==================================================================*/
-    const val URL_USADA = URL_DEMO_Kairos24h
-    /*--------------------------------------------------------*/
-    const val LOGIN = URL_USADA + "r=site/login&0%5BxEntidad%5D="
-    const val forgotPassword = URL_USADA + "r=site/solicitudRestablecerClave"
-    const val Inicio = URL_USADA + "r=site/login&xEntidad=1002&cApp=APP_CPP"
-    const val Fichaje = URL_USADA + "r=explotacion/consultarExplotacion&cTipExp=FICHAJE"
-    const val Incidencia = URL_USADA + "r=explotacion/consultarExplotacion&cTipExp=INCIDENCIA&cOpcionVisual=INCBAN"
-    const val Horarios = URL_USADA + "r=explotacion/consultarExplotacion&cTipExp=HORARIO&cModoVisual=HORMEN"
-    /*--------------------------------------------------------*/
+    object WebViewURL {
+    /**
+     * Beiman = https://beimancpp.tucitamedica.es
+     * Kairos24h = https://controlhorario.kairos24h.es
+     * Máquina = http://localhost:8008/kairos24h
+     */
+    const val HOST = "https://democontrolhorario.kairos24h.es"
+    const val ENTRY_POINT = "/index.php"
+    const val URL_USADA = "$HOST$ENTRY_POINT"
+
+    const val ACTION_LOGIN = "r=wsExterno/loginExterno"
+    const val ACTION_FORGOTPASS = "r=site/solicitudRestablecerClave"
+    const val ACTION_CONSULTAR = "r=explotacion/consultarExplotacion"
+
+    const val LOGIN = "$URL_USADA?$ACTION_LOGIN"
+    const val forgotPassword = "$URL_USADA?$ACTION_FORGOTPASS"
+
+    const val Fichaje = "$URL_USADA?$ACTION_CONSULTAR" +
+            "&cTipExp=FICHAJE"
+    const val Incidencia = "$URL_USADA?$ACTION_CONSULTAR" +
+            "&cTipExp=INCIDENCIA" +
+            "&cOpcionVisual=INCBAN"
+    const val Horarios = "$URL_USADA?" +
+            "&cTipExp=HORARIO" +
+            "&cModoVisual=HORMEN"
 }
 
 // Esta será la URL que construiremos cuando desde el login de nuestra APK introduzcamos el Usuario y la Contraseña
 object BuildURL {
+    /**
+     * Beiman = https://beimancpp.tucitamedica.es
+     * Kairos24h = https://controlhorario.kairos24h.es
+     * Máquina = http://localhost:8008/kairos24h
+     */
 
     /*==================================================================*/
-    const val URL_BEIMAN = "https://beimancpp.tucitamedica.es/index.php?"
-    const val URL_Kairos24h = "https://controlhorario.kairos24h.es/index.php?"
-    const val URL_DEMO_Kairos24h = "https://democontrolhorario.kairos24h.es/index.php?"
-    const val prueba = "http://192.168.25.67:8008/kairos24h/index.php?r=citaRedWeb/crearFichajeExterno&xGrupo=&xEntidad=3&cKiosko=&cFicOri=APP&cEmpCppExt=135&fFichaje="
+    const val HOST = "https://democontrolhorario.kairos24h.es"
+    const val ENTRY_POINT = "/index.php"
+    const val ACTION_FICHAJE = "r=explotacion/creaFichaje"
+    const val ACTION_LOGIN = "r=wsExterno/loginExterno"
+    const val ACTION_CONSULTHORARIO = "r=wsExterno/consultarHorarioExterno"
+    const val ACTION_CONSULTFIC_DIA = "r=wsExterno/consultarFichajesExterno"
+    const val ACTION_CONSULT_ALERTAS = "r=wsExterno/consultarAlertasExterno"
 
-    const val urlServidor = URL_DEMO_Kairos24h + "r=citaRedWeb/crearFichajeExterno&xGrupo=&xEntidad=1002&cKiosko=&cFicOri=APP" //CAMBIAR POR URL PARA MOSTRAR LOS FICHAJES
+    const val X_GRUPO = ""
+    const val X_ENTIDAD = "1002"
+    const val C_KIOSKO = ""
+    const val C_FIC_ORI = "APP"
+
+    const val URL_USADA = "$HOST$ENTRY_POINT?"
+    const val urlServidor = ""
     /*==================================================================*/
-    const val URL_USADA = URL_DEMO_Kairos24h
+
     /*--------------------------------------------------------*/
-    const val LOGIN = URL_USADA + "r=wsExterno/"
-    const val crearFichaje = URL_USADA + "r=explotacion/creaFichaje"
+    const val LOGIN = URL_USADA + ACTION_LOGIN
+    const val crearFichaje = URL_USADA + ACTION_FICHAJE +
+                "&xGrupo=$X_GRUPO" +
+                "&xEntidad=$X_ENTIDAD" +
+                "&cKiosko=$C_KIOSKO" +
+                "&cDomFicOri=$C_FIC_ORI"
+    const val mostrarHorarios = URL_USADA + ACTION_CONSULTHORARIO +
+                "&xEntidad=$X_ENTIDAD" +
+                "&xEmpleado="
+    const val mostrarFichajes = URL_USADA + ACTION_CONSULTFIC_DIA +
+                "&xEntidad=$X_ENTIDAD" +
+                "&xEmpleado="
+    const val mostrarAlertas = ACTION_CONSULT_ALERTAS +
+                "&xEntidad=$X_ENTIDAD" +
+                "&xEmpleado="
+
+    // horqrio
+    // http://localhost:8008/kairos24h/index.php?r=wsExterno/consultarHorarioExterno&xEntidad=3&xEmpleado=413&fecha=2025-03-19
 }
-
-    /*
-    http://192.168.25.47:8008/kairos24h/index.php?r=citaRedWeb/crearFichajeExterno&xGrupo=&xEntidad=3&cKiosko=&cFicOri=APP&cEmpCppExt=135&cTipFic=ENTRADA&fFichaje=2025-03-01 08:00&tGpsLat=$tGpsLon=
-
-
-    /*
-const val urlServidor = "http://192.168.25.47:8008/kairos24h/index.php?r=citaRedWeb/crearFichajeExterno&xGrupo=&xEntidad=3&cKiosko=&cFicOri=APP&cEmpCppExt=135" //CAMBIAR POR URL PARA MOSTRAR LOS FICHAJES
- val url_entrada = "http://192.168.25.47:8008/kairos24h/index.php?r=citaRedWeb/crearFichajeExterno&xGrupo=&xEntidad=3&cKiosko=&cFicOri=APP&cEmpCppExt=135&cTipFic=ENTRADA&fFichaje=&tGpsLat=&tGpsLon="
-val url_salida =
-    "http://192.168.25.47:8008/kairos24h/index.php?r=citaRedWeb/crearFichajeExterno&xGrupo=&xEntidad=3&cKiosko=&cFicOri=APP&cEmpCppExt=135&cTipFic=ENTRADA&fFichaje=&tGpsLat=&tGpsLon="
-
- */
-            val urlFichaje = urlServidor +
-                    "&cEmpCppExt=$xEmpleado" +
-                    "&cTipFic=$tipo" +
-                    "&fFichaje=$fechaFichaje" +
-                    "&tGpsLat=$lat" +
-                    "&tGpsLon=$lon"
-    /*--------------------------------------------------------*/
-}
-*/

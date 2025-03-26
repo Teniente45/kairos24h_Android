@@ -58,6 +58,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -84,7 +85,7 @@ import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 import com.google.android.gms.location.LocationServices
 import com.miapp.iDEMO_kairos24h.enlaces_internos.AuthManager
-import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.prueba
+import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL
 import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.urlServidor
 import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL
 import kotlinx.coroutines.Dispatchers
@@ -156,10 +157,6 @@ class Fichar : ComponentActivity() {
         super.onCreate(savedInstanceState)
         Log.d("Fichar", "onCreate iniciado")
 
-        setContent {
-            Log.d("Fichar", "setContent ejecutándose")
-            Text("Hola, esto es una prueba") // Esto debería aparecer en pantalla
-        }
         val (storedUser, storedPassword, _) = AuthManager.getUserCredentials(this)
 
         if (storedUser.isEmpty() || storedPassword.isEmpty()) {
@@ -205,7 +202,7 @@ class Fichar : ComponentActivity() {
         Log.e("Fichar", "Error: WebView no inicializado en onStop()")
     }
 
-    // Se ejecuta cuando la actividad se reanuda. Comprueba las credenciales y la actividad reciente
+    // Se ejecuta cuando la actividad se reanuda. ComBuildURL.crearFichaje las credenciales y la actividad reciente
     override fun onResume() {
         super.onResume()
         // Recupera las credenciales almacenadas
@@ -431,7 +428,8 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String, onLogou
                     onShowAlert = { alertTipo ->
                         fichajeAlertTipo = alertTipo
                     },
-                    modifier = Modifier.zIndex(2f)
+                    modifier = Modifier.zIndex(2f),
+                    webViewState = webViewState
                 )
             }
 
@@ -498,7 +496,8 @@ fun CuadroParaFichar(
     fichajes: List<String>,
     onFichaje: (tipo: String) -> Unit,
     onShowAlert: (String) -> Unit, // ✅ Se agregó correctamente
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    webViewState: MutableState<WebView?>
 ) {
     if (isVisible) {
         Box(
@@ -526,7 +525,8 @@ fun CuadroParaFichar(
                 MiHorario()
                 BotonesFichajeConPermisos(
                     onFichaje = onFichaje,
-                    onShowAlert = onShowAlert
+                    onShowAlert = onShowAlert,
+                    webView = webViewState.value ?: return@CuadroParaFichar
                 )
                 RecuadroFichajesDia(fichajes)
                 AlertasDiarias()
@@ -598,7 +598,9 @@ fun MiHorario() {
 @Composable
 fun BotonesFichajeConPermisos(
     onFichaje: (tipo: String) -> Unit,
-    onShowAlert: (String) -> Unit) {
+    onShowAlert: (String) -> Unit,
+    webView: WebView?
+) {
     val context = LocalContext.current
     var pendingFichaje by remember { mutableStateOf<String?>(null) }
 
@@ -609,7 +611,11 @@ fun BotonesFichajeConPermisos(
         if (isGranted) {
             pendingFichaje?.let { tipo ->
                 Log.d("Fichaje", "Permiso concedido. Procesando fichaje de: $tipo")
-                fichar(context, tipo)
+                if (webView != null) {
+                    fichar(context, tipo, webView!!)
+                } else {
+                    Log.e("Fichaje", "webView es null. No se puede fichar.")
+                }
                 onFichaje(tipo)
             }
         } else {
@@ -651,7 +657,7 @@ fun BotonesFichajeConPermisos(
                     }
                 }
                 Log.d("Fichaje", "Fichaje Entrada: Permiso concedido. Procesando fichaje de ENTRADA")
-                fichar(context, "ENTRADA")
+                webView?.let { fichar(context, "ENTRADA", it) }
                 onFichaje("ENTRADA")
             },
         color = Color(0xFFFFFFFF),
@@ -716,7 +722,7 @@ fun BotonesFichajeConPermisos(
                     }
                 }
                 Log.d("Fichaje", "Fichaje Salida: Permiso concedido. Procesando fichaje de SALIDA")
-                fichar(context, "SALIDA")
+                webView?.let { fichar(context, "SALIDA", it) }
                 onFichaje("SALIDA")
             },
         color = Color(0xFFFFFFFF),
@@ -1007,7 +1013,7 @@ fun MensajeAlerta(
 }
 
 //============================================== FICHAJE DE LA APP =====================================
-private fun fichar(context: Context, tipo: String) {
+private fun fichar(context: Context, tipo: String, webView: WebView) {
     val hasPermission = ContextCompat.checkSelfPermission(
         context, Manifest.permission.ACCESS_FINE_LOCATION
     ) == PackageManager.PERMISSION_GRANTED
@@ -1027,16 +1033,20 @@ private fun fichar(context: Context, tipo: String) {
                     return@obtenerCoord
                 }
 
-                val urlFichaje = prueba +
-                        "&cTipFic=$tipo" +
+                val (_, _, xEmpleado) = AuthManager.getUserCredentials(context)
+                if (xEmpleado.isNullOrEmpty()) {
+                    Log.e("Fichar", "xEmpleado no está disponible")
+                    return@obtenerCoord
+                }
+
+                val urlFichaje = BuildURL.crearFichaje +
+                        "&xEmpleado=$xEmpleado" +
+                        "&cDomTipFic=$tipo" +
                         "&tGpsLat=$lat" +
                         "&tGpsLon=$lon"
 
-                Log.d("Fichar", "URL que se va a enviar: $urlFichaje")
-
-                kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
-                    enviarFichaje(urlFichaje)
-                }
+                Log.d("Fichar", "URL que se va a enviar desde WebView: $urlFichaje")
+                webView.evaluateJavascript("window.location.href = '$urlFichaje';", null)
             },
             onShowAlert = { alertTipo ->
                 Log.e("Fichar", "Alerta: $alertTipo")
