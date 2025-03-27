@@ -23,7 +23,7 @@ package com.miapp.iDEMO_kairos24h.enlaces_internos
     const val Incidencia = "$URL_USADA?$ACTION_CONSULTAR" +
             "&cTipExp=INCIDENCIA" +
             "&cOpcionVisual=INCBAN"
-    const val Horarios = "$URL_USADA?" +
+    const val Horarios = "$URL_USADA?$ACTION_CONSULTAR" +
             "&cTipExp=HORARIO" +
             "&cModoVisual=HORMEN"
 }
@@ -37,9 +37,9 @@ object BuildURL {
      */
     /**
     https://democontrolhorario.kairos24h.es/index.php?r=wsExterno/consultarHorarioExterno&xGrupo=&xEntidad=1002&cKiosko=&cDomFicOri=APP
-    http://localhost:8008/kairos24h/index.php?r=wsExterno/consultarFichajesExterno&xEntidad=3&xEmpleado=413&fecha=2025-03-19
-    http://localhost:8008/kairos24h/index.php?r=wsExterno/consultarHorarioExterno&xEntidad=3&xEmpleado=413&fecha=2025-03-19
-    http://localhost:8008/kairos24h/index.php?r=wsExterno/consultarAlertasExterno&xEntidad=3&xEmpleado=413&fecha=2025-03-19
+    http://192.168.25.67:8008/kairos24h/index.php?r=wsExterno/consultarFichajesExterno&xEntidad=3&xEmpleado=413&fecha=2025-03-19
+    http://192.168.25.67:8008/kairos24h/index.php?r=wsExterno/consultarHorarioExterno&xEntidad=3&xEmpleado=413&fecha=2025-03-19
+    http://192.168.25.67:8008/kairos24h/index.php?r=wsExterno/consultarAlertasExterno&xEntidad=3&xEmpleado=413&fecha=2025-03-19
     */
     /*==================================================================*/
     const val HOST = "https://democontrolhorario.kairos24h.es"

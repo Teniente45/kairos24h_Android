@@ -61,6 +61,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -96,6 +97,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import org.json.JSONArray
+import org.json.JSONObject
 import java.net.NetworkInterface
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -144,6 +146,7 @@ private fun isMockLocationEnabled(context: Context): Boolean {
     }
 }
 
+
 class Fichar : ComponentActivity() {
 
     private val handler = Handler(Looper.getMainLooper())
@@ -175,6 +178,23 @@ class Fichar : ComponentActivity() {
             )
         }
         startActivitySimulationTimer()
+    }
+
+    // Obtniene la fecha y hora de internte, para evitar que la hora y fecha local del dispositivo esté alterada
+    suspend fun obtenerFechaHoraInternet(): Date? = withContext(Dispatchers.IO) {
+        try {
+            val client = OkHttpClient()
+            val request = Request.Builder().url("https://www.google.com").build()
+            val response = client.newCall(request).execute()
+            val dateHeader = response.header("Date")
+            dateHeader?.let {
+                val sdf = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.ENGLISH)
+                sdf.parse(it)
+            }
+        } catch (e: Exception) {
+            Log.e("FechaInternet", "Error al obtener fecha: ${e.message}")
+            null
+        }
     }
 
     // Inicia un temporizador para simular actividad en la WebView cada 2 horas
@@ -555,16 +575,78 @@ fun Logo_empresa() {
     }
 }
 
+
+/**
+ * Cambiar por variables const la fechaFormateada y la fechaParaURL
+ */
 @Composable
 fun MiHorario() {
-    // Calculamos la fecha actual y la formateamos en español
-    val currentDateString = remember {
-        val currentDate = Date()
-        // Formato: día de la semana, día de mes de mes de año (por ejemplo: "Lunes, 10 de Marzo de 2025")
-        val sdf = SimpleDateFormat("EEEE, dd 'de' MMMM 'de' yyyy", Locale("es", "ES"))
-        // La primera letra del día se puede poner en mayúscula si es necesario:
-        sdf.format(currentDate).replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+    val context = LocalContext.current
+
+    // Fecha fija en texto y para URL
+    val fechaFormateada = "Martes, 25 de marzo de 2025"
+    val fechaParaURL = "2025-03-25"
+
+    // Obtener empleado actual
+    val (_, _, xEmpleado) = AuthManager.getUserCredentials(context)
+
+    val urlHorario = "http://192.168.25.67:8008/kairos24h/index.php?r=wsExterno/consultarHorarioExterno" +
+            "&xEntidad=3" +
+            "&xEmpleado=413" +
+            "&fecha=$fechaParaURL"
+
+    // Estado para mostrar el horario
+    val horarioTexto by produceState(initialValue = "Cargando horario...") {
+        value = try {
+            withContext(Dispatchers.IO) {
+                val client = OkHttpClient()
+                val request = Request.Builder().url(urlHorario).build()
+                val response = client.newCall(request).execute()
+                val responseBody = response.body?.string()
+                Log.d("MiHorario", "Respuesta completa del servidor:\n$responseBody")
+
+                val cleanedBody = responseBody?.replace("\uFEFF", "")
+
+                if (!response.isSuccessful || cleanedBody.isNullOrEmpty()) {
+                    Log.e("MiHorario", "Error: ${response.code}")
+                    "Error al obtener horario"
+                } else {
+                    try {
+                        val json = JSONObject(cleanedBody)
+                        val dataArray = json.getJSONArray("dataHorario")
+                        if (dataArray.length() > 0) {
+                            val item = dataArray.getJSONObject(0)
+                            val horaIni = item.optInt("N_HORINI", 0)
+                            val horaFin = item.optInt("N_HORFIN", 0)
+                            Log.d("MiHorario", "Valor N_HORINI: $horaIni")
+                            Log.d("MiHorario", "Valor N_HORFIN: $horaFin")
+
+                            if (horaIni == 0 && horaFin == 0) {
+                                "No se detectaron fichajes este dia"
+                            } else {
+                                fun minutosAHora(minutos: Int): String {
+                                    val horas = minutos / 60
+                                    val mins = minutos % 60
+                                    return String.format("%02d:%02d", horas, mins)
+                                }
+                                minutosAHora(horaIni) + " - " + minutosAHora(horaFin)
+                            }
+                        } else {
+                            "No hay horario"
+                        }
+                    } catch (e: Exception) {
+                        Log.e("MiHorario", "Error al parsear JSON: ${e.message}\nResponse body: $responseBody")
+                        "Error al procesar horario"
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("MiHorario", "Excepción al obtener horario: ${e.message}")
+            "Error de conexión"
+        }
     }
+
+    // Interfaz
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -573,20 +655,17 @@ fun MiHorario() {
             .background(Color.White),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Primer renglón: fecha actual centrada
         Text(
-            text = currentDateString,
+            text = fechaFormateada,
             color = Color(0xFF7599B6),
             fontWeight = FontWeight.Bold,
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center
         )
-        // Segundo renglón: "No Horario" centrado (se puede personalizar según la lógica)
-        // Se tendrá que meter aqui la lógics para que pille los fichajes del servidor
         Text(
-            text = "No Horario",
-            color = Color.Red,
+            text = horarioTexto,
+            color = if (horarioTexto.contains("Error") || horarioTexto.contains("No hay")) Color.Red else Color(0xFF7599B6),
             fontWeight = FontWeight.Bold,
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.fillMaxWidth(),
@@ -753,8 +832,79 @@ fun BotonesFichajeConPermisos(
     }
 }
 
+/**
+ * continuar aqui
+ */
 @Composable
 fun RecuadroFichajesDia(fichajes: List<String>) {
+    val context = LocalContext.current
+    val fechaParaURL = "2025-03-26"
+    val xEmpleado = "413"
+
+    val urlFichajes = "http://localhost:8008/kairos24h/index.php?r=wsExterno/consultarFichajesExterno" +
+            "&xEntidad=3" +
+            "&xEmpleado=$xEmpleado" +
+            "&fecha=$fechaParaURL"
+    Log.d("RecuadroFichajesDia", "Invocando URL: $urlFichajes")
+
+    val fichajes by produceState<List<String>>(initialValue = emptyList()) {
+        value = try {
+            withContext(Dispatchers.IO) {
+                val client = OkHttpClient()
+                val request = Request.Builder().url(urlFichajes).build()
+                val response = client.newCall(request).execute()
+                val responseBody = response.body?.string()
+                Log.d("RecuadroFichajesDia", "Respuesta del servidor:\n$responseBody")
+
+                val cleanedBody = responseBody?.replace("\uFEFF", "")
+
+                if (!response.isSuccessful || cleanedBody.isNullOrEmpty()) {
+                    Log.e("RecuadroFichajesDia", "Error: ${response.code}")
+                    emptyList()
+                } else {
+                    try {
+                        val jsonArray = JSONArray(cleanedBody)
+
+                        // Variables para almacenar el fichaje más antiguo de entrada y el más nuevo de salida
+                        var primerFicEnt: String? = null
+                        var ultimoFicSal: String? = null
+
+                        for (i in 0 until jsonArray.length()) {
+                            val item = jsonArray.getJSONObject(i)
+                            val ficEnt = item.optString("xFicEnt", null)
+                            val ficSal = item.optString("xFicSal", null)
+                            Log.d("RecuadroFichajesDia", "xFicEnt: $ficEnt | xFicSal: $ficSal")
+
+                            if (!ficEnt.isNullOrEmpty()) {
+                                if (primerFicEnt == null || ficEnt < primerFicEnt) {
+                                    primerFicEnt = ficEnt
+                                }
+                            }
+
+                            if (!ficSal.isNullOrEmpty()) {
+                                if (ultimoFicSal == null || ficSal > ultimoFicSal) {
+                                    ultimoFicSal = ficSal
+                                }
+                            }
+                        }
+
+                        val resultado = mutableListOf<String>()
+                        if (primerFicEnt != null) resultado.add("Entrada: $primerFicEnt")
+                        if (ultimoFicSal != null) resultado.add("Salida: $ultimoFicSal")
+
+                        resultado
+                    } catch (e: Exception) {
+                        Log.e("RecuadroFichajesDia", "Error al parsear JSON: ${e.message}")
+                        emptyList()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("RecuadroFichajesDia", "Excepción al obtener fichajes: ${e.message}")
+            emptyList()
+        }
+    }
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -784,7 +934,9 @@ fun RecuadroFichajesDia(fichajes: List<String>) {
         }
     }
 }
-
+/**
+ * continuar aqui
+ */
 @Composable
 fun AlertasDiarias() {
     // Control para expandir/colapsar el detalle de avisos
