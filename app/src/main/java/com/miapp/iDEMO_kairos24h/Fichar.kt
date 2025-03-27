@@ -10,6 +10,8 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.app.DatePickerDialog
+import java.util.Calendar
 import android.webkit.CookieManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -89,6 +91,7 @@ import com.miapp.iDEMO_kairos24h.enlaces_internos.AuthManager
 import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL
 import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.urlServidor
 import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -585,15 +588,16 @@ fun MiHorario() {
 
     // Fecha fija en texto y para URL
     val fechaFormateada = "Martes, 25 de marzo de 2025"
-    val fechaParaURL = "2025-03-25"
+    var fechaSeleccionada by remember { mutableStateOf("2025-03-26") }
+    val xEmpleado = "413"
 
     // Obtener empleado actual
-    val (_, _, xEmpleado) = AuthManager.getUserCredentials(context)
+    //val (_, _, xEmpleado) = AuthManager.getUserCredentials(context)
 
     val urlHorario = "http://192.168.25.67:8008/kairos24h/index.php?r=wsExterno/consultarHorarioExterno" +
             "&xEntidad=3" +
-            "&xEmpleado=413" +
-            "&fecha=$fechaParaURL"
+            "&xEmpleado=$xEmpleado" +
+            "&fecha=$fechaSeleccionada"
 
     // Estado para mostrar el horario
     val horarioTexto by produceState(initialValue = "Cargando horario...") {
@@ -837,14 +841,37 @@ fun BotonesFichajeConPermisos(
  */
 @Composable
 fun RecuadroFichajesDia(fichajes: List<String>) {
+    /**
     val context = LocalContext.current
     val fechaParaURL = "2025-03-26"
     val xEmpleado = "413"
+    */
+
+    val context = LocalContext.current
+    val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+    var fechaSeleccionada by remember { mutableStateOf("2025-03-26") }
+    val xEmpleado = "413"
+
+    val calendar = Calendar.getInstance()
+    val datePickerDialog = remember {
+        DatePickerDialog(
+            context,
+            { _, year, month, dayOfMonth ->
+                val nuevaFecha = Calendar.getInstance().apply {
+                    set(year, month, dayOfMonth)
+                }
+                fechaSeleccionada = dateFormatter.format(nuevaFecha.time)
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+    }
 
     val urlFichajes = "http://localhost:8008/kairos24h/index.php?r=wsExterno/consultarFichajesExterno" +
             "&xEntidad=3" +
             "&xEmpleado=$xEmpleado" +
-            "&fecha=$fechaParaURL"
+            "&fecha=$fechaSeleccionada"
     Log.d("RecuadroFichajesDia", "Invocando URL: $urlFichajes")
 
     val fichajes by produceState<List<String>>(initialValue = emptyList()) {
@@ -917,6 +944,46 @@ fun RecuadroFichajesDia(fichajes: List<String>) {
             textAlign = TextAlign.Center,
             modifier = Modifier.offset(y = (-20).dp)
         )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset(y = (-15).dp)
+                .padding(horizontal = 16.dp)
+        ) {
+            IconButton(onClick = { datePickerDialog.show() }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_calendario), // Usa el ícono que prefieras
+                    contentDescription = "Seleccionar fecha",
+                    tint = Color.Gray
+                )
+            }
+            IconButton(onClick = {
+                // Llamada para actualizar con la fecha del servidor
+                CoroutineScope(Dispatchers.IO).launch {
+                    val fechaServidor = (context as? Fichar)?.obtenerFechaHoraInternet()
+                    fechaServidor?.let {
+                        val nuevaFecha = dateFormatter.format(it)
+                        withContext(Dispatchers.Main) {
+                            fechaSeleccionada = nuevaFecha
+                        }
+                    }
+                }
+            }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_calendario), // Usa un icono de actualizar
+                    contentDescription = "Usar fecha del servidor",
+                    tint = Color.Gray
+                )
+            }
+            Text(
+                text = "Fecha: $fechaSeleccionada",
+                color = Color.Gray,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f)
+            )
+        }
 
         Column(
             modifier = Modifier
