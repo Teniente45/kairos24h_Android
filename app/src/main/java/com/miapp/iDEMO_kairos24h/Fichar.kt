@@ -1337,6 +1337,9 @@ private fun fichar(context: Context, tipo: String, webView: WebView) {
                     return@obtenerCoord
                 }
 
+                /**
+                 * Partir en variables
+                 */
                 val urlFichaje = BuildURL.crearFichaje +
                         "&xEmpleado=$xEmpleado" +
                         "&cDomTipFic=$tipo" +
