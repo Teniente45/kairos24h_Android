@@ -16,11 +16,12 @@ object AuthManager {
         val xEmpleado = sharedPreferences.getString("xEmpleado", null)
         return Triple(usuario, password, xEmpleado)
     }
-    // Función adicional para dispositivos con SDK 23 (o donde solo se necesiten usuario y password)
-    fun getUserCredentialsPair(context: Context): Pair<String, String> {
-        val (usuario, password, _) = getUserCredentials(context)
-        return Pair(usuario, password)
+
+    fun getXEmpleado(context: Context): String {
+        val (_, _, xEmpleadoRaw) = AuthManager.getUserCredentials(context)
+        return xEmpleadoRaw ?: "SIN_EMPLEADO"
     }
+
 
 
     // Guardar las credenciales del usuario en SharedPreferences, junto con xEmpleado

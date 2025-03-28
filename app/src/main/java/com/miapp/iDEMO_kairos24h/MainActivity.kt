@@ -157,7 +157,6 @@ class MainActivity : ComponentActivity() {
                             FicharScreen(
                                 usuario = usuario,
                                 password = password,
-                                fichajesUrl = "",
                                 onLogout = { navigateToLogin() }
                             ) // 🔥 Se pasa un valor vacío
                         }

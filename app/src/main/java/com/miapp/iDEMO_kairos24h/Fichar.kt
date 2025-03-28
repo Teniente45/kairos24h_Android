@@ -73,8 +73,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -89,7 +91,7 @@ import coil.request.ImageRequest
 import com.google.android.gms.location.LocationServices
 import com.miapp.iDEMO_kairos24h.enlaces_internos.AuthManager
 import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL
-import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.urlServidor
+import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.mostrarHorarios
 import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -176,7 +178,6 @@ class Fichar : ComponentActivity() {
             FicharScreen(
                 usuario = usuario,
                 password = password,
-                fichajesUrl = urlServidor,
                 onLogout = { navigateToLogin() }
             )
         }
@@ -287,41 +288,37 @@ class Fichar : ComponentActivity() {
 }
 
 // Funcion para obtener los fichajes del dia
-suspend fun obtenerFichajesDesdeServidor(url: String): List<String> {
-    return withContext(Dispatchers.IO) {
-        try {
-            val client = OkHttpClient()
-            val request = Request.Builder().url(url).build()
-            client.newCall(request).execute().use { response ->
-                val responseBody = response.body?.string()
-                if (!response.isSuccessful || responseBody.isNullOrEmpty()) {
-                    Log.e("Fichaje", "Error en la respuesta: ${response.code} - ${response.message}")
-                    return@withContext emptyList()
-                }
-                // Convertimos la respuesta JSON en una lista de Strings
-                val jsonArray = JSONArray(responseBody)
-                List(jsonArray.length()) { index -> jsonArray.getString(index) }
-            }
-        } catch (e: Exception) {
-            Log.e("Fichaje", "Error al obtener fichajes: ${e.message}", e)
-            emptyList()
+suspend fun obtenerFechaHoraInternet(): Date? = withContext(Dispatchers.IO) {
+    try {
+        val client = OkHttpClient()
+        val request = Request.Builder().url("https://www.google.com").build()
+        val response = client.newCall(request).execute()
+        val dateHeader = response.header("Date")
+        dateHeader?.let {
+            val sdf = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.ENGLISH)
+            sdf.parse(it)
         }
+    } catch (e: Exception) {
+        Log.e("FechaInternet", "Error al obtener fecha: ${e.message}")
+        null
     }
 }
 
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun FicharScreen(usuario: String, password: String, fichajesUrl: String, onLogout: () -> Unit) {
+fun FicharScreen(
+    usuario: String,
+    password: String,
+    onLogout: () -> Unit
+) {
     var isLoading by remember { mutableStateOf(true) }
     var showCuadroParaFichar by remember { mutableStateOf(true) }
     var fichajes by remember { mutableStateOf<List<String>>(emptyList()) }
     var imageIndex by remember { mutableStateOf(0) }
-    // Estado para almacenar el tipo de fichaje realizado (null = sin alerta)
     var fichajeAlertTipo by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    // Lista de imágenes para el usuario
     val imageList = listOf(
         R.drawable.cliente32,
         R.drawable.cliente32_2,
@@ -336,16 +333,10 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String, onLogou
     val sharedPreferences = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
     val cUsuario = sharedPreferences.getString("usuario", "Usuario") ?: "Usuario"
 
-    // Se muestra la pantalla de carga durante 4 segundos
     LaunchedEffect(Unit) {
         isLoading = true
         delay(1500)
         isLoading = false
-    }
-
-    // Cargar fichajes desde el servidor
-    LaunchedEffect(fichajesUrl) {
-        fichajes = obtenerFichajesDesdeServidor(fichajesUrl)
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -359,7 +350,7 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String, onLogou
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Contenedor izquierdo (Imagen intercambiable + Usuario)
+            // Usuario e imagen
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
                     onClick = { imageIndex = (imageIndex + 1) % imageList.size }
@@ -377,7 +368,8 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String, onLogou
                     fontSize = 18.sp
                 )
             }
-            // Botón de cierre de sesión
+
+            // Cerrar sesión
             IconButton(onClick = onLogout) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_cerrar32),
@@ -401,7 +393,6 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String, onLogou
                         webViewClient = object : WebViewClient() {
                             override fun onPageFinished(view: WebView?, url: String?) {
                                 super.onPageFinished(view, url)
-                                // Autocompletamos el formulario de login
                                 view?.evaluateJavascript(
                                     """
                                     (function() {
@@ -426,7 +417,7 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String, onLogou
             // Pantalla de carga
             LoadingScreen(isLoading = isLoading)
 
-            // Cuadro para fichar (se pasa el callback onFichaje)
+            // Cuadro para fichar
             if (showCuadroParaFichar) {
                 CuadroParaFichar(
                     isVisible = showCuadroParaFichar,
@@ -456,7 +447,7 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String, onLogou
                 )
             }
 
-            // Mostrar alerta solo si se ha realizado un fichaje
+            // Mostrar alerta
             fichajeAlertTipo?.let { tipo ->
                 MensajeAlerta(
                     tipo = tipo,
@@ -464,11 +455,11 @@ fun FicharScreen(usuario: String, password: String, fichajesUrl: String, onLogou
                 )
             }
 
-            // Barra de navegación inferior
+            // Navegación inferior
             BottomNavigationBar(
                 onNavigate = { url ->
                     isLoading = true
-                    showCuadroParaFichar = false // Oculta el cuadro de fichar
+                    showCuadroParaFichar = false
                     webViewState.value?.loadUrl(url)
                     scope.launch {
                         delay(1500)
@@ -551,7 +542,8 @@ fun CuadroParaFichar(
                     onShowAlert = onShowAlert,
                     webView = webViewState.value ?: return@CuadroParaFichar
                 )
-                RecuadroFichajesDia(fichajes)
+                val datos = rememberDatosHorario()
+                RecuadroFichajesDia(fichajes, fecha = datos.fechaSeleccionada)
                 AlertasDiarias()
             }
         }
@@ -591,25 +583,33 @@ data class DatosHorario(
 @Composable
 fun rememberDatosHorario(): DatosHorario {
     val context = LocalContext.current
-    val dateFormatterTexto = remember { SimpleDateFormat("EEEE, d 'de' MMMM 'de' yyyy", Locale("es", "ES")) }
-    val dateFormatterURL = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+
+    val dateFormatterTexto = remember {
+        SimpleDateFormat("EEEE, d 'de' MMMM 'de' yyyy", Locale("es", "ES"))
+    }
+    val dateFormatterURL = remember {
+        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    }
 
     var fechaFormateada by remember { mutableStateOf("Cargando...") }
     var fechaSeleccionada by remember { mutableStateOf("") }
+
     val (_, _, xEmpleadoRaw) = AuthManager.getUserCredentials(context)
     val xEmpleado = xEmpleadoRaw ?: "SIN_EMPLEADO"
 
     LaunchedEffect(Unit) {
         val fechaServidor = (context as? Fichar)?.obtenerFechaHoraInternet()
-        fechaServidor?.let {
-            fechaFormateada = dateFormatterTexto.format(it).replaceFirstChar { c -> c.uppercaseChar() }
-            fechaSeleccionada = dateFormatterURL.format(it)
-        } ?: run {
+        if (fechaServidor != null) {
+            fechaFormateada = dateFormatterTexto.format(fechaServidor)
+                .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale("es", "ES")) else it.toString() }
+            fechaSeleccionada = dateFormatterURL.format(fechaServidor)
+        } else {
             fechaFormateada = "Error al obtener fecha"
+            fechaSeleccionada = "0000-00-00"
         }
     }
 
-    val urlHorario = "${urlServidor}index.php?r=wsExterno/consultarHorarioExterno" +
+    val urlHorario = mostrarHorarios +
             "&xEntidad=3" +
             "&xEmpleado=$xEmpleado" +
             "&fecha=$fechaSeleccionada"
@@ -631,21 +631,8 @@ fun MiHorario() {
     val context = LocalContext.current
     val datos = rememberDatosHorario()
 
-
-//==================== TEST =======================================
-    val fechaFormateada = "Martes, 25 de marzo de 2025"
-    var fechaSeleccionada by remember { mutableStateOf("2025-03-26") }
-    val xEmpleado = "413"
-
-    val urlHorario = "http://192.168.25.67:8008/kairos24h/index.php?r=wsExterno/consultarHorarioExterno" +
-            "&xEntidad=3" +
-            "&xEmpleado=$xEmpleado" +
-            "&fecha=$fechaSeleccionada"
-//==================== TEST =======================================
-
-
-
-
+    // ✅ Usamos directamente la URL construida con la fecha del servidor
+    val urlHorario = mostrarHorarios
 
     // Estado para mostrar el horario
     val horarioTexto by produceState(initialValue = "Cargando horario...") {
@@ -674,7 +661,7 @@ fun MiHorario() {
                             Log.d("MiHorario", "Valor N_HORFIN: $horaFin")
 
                             if (horaIni == 0 && horaFin == 0) {
-                                "No se detectaron fichajes este dia"
+                                "No se detectaron fichajes este día"
                             } else {
                                 fun minutosAHora(minutos: Int): String {
                                     val horas = minutos / 60
@@ -898,20 +885,15 @@ fun BotonesFichajeConPermisos(
  * continuar aqui
  */
 @Composable
-fun RecuadroFichajesDia(fichajes: List<String>) {
-    val datos = rememberDatosHorario()
-    /**
-    val context = LocalContext.current
-    val fechaParaURL = "2025-03-26"
-    val xEmpleado = "413"
-    */
-
-
-
+fun RecuadroFichajesDia(fichajes: List<String>, fecha: String) {
     val context = LocalContext.current
     val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
-    var fechaSeleccionada by remember { mutableStateOf("2025-03-26") }
-    val xEmpleado = "413"
+
+    val fechaSeleccionadaState = remember { mutableStateOf(fecha) }
+    val fechaSeleccionada = fechaSeleccionadaState.value
+
+    val (_, _, xEmpleadoRaw) = AuthManager.getUserCredentials(context)
+    val xEmpleado = xEmpleadoRaw ?: "SIN_EMPLEADO"
 
     val calendar = Calendar.getInstance()
     val datePickerDialog = remember {
@@ -921,7 +903,7 @@ fun RecuadroFichajesDia(fichajes: List<String>) {
                 val nuevaFecha = Calendar.getInstance().apply {
                     set(year, month, dayOfMonth)
                 }
-                fechaSeleccionada = dateFormatter.format(nuevaFecha.time)
+                fechaSeleccionadaState.value = dateFormatter.format(nuevaFecha.time)
             },
             calendar.get(Calendar.YEAR),
             calendar.get(Calendar.MONTH),
@@ -929,13 +911,13 @@ fun RecuadroFichajesDia(fichajes: List<String>) {
         )
     }
 
-    val urlFichajes = "http://localhost:8008/kairos24h/index.php?r=wsExterno/consultarFichajesExterno" +
-            "&xEntidad=3" +
+    val urlFichajes = BuildURL.mostrarFichajes +
             "&xEmpleado=$xEmpleado" +
             "&fecha=$fechaSeleccionada"
+
     Log.d("RecuadroFichajesDia", "Invocando URL: $urlFichajes")
 
-    val fichajes by produceState<List<String>>(initialValue = emptyList()) {
+    val fichajesActuales by produceState<List<String>>(initialValue = emptyList(), key1 = fechaSeleccionada) {
         value = try {
             withContext(Dispatchers.IO) {
                 val client = OkHttpClient()
@@ -952,8 +934,6 @@ fun RecuadroFichajesDia(fichajes: List<String>) {
                 } else {
                     try {
                         val jsonArray = JSONArray(cleanedBody)
-
-                        // Variables para almacenar el fichaje más antiguo de entrada y el más nuevo de salida
                         var primerFicEnt: String? = null
                         var ultimoFicSal: String? = null
 
@@ -961,14 +941,12 @@ fun RecuadroFichajesDia(fichajes: List<String>) {
                             val item = jsonArray.getJSONObject(i)
                             val ficEnt = item.optString("xFicEnt", null)
                             val ficSal = item.optString("xFicSal", null)
-                            Log.d("RecuadroFichajesDia", "xFicEnt: $ficEnt | xFicSal: $ficSal")
 
                             if (!ficEnt.isNullOrEmpty()) {
                                 if (primerFicEnt == null || ficEnt < primerFicEnt) {
                                     primerFicEnt = ficEnt
                                 }
                             }
-
                             if (!ficSal.isNullOrEmpty()) {
                                 if (ultimoFicSal == null || ficSal > ultimoFicSal) {
                                     ultimoFicSal = ficSal
@@ -976,11 +954,10 @@ fun RecuadroFichajesDia(fichajes: List<String>) {
                             }
                         }
 
-                        val resultado = mutableListOf<String>()
-                        if (primerFicEnt != null) resultado.add("Entrada: $primerFicEnt")
-                        if (ultimoFicSal != null) resultado.add("Salida: $ultimoFicSal")
-
-                        resultado
+                        buildList {
+                            if (primerFicEnt != null) add("Entrada: $primerFicEnt")
+                            if (ultimoFicSal != null) add("Salida: $ultimoFicSal")
+                        }
                     } catch (e: Exception) {
                         Log.e("RecuadroFichajesDia", "Error al parsear JSON: ${e.message}")
                         emptyList()
@@ -1005,6 +982,7 @@ fun RecuadroFichajesDia(fichajes: List<String>) {
             textAlign = TextAlign.Center,
             modifier = Modifier.offset(y = (-20).dp)
         )
+
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -1014,21 +992,20 @@ fun RecuadroFichajesDia(fichajes: List<String>) {
         ) {
             IconButton(onClick = { datePickerDialog.show() }) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_calendario), // Usa el ícono que prefieras
+                    painter = painterResource(id = R.drawable.ic_calendario),
                     contentDescription = "Seleccionar fecha"
                 )
             }
-            // Formatear la fecha seleccionada en formato DD-MM-AAAA
-            val fechaFormateadaCorta = remember(datos.fechaSeleccionada) {
-                try {
-                    val sdfEntrada = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                    val sdfSalida = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-                    val date = sdfEntrada.parse(datos.fechaSeleccionada)
-                    sdfSalida.format(date ?: Date())
-                } catch (e: Exception) {
-                    datos.fechaSeleccionada // En caso de error, mostramos la original
-                }
+
+            val fechaFormateadaCorta = try {
+                val sdfEntrada = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                val sdfSalida = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+                val date = sdfEntrada.parse(fechaSeleccionada)
+                sdfSalida.format(date ?: Date())
+            } catch (e: Exception) {
+                fechaSeleccionada
             }
+
             Text(
                 text = "Fecha: $fechaFormateadaCorta",
                 color = Color.Gray,
@@ -1038,31 +1015,31 @@ fun RecuadroFichajesDia(fichajes: List<String>) {
             )
 
             IconButton(onClick = {
-                // Llamada para actualizar con la fecha del servidor
                 CoroutineScope(Dispatchers.IO).launch {
                     val fechaServidor = (context as? Fichar)?.obtenerFechaHoraInternet()
                     fechaServidor?.let {
                         val nuevaFecha = dateFormatter.format(it)
                         withContext(Dispatchers.Main) {
-                            fechaSeleccionada = nuevaFecha
+                            fechaSeleccionadaState.value = nuevaFecha
                         }
                     }
                 }
             }) {
                 Icon(
-                    painter = painterResource(id = R.drawable.reload), // Usa un icono de actualizar
+                    painter = painterResource(id = R.drawable.reload),
                     contentDescription = "Usar fecha del servidor"
                 )
             }
         }
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .offset(y = (-15).dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (fichajes.isNotEmpty()) {
-                fichajes.forEach { fichaje ->
+            if (fichajesActuales.isNotEmpty()) {
+                fichajesActuales.forEach { fichaje ->
                     Text(text = fichaje, color = Color(0xFF7599B6), fontSize = 18.sp)
                 }
             } else {
@@ -1211,21 +1188,25 @@ fun MensajeAlerta(
     tipo: String = "ENTRADA",
     onClose: () -> Unit
 ) {
-    // Se obtiene la fecha y hora actual formateada
     val currentDateTime = SimpleDateFormat("dd/MM/yyyy HH:mm'h'", Locale.getDefault()).format(Date())
 
-    // Se define el mensaje en función del tipo de fichaje
-    val mensaje = when(tipo.uppercase()) {
+    val mensaje = when (tipo.uppercase()) {
         "ENTRADA" -> "Fichaje de Entrada realizado correctamente"
         "SALIDA" -> "Fichaje de Salida realizado correctamente"
-        "PROBLEMA GPS" -> "No se detecta la geolocalizacion gps. Por favor, active la geolocalizacion gps para poder fichar."
+        "PROBLEMA GPS" -> "No se detecta la geolocalización gps. Por favor, active la geolocalización gps para poder fichar."
         "PROBLEMA INTERNET" -> "El dispositivo no está conectado a la red. Revise su conexión a Internet."
-        "POSIBLE UBI FALSA" -> "Se detectó una posible ubicación falsa. Reinicie su geolocalizacion gps y vuelva a intentarlo en unos minutos"
-        "VPN DETECTADA" -> "VPN detectada. Desactive la VPN para continuar y vuelva a de intentarlo en unos minutos."
+        "POSIBLE UBI FALSA" -> "Se detectó una posible ubicación falsa. Reinicie su geolocalización gps y vuelva a intentarlo en unos minutos"
+        "VPN DETECTADA" -> "VPN detectada. Desactive la VPN para continuar y vuelva a intentarlo en unos minutos."
         else -> "Fichaje de $tipo realizado correctamente"
     }
 
-    // Usamos un Dialog para mostrar el contenido centrado en la pantalla
+    // 🎨 Color por tipo
+    val colorFondo = when (tipo.uppercase()) {
+        "ENTRADA" -> Color(0xFF124672) // Azul oscuro
+        "SALIDA" -> Color(0xFFd7ebfa)  // Azul claro
+        else -> Color(0xFFFF0101)      // Rojo para errores
+    }
+
     Dialog(
         onDismissRequest = onClose,
         properties = DialogProperties(dismissOnClickOutside = true)
@@ -1236,46 +1217,73 @@ fun MensajeAlerta(
             color = Color.White
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                // Encabezado del cuadro
+
+                // 🎨 Encabezado con color y texto según tipo
+                val textoEncabezado = when (tipo.uppercase()) {
+                    "ENTRADA" -> "ENTRADA"
+                    "SALIDA" -> "SALIDA"
+                    else -> "ERROR DE FICHAJE"
+                }
+
+                val colorTextoEncabezado = when (tipo.uppercase()) {
+                    "SALIDA" -> Color(0xFF124672)
+                    else -> Color.White
+                }
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(
-                            if (tipo.uppercase() == "ENTRADA" || tipo.uppercase() == "SALIDA")
-                                Color(0xFF7599B6) // 🔵 Azul para fichajes correctos
-                            else
-                                Color(0xFFFF0101) // 🔴 Rojo para errores
-                        )
+                        .background(colorFondo)
                         .padding(8.dp)
                 ) {
                     Text(
-                        text = "Información",
-                        color = Color.White,
+                        text = textoEncabezado,
+                        color = colorTextoEncabezado,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
                         fontSize = 18.sp,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
+
                 Spacer(modifier = Modifier.height(16.dp))
-                // Mensaje de fichaje
+
+                // 📝 Mensaje del fichaje
                 Text(
                     text = mensaje,
                     color = Color.Black,
                     fontSize = 18.sp,
                     style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center
                 )
+
                 Spacer(modifier = Modifier.height(16.dp))
-                // Fecha y hora actual
+
+                // 🕒 Fecha + hora con hora en negrita y más grande
+                val partes = currentDateTime.split(" ")
+                val fechaSolo = partes.getOrNull(0) ?: ""
+                val horaSolo = partes.getOrNull(1) ?: ""
+
                 Text(
-                    text = currentDateTime,
+                    text = buildAnnotatedString {
+                        append("$fechaSolo ")
+                        withStyle(
+                            style = androidx.compose.ui.text.SpanStyle(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp
+                            )
+                        ) {
+                            append(horaSolo)
+                        }
+                    },
                     color = Color.Black,
-                    fontSize = 18.sp,
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
+
                 Spacer(modifier = Modifier.height(16.dp))
-                // Botón para cerrar la alerta
+
+                // 🔘 Botón Cerrar
                 Box(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
@@ -1283,16 +1291,17 @@ fun MensajeAlerta(
                     Button(
                         onClick = onClose,
                         shape = RoundedCornerShape(4.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (tipo.uppercase() == "ENTRADA" || tipo.uppercase() == "SALIDA")
-                                Color(0xFF7599B6) // 🔵 Azul para fichajes correctos
-                            else
-                                Color(0xFFFF0000) // 🔴 Rojo para errores
-                        )
+                        colors = ButtonDefaults.buttonColors(containerColor = colorFondo)
                     ) {
+                        val colorTextoBoton = when (tipo.uppercase()) {
+                            "SALIDA" -> Color(0xFF124672)
+                            else -> Color.White
+                        }
+
                         Text(
                             text = "Cerrar",
-                            fontSize = 18.sp
+                            fontSize = 18.sp,
+                            color = colorTextoBoton
                         )
                     }
                 }

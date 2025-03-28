@@ -1,5 +1,7 @@
 package com.miapp.iDEMO_kairos24h.enlaces_internos
 
+import androidx.compose.ui.platform.LocalContext
+
 // Estás son las URL que se nos mostrarán en el WebView
     object WebViewURL {
     /**
@@ -43,6 +45,11 @@ object BuildURL {
     */
     /*==================================================================*/
     const val HOST = "https://democontrolhorario.kairos24h.es"
+
+    //========================= Borrar más tarde =====================================
+    const val prueba_maquina = "http://192.168.25.67:8008/kairos24h"
+    //========================= Borrar más tarde =====================================
+
     const val ENTRY_POINT = "/index.php"
     const val ACTION_FICHAJE = "r=explotacion/creaFichaje"
     const val ACTION_LOGIN = "r=wsExterno/loginExterno"
@@ -55,28 +62,23 @@ object BuildURL {
     const val C_KIOSKO = ""
     const val C_FIC_ORI = "APP"
 
+
     const val staticParams =
             "&xGrupo=$X_GRUPO" +
-            "&xEntidad=$X_ENTIDAD" +
+           // "&xEntidad=$X_ENTIDAD" +
             "&cKiosko=$C_KIOSKO" +
             "&cDomFicOri=$C_FIC_ORI"
 
     const val URL_USADA = "$HOST$ENTRY_POINT?"
-    const val urlServidor = ""
     /*==================================================================*/
 
     /*--------------------------------------------------------*/
     const val LOGIN = URL_USADA + ACTION_LOGIN
     const val crearFichaje = URL_USADA + ACTION_FICHAJE + staticParams
 
-    const val mostrarHorarios = URL_USADA + ACTION_CONSULTHORARIO + staticParams +
-                "&xEmpleado="
-
-    const val mostrarFichajes = URL_USADA + ACTION_CONSULTFIC_DIA + staticParams +
-                "&xEmpleado="
-
-    const val mostrarAlertas = ACTION_CONSULT_ALERTAS + staticParams +
-                "&xEmpleado="
+    const val mostrarHorarios = URL_USADA + ACTION_CONSULTHORARIO + staticParams
+    const val mostrarFichajes = URL_USADA + ACTION_CONSULTFIC_DIA + staticParams
+    const val mostrarAlertas = URL_USADA + ACTION_CONSULT_ALERTAS + staticParams
 
     // horqrio
     // http://localhost:8008/kairos24h/index.php?r=wsExterno/consultarHorarioExterno&xEntidad=3&xEmpleado=413&fecha=2025-03-19
