@@ -899,11 +899,14 @@ fun BotonesFichajeConPermisos(
  */
 @Composable
 fun RecuadroFichajesDia(fichajes: List<String>) {
+    val datos = rememberDatosHorario()
     /**
     val context = LocalContext.current
     val fechaParaURL = "2025-03-26"
     val xEmpleado = "413"
     */
+
+
 
     val context = LocalContext.current
     val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
@@ -1012,10 +1015,28 @@ fun RecuadroFichajesDia(fichajes: List<String>) {
             IconButton(onClick = { datePickerDialog.show() }) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_calendario), // Usa el ícono que prefieras
-                    contentDescription = "Seleccionar fecha",
-                    tint = Color.Gray
+                    contentDescription = "Seleccionar fecha"
                 )
             }
+            // Formatear la fecha seleccionada en formato DD-MM-AAAA
+            val fechaFormateadaCorta = remember(datos.fechaSeleccionada) {
+                try {
+                    val sdfEntrada = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                    val sdfSalida = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+                    val date = sdfEntrada.parse(datos.fechaSeleccionada)
+                    sdfSalida.format(date ?: Date())
+                } catch (e: Exception) {
+                    datos.fechaSeleccionada // En caso de error, mostramos la original
+                }
+            }
+            Text(
+                text = "Fecha: $fechaFormateadaCorta",
+                color = Color.Gray,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f)
+            )
+
             IconButton(onClick = {
                 // Llamada para actualizar con la fecha del servidor
                 CoroutineScope(Dispatchers.IO).launch {
@@ -1029,20 +1050,11 @@ fun RecuadroFichajesDia(fichajes: List<String>) {
                 }
             }) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_calendario), // Usa un icono de actualizar
-                    contentDescription = "Usar fecha del servidor",
-                    tint = Color.Gray
+                    painter = painterResource(id = R.drawable.reload), // Usa un icono de actualizar
+                    contentDescription = "Usar fecha del servidor"
                 )
             }
-            Text(
-                text = "Fecha: $fechaSeleccionada",
-                color = Color.Gray,
-                fontSize = 16.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.weight(1f)
-            )
         }
-
         Column(
             modifier = Modifier
                 .fillMaxWidth()
