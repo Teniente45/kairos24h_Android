@@ -579,25 +579,73 @@ fun Logo_empresa() {
 }
 
 
+data class DatosHorario(
+    val fechaFormateada: String,
+    val fechaSeleccionada: String,
+    val xEmpleado: String,
+    val urlHorario: String
+)
+/**
+ * Con esta funcion tomaremos la fecha del servidor, el xEmpleado para poder usarlo en las funciones siguientes
+ */
+@Composable
+fun rememberDatosHorario(): DatosHorario {
+    val context = LocalContext.current
+    val dateFormatterTexto = remember { SimpleDateFormat("EEEE, d 'de' MMMM 'de' yyyy", Locale("es", "ES")) }
+    val dateFormatterURL = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+
+    var fechaFormateada by remember { mutableStateOf("Cargando...") }
+    var fechaSeleccionada by remember { mutableStateOf("") }
+    val (_, _, xEmpleadoRaw) = AuthManager.getUserCredentials(context)
+    val xEmpleado = xEmpleadoRaw ?: "SIN_EMPLEADO"
+
+    LaunchedEffect(Unit) {
+        val fechaServidor = (context as? Fichar)?.obtenerFechaHoraInternet()
+        fechaServidor?.let {
+            fechaFormateada = dateFormatterTexto.format(it).replaceFirstChar { c -> c.uppercaseChar() }
+            fechaSeleccionada = dateFormatterURL.format(it)
+        } ?: run {
+            fechaFormateada = "Error al obtener fecha"
+        }
+    }
+
+    val urlHorario = "${urlServidor}index.php?r=wsExterno/consultarHorarioExterno" +
+            "&xEntidad=3" +
+            "&xEmpleado=$xEmpleado" +
+            "&fecha=$fechaSeleccionada"
+
+    return DatosHorario(
+        fechaFormateada = fechaFormateada,
+        fechaSeleccionada = fechaSeleccionada,
+        xEmpleado = xEmpleado,
+        urlHorario = urlHorario
+    )
+}
+
+
 /**
  * Cambiar por variables const la fechaFormateada y la fechaParaURL
  */
 @Composable
 fun MiHorario() {
     val context = LocalContext.current
+    val datos = rememberDatosHorario()
 
-    // Fecha fija en texto y para URL
+
+//==================== TEST =======================================
     val fechaFormateada = "Martes, 25 de marzo de 2025"
     var fechaSeleccionada by remember { mutableStateOf("2025-03-26") }
     val xEmpleado = "413"
-
-    // Obtener empleado actual
-    //val (_, _, xEmpleado) = AuthManager.getUserCredentials(context)
 
     val urlHorario = "http://192.168.25.67:8008/kairos24h/index.php?r=wsExterno/consultarHorarioExterno" +
             "&xEntidad=3" +
             "&xEmpleado=$xEmpleado" +
             "&fecha=$fechaSeleccionada"
+//==================== TEST =======================================
+
+
+
+
 
     // Estado para mostrar el horario
     val horarioTexto by produceState(initialValue = "Cargando horario...") {
@@ -660,12 +708,13 @@ fun MiHorario() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = fechaFormateada,
+            text = datos.fechaFormateada,
             color = Color(0xFF7599B6),
             fontWeight = FontWeight.Bold,
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            fontSize = 18.sp
         )
         Text(
             text = horarioTexto,
@@ -718,19 +767,22 @@ fun BotonesFichajeConPermisos(
                 when {
                     isUsingVPN() -> {
                         Log.e("Seguridad", "Intento de fichaje con VPN activa")
-                onShowAlert("VPN DETECTADA")
+                        onShowAlert("VPN DETECTADA")
                         return@clickable
                     }
+
                     isMockLocationEnabled(context) -> {
                         Log.e("Seguridad", "Intento de fichaje con ubicación simulada")
                         onShowAlert("POSIBLE UBI FALSA")
                         return@clickable
                     }
+
                     !isInternetAvailable(context) -> {
                         Log.e("Fichar", "No hay conexión a Internet")
                         onShowAlert("PROBLEMA INTERNET")
                         return@clickable
                     }
+
                     ContextCompat.checkSelfPermission(
                         context, Manifest.permission.ACCESS_FINE_LOCATION
                     ) != PackageManager.PERMISSION_GRANTED -> {
@@ -739,7 +791,10 @@ fun BotonesFichajeConPermisos(
                         return@clickable
                     }
                 }
-                Log.d("Fichaje", "Fichaje Entrada: Permiso concedido. Procesando fichaje de ENTRADA")
+                Log.d(
+                    "Fichaje",
+                    "Fichaje Entrada: Permiso concedido. Procesando fichaje de ENTRADA"
+                )
                 webView?.let { fichar(context, "ENTRADA", it) }
                 onFichaje("ENTRADA")
             },
@@ -786,16 +841,19 @@ fun BotonesFichajeConPermisos(
                         onShowAlert("VPN DETECTADA")
                         return@clickable
                     }
+
                     isMockLocationEnabled(context) -> {
                         Log.e("Seguridad", "Intento de fichaje con ubicación simulada")
                         onShowAlert("POSIBLE UBI FALSA")
                         return@clickable
                     }
+
                     !isInternetAvailable(context) -> {
                         Log.e("Fichar", "No hay conexión a Internet")
                         onShowAlert("PROBLEMA INTERNET")
                         return@clickable
                     }
+
                     ContextCompat.checkSelfPermission(
                         context, Manifest.permission.ACCESS_FINE_LOCATION
                     ) != PackageManager.PERMISSION_GRANTED -> {
