@@ -91,7 +91,6 @@ import coil.request.ImageRequest
 import com.google.android.gms.location.LocationServices
 import com.miapp.iDEMO_kairos24h.enlaces_internos.AuthManager
 import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL
-import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL.mostrarHorarios
 import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -284,23 +283,6 @@ class Fichar : ComponentActivity() {
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         finish()
-    }
-}
-
-// Funcion para obtener los fichajes del dia
-suspend fun obtenerFechaHoraInternet(): Date? = withContext(Dispatchers.IO) {
-    try {
-        val client = OkHttpClient()
-        val request = Request.Builder().url("https://www.google.com").build()
-        val response = client.newCall(request).execute()
-        val dateHeader = response.header("Date")
-        dateHeader?.let {
-            val sdf = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.ENGLISH)
-            sdf.parse(it)
-        }
-    } catch (e: Exception) {
-        Log.e("FechaInternet", "Error al obtener fecha: ${e.message}")
-        null
     }
 }
 
@@ -543,6 +525,7 @@ fun CuadroParaFichar(
                     webView = webViewState.value ?: return@CuadroParaFichar
                 )
                 val datos = rememberDatosHorario()
+
                 RecuadroFichajesDia(fichajes, fecha = datos.fechaSeleccionada)
                 AlertasDiarias()
             }
@@ -577,9 +560,8 @@ data class DatosHorario(
     val xEmpleado: String,
     val urlHorario: String
 )
-/**
- * Con esta funcion tomaremos la fecha del servidor, el xEmpleado para poder usarlo en las funciones siguientes
- */
+
+
 @Composable
 fun rememberDatosHorario(): DatosHorario {
     val context = LocalContext.current
@@ -608,11 +590,11 @@ fun rememberDatosHorario(): DatosHorario {
             fechaSeleccionada = "0000-00-00"
         }
     }
-
-    val urlHorario = mostrarHorarios +
-            "&xEntidad=3" +
+    val urlHorario = BuildURL.mostrarHorarios +
             "&xEmpleado=$xEmpleado" +
             "&fecha=$fechaSeleccionada"
+
+
 
     return DatosHorario(
         fechaFormateada = fechaFormateada,
@@ -623,16 +605,12 @@ fun rememberDatosHorario(): DatosHorario {
 }
 
 
-/**
- * Cambiar por variables const la fechaFormateada y la fechaParaURL
- */
 @Composable
 fun MiHorario() {
     val context = LocalContext.current
     val datos = rememberDatosHorario()
 
-    // ✅ Usamos directamente la URL construida con la fecha del servidor
-    val urlHorario = mostrarHorarios
+    val urlHorario = datos.urlHorario
 
     // Estado para mostrar el horario
     val horarioTexto by produceState(initialValue = "Cargando horario...") {
@@ -881,9 +859,6 @@ fun BotonesFichajeConPermisos(
     }
 }
 
-/**
- * continuar aqui
- */
 @Composable
 fun RecuadroFichajesDia(fichajes: List<String>, fecha: String) {
     val context = LocalContext.current
@@ -891,6 +866,19 @@ fun RecuadroFichajesDia(fichajes: List<String>, fecha: String) {
 
     val fechaSeleccionadaState = remember { mutableStateOf(fecha) }
     val fechaSeleccionada = fechaSeleccionadaState.value
+
+    // ✅ Cargar fecha desde internet si está vacía o inválida
+    LaunchedEffect(Unit) {
+        if (fechaSeleccionadaState.value.isEmpty() || fechaSeleccionadaState.value == "0000-00-00") {
+            val fechaServidor = (context as? Fichar)?.obtenerFechaHoraInternet()
+            if (fechaServidor != null) {
+                val nuevaFecha = dateFormatter.format(fechaServidor)
+                fechaSeleccionadaState.value = nuevaFecha
+            } else {
+                Log.e("RecuadroFichajesDia", "No se pudo obtener la fecha desde internet")
+            }
+        }
+    }
 
     val (_, _, xEmpleadoRaw) = AuthManager.getUserCredentials(context)
     val xEmpleado = xEmpleadoRaw ?: "SIN_EMPLEADO"
@@ -911,21 +899,20 @@ fun RecuadroFichajesDia(fichajes: List<String>, fecha: String) {
         )
     }
 
-    val urlFichajes = BuildURL.mostrarFichajes +
-            "&xEmpleado=$xEmpleado" +
-            "&fecha=$fechaSeleccionada"
-
-    Log.d("RecuadroFichajesDia", "Invocando URL: $urlFichajes")
-
+    // 🔄 Cada vez que cambia la fecha, se recalcula esta URL y se hace nueva petición
     val fichajesActuales by produceState<List<String>>(initialValue = emptyList(), key1 = fechaSeleccionada) {
+        val urlFichajes = BuildURL.mostrarFichajes +
+                "&xEmpleado=$xEmpleado" +
+                "&fecha=$fechaSeleccionada"
+
+        Log.d("RecuadroFichajesDia", "Invocando URL actualizada: $urlFichajes")
+
         value = try {
             withContext(Dispatchers.IO) {
                 val client = OkHttpClient()
                 val request = Request.Builder().url(urlFichajes).build()
                 val response = client.newCall(request).execute()
                 val responseBody = response.body?.string()
-                Log.d("RecuadroFichajesDia", "Respuesta del servidor:\n$responseBody")
-
                 val cleanedBody = responseBody?.replace("\uFEFF", "")
 
                 if (!response.isSuccessful || cleanedBody.isNullOrEmpty()) {
@@ -970,6 +957,7 @@ fun RecuadroFichajesDia(fichajes: List<String>, fecha: String) {
         }
     }
 
+    // Interfaz
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -983,6 +971,11 @@ fun RecuadroFichajesDia(fichajes: List<String>, fecha: String) {
             modifier = Modifier.offset(y = (-20).dp)
         )
 
+        val sdfEntrada = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val sdfSalida = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+
+        val iconColor = Color(0xFF7599B6)
+
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -993,26 +986,56 @@ fun RecuadroFichajesDia(fichajes: List<String>, fecha: String) {
             IconButton(onClick = { datePickerDialog.show() }) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_calendario),
-                    contentDescription = "Seleccionar fecha"
+                    contentDescription = "Seleccionar fecha",
+                    modifier = Modifier.size(26.dp),
+                    tint = iconColor
                 )
             }
 
-            val fechaFormateadaCorta = try {
-                val sdfEntrada = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                val sdfSalida = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-                val date = sdfEntrada.parse(fechaSeleccionada)
-                sdfSalida.format(date ?: Date())
-            } catch (e: Exception) {
-                fechaSeleccionada
+            IconButton(onClick = {
+                val actual = sdfEntrada.parse(fechaSeleccionadaState.value)
+                val anterior = Calendar.getInstance().apply {
+                    time = actual ?: Date()
+                    add(Calendar.DAY_OF_MONTH, -1)
+                }
+                fechaSeleccionadaState.value = sdfEntrada.format(anterior.time)
+            }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.hacia_atras),
+                    contentDescription = "Día anterior",
+                    modifier = Modifier.size(26.dp),
+                    tint = iconColor
+                )
             }
 
             Text(
-                text = "Fecha: $fechaFormateadaCorta",
+                text = "Fecha: ${try {
+                    val date = sdfEntrada.parse(fechaSeleccionadaState.value)
+                    sdfSalida.format(date ?: Date())
+                } catch (e: Exception) {
+                    fechaSeleccionadaState.value
+                }}",
                 color = Color.Gray,
                 fontSize = 16.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.weight(1f)
             )
+
+            IconButton(onClick = {
+                val actual = sdfEntrada.parse(fechaSeleccionadaState.value)
+                val siguiente = Calendar.getInstance().apply {
+                    time = actual ?: Date()
+                    add(Calendar.DAY_OF_MONTH, 1)
+                }
+                fechaSeleccionadaState.value = sdfEntrada.format(siguiente.time)
+            }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.hacia_delante),
+                    contentDescription = "Día siguiente",
+                    modifier = Modifier.size(26.dp),
+                    tint = iconColor
+                )
+            }
 
             IconButton(onClick = {
                 CoroutineScope(Dispatchers.IO).launch {
@@ -1027,7 +1050,9 @@ fun RecuadroFichajesDia(fichajes: List<String>, fecha: String) {
             }) {
                 Icon(
                     painter = painterResource(id = R.drawable.reload),
-                    contentDescription = "Usar fecha del servidor"
+                    contentDescription = "Usar fecha del servidor",
+                    modifier = Modifier.size(26.dp),
+                    tint = iconColor
                 )
             }
         }
@@ -1048,9 +1073,8 @@ fun RecuadroFichajesDia(fichajes: List<String>, fecha: String) {
         }
     }
 }
-/**
- * continuar aqui
- */
+
+
 @Composable
 fun AlertasDiarias() {
     // Control para expandir/colapsar el detalle de avisos
@@ -1084,39 +1108,6 @@ fun AlertasDiarias() {
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.align(Alignment.CenterStart)
                 )
-
-                Row(modifier = Modifier.align(Alignment.CenterEnd)) {
-                    // Botón "Mostrar Avisos/Alertas"
-                    IconButton(
-                        onClick = {
-                            // Lógica para mostrarExplotacion(1, true, 'AVISO', ...).
-                            // Aquí pones tu función o acción correspondiente.
-                        }
-                    ) {
-                        // Usa tu icono o imagen. Ej. painterResource(R.drawable.mostrar20)
-                        Icon(
-                            imageVector = Icons.Default.Visibility,
-                            contentDescription = "Mostrar Avisos",
-                            tint = Color.White
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    // Botón "Nuevo Aviso"
-                    IconButton(
-                        onClick = {
-                            // Lógica para createExplotacion('AVISO', '').
-                        }
-                    ) {
-                        // Usa tu icono o imagen. Ej. painterResource(R.drawable.nuevo20)
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Nuevo Aviso",
-                            tint = Color.White
-                        )
-                    }
-                }
             }
 
             // Cuerpo de la tarjeta (similar al panel-body del HTML)
@@ -1183,6 +1174,8 @@ fun AlertasDiarias() {
     }
 }
 
+
+// Mensaje de alerta cuando se le da a uno de los botones de fichar
 @Composable
 fun MensajeAlerta(
     tipo: String = "ENTRADA",
@@ -1337,9 +1330,6 @@ private fun fichar(context: Context, tipo: String, webView: WebView) {
                     return@obtenerCoord
                 }
 
-                /**
-                 * Partir en variables
-                 */
                 val urlFichaje = BuildURL.crearFichaje +
                         "&xEmpleado=$xEmpleado" +
                         "&cDomTipFic=$tipo" +

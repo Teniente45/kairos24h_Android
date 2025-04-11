@@ -17,12 +17,6 @@ object AuthManager {
         return Triple(usuario, password, xEmpleado)
     }
 
-    fun getXEmpleado(context: Context): String {
-        val (_, _, xEmpleadoRaw) = AuthManager.getUserCredentials(context)
-        return xEmpleadoRaw ?: "SIN_EMPLEADO"
-    }
-
-
 
     // Guardar las credenciales del usuario en SharedPreferences, junto con xEmpleado
     fun saveUserCredentials(context: Context, usuario: String, password: String, xEmpleado: String?) {
@@ -42,8 +36,9 @@ object AuthManager {
         val client = OkHttpClient()
         // Se usa cUsuario y tPassword en la URL
         val url = BuildURL.LOGIN +
-                    "&cUsuario=$usuario" +
-                    "&tPassword=$password"
+                "&cUsuario=$usuario" +
+                "&tPassword=$password"
+
         Log.d("AuthManager", "URL: $url")
 
         val request = Request.Builder()
