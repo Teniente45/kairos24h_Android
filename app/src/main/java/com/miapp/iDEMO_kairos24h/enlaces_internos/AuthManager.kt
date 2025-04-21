@@ -68,4 +68,20 @@ object AuthManager {
             Pair(false, null)
         }
     }
+
+    // Borrar credenciales y cookies almacenadas
+    fun destroyCredentials(context: Context) {
+        // Borrar SharedPreferences
+        val sharedPreferences = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+        with(sharedPreferences.edit()) {
+            remove("usuario")
+            remove("password")
+            remove("xEmpleado")
+            apply()
+        }
+
+        // Borrar cookies (si se usan en WebView)
+        android.webkit.CookieManager.getInstance().removeAllCookies(null)
+        android.webkit.CookieManager.getInstance().flush()
+    }
 }

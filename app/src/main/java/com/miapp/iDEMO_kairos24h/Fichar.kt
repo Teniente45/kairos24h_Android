@@ -12,6 +12,7 @@ import android.os.Looper
 import android.util.Log
 import android.app.DatePickerDialog
 import java.util.Calendar
+import androidx.compose.material3.AlertDialog
 import android.webkit.CookieManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -88,6 +89,11 @@ import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
+import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
 import com.google.android.gms.location.LocationServices
 import com.miapp.iDEMO_kairos24h.enlaces_internos.AuthManager
 import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL
@@ -173,11 +179,14 @@ class Fichar : ComponentActivity() {
         // Usamos las credenciales del Intent, o las almacenadas
         val usuario = intent.getStringExtra("usuario") ?: storedUser
         val password = intent.getStringExtra("password") ?: storedPassword
+        val mostrarDialogoLogout = mutableStateOf(false)
         setContent {
             FicharScreen(
                 usuario = usuario,
                 password = password,
-                onLogout = { navigateToLogin() }
+                onLogout = { mostrarDialogoLogout.value = true },
+                mostrarDialogoLogout = mostrarDialogoLogout,
+                onConfirmLogout = { navigateToLogin() }
             )
         }
         startActivitySimulationTimer()
@@ -268,16 +277,7 @@ class Fichar : ComponentActivity() {
 
     // Redirige al usuario a la pantalla de login y limpia la actividad actual
     private fun navigateToLogin() {
-        val cookieManager = CookieManager.getInstance()
-        cookieManager.removeAllCookies(null)
-        cookieManager.flush()
-
-        val sharedPreferences = getSharedPreferences("UserSession", Context.MODE_PRIVATE)
-        with(sharedPreferences.edit()) {
-            remove("usuario")
-            remove("password")
-            apply()
-        }
+        AuthManager.destroyCredentials(this)
 
         val intent = Intent(this, MainActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -292,7 +292,9 @@ class Fichar : ComponentActivity() {
 fun FicharScreen(
     usuario: String,
     password: String,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    mostrarDialogoLogout: MutableState<Boolean>,
+    onConfirmLogout: () -> Unit
 ) {
     var isLoading by remember { mutableStateOf(true) }
     var showCuadroParaFichar by remember { mutableStateOf(true) }
@@ -455,6 +457,79 @@ fun FicharScreen(
                     .fillMaxWidth()
                     .zIndex(3f)
             )
+
+            val transition = updateTransition(targetState = mostrarDialogoLogout.value, label = "DialogTransition")
+
+            val scale by transition.animateFloat(
+                label = "scale",
+                transitionSpec = { tween(durationMillis = 500) }
+            ) { visible -> if (visible) 1f else 0.8f }
+
+            val rotationX by transition.animateFloat(
+                label = "rotationX",
+                transitionSpec = { tween(durationMillis = 500) }
+            ) { visible -> if (visible) 0f else -90f }
+
+            val alpha by transition.animateFloat(
+                label = "alpha",
+                transitionSpec = { tween(durationMillis = 500) }
+            ) { visible -> if (visible) 1f else 0f }
+
+            if (mostrarDialogoLogout.value || transition.currentState) {
+                AlertDialog(
+                    modifier = Modifier.graphicsLayer {
+                        this.scaleX = scale
+                        this.scaleY = scale
+                        this.rotationX = rotationX
+                        this.alpha = alpha
+                        this.transformOrigin = TransformOrigin(0.5f, 1f)
+                    },
+                    onDismissRequest = { mostrarDialogoLogout.value = false },
+                    title = {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF7599B6))
+                                .padding(12.dp)
+                        ) {
+                            Text(
+                                text = "Cerrar sesión",
+                                color = Color.White,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.align(Alignment.CenterStart)
+                            )
+                        }
+                    },
+                    text = {
+                        Text(
+                            text = "Vamos a cerrar tu sesión. ¿Estás seguro?",
+                            fontSize = 16.sp,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                mostrarDialogoLogout.value = false
+                                onConfirmLogout()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7599B6))
+                        ) {
+                            Text("Cerrar sesión", color = Color.White)
+                        }
+                    },
+                    dismissButton = {
+                        Button(
+                            onClick = { mostrarDialogoLogout.value = false },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7599B6))
+                        ) {
+                            Text("Cancelar", color = Color.White)
+                        }
+                    },
+                    shape = RoundedCornerShape(30.dp)
+                )
+            }
         }
     }
 }

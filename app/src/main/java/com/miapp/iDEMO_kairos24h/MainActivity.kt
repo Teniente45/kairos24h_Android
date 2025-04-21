@@ -60,6 +60,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
 
 class MainActivity : ComponentActivity() {
 
@@ -154,11 +159,14 @@ class MainActivity : ComponentActivity() {
                             val usuario = backStackEntry.arguments?.getString("usuario") ?: ""
                             val password = backStackEntry.arguments?.getString("password") ?: ""
 
+                            val mostrarDialogoLogout = remember { mutableStateOf(false) }
                             FicharScreen(
                                 usuario = usuario,
                                 password = password,
-                                onLogout = { navigateToLogin() }
-                            ) // 🔥 Se pasa un valor vacío
+                                onLogout = { mostrarDialogoLogout.value = true },
+                                mostrarDialogoLogout = mostrarDialogoLogout,
+                                onConfirmLogout = { navigateToLogin() }
+                            )
                         }
                     }
                 }
