@@ -17,6 +17,7 @@ object SeguridadUtils {
                 it.name.equals("tun0", ignoreCase = true) || it.name.equals("ppp0", ignoreCase = true)
             }
         } catch (e: Exception) {
+            Log.e("Seguridad", "Error al verificar VPN: ${e.message}")
             false
         }
     }
