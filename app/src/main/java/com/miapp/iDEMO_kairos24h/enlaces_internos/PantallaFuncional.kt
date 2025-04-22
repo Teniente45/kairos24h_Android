@@ -498,25 +498,6 @@ fun RecuadroFichajesDia(fichajes: List<String>, fecha: String) {
                         val json = JSONObject(responseBody)
                         val dataFichajes = json.getJSONObject("dataFichajes")
                         val fichajesArray = dataFichajes.getJSONArray("fichajes")
-                        var menorEntrada: Int? = null
-                        var mayorSalida: Int? = null
-
-                        for (i in 0 until fichajesArray.length()) {
-                            val item = fichajesArray.getJSONObject(i)
-                            val nMinEntStr = item.optString("nMinEnt", "").trim()
-                            val nMinSalStr = item.optString("nMinSal", "").trim()
-
-                            val nMinEnt = nMinEntStr.toIntOrNull()
-                            val nMinSal = nMinSalStr.toIntOrNull()
-
-                            if (nMinEnt != null) {
-                                if (menorEntrada == null || nMinEnt < menorEntrada) menorEntrada = nMinEnt
-                            }
-
-                            if (nMinSal != null) {
-                                if (mayorSalida == null || nMinSal > mayorSalida) mayorSalida = nMinSal
-                            }
-                        }
 
                         fun minutosAHora(minutos: Int?): String {
                             return if (minutos != null) {
@@ -529,8 +510,29 @@ fun RecuadroFichajesDia(fichajes: List<String>, fecha: String) {
                         }
 
                         buildList {
-                            if (menorEntrada != null) add("Entrada: ${minutosAHora(menorEntrada)}")
-                            if (mayorSalida != null) add("Salida: ${minutosAHora(mayorSalida)}")
+                            for (i in 0 until fichajesArray.length()) {
+                                val item = fichajesArray.getJSONObject(i)
+                                val nMinEntStr = item.optString("nMinEnt", "").trim()
+                                val nMinSalStr = item.optString("nMinSal", "").trim()
+
+                                val nMinEnt = nMinEntStr.toIntOrNull()
+                                val nMinSal = nMinSalStr.toIntOrNull()
+
+                                fun minutosAHora(minutos: Int?): String {
+                                    return if (minutos != null) {
+                                        val horas = minutos / 60
+                                        val mins = minutos % 60
+                                        String.format("%02d:%02d", horas, mins)
+                                    } else {
+                                        "??"
+                                    }
+                                }
+
+                                val horaEntrada = minutosAHora(nMinEnt)
+                                val horaSalida = minutosAHora(nMinSal)
+
+                                add("$horaEntrada h - $horaSalida h")
+                            }
                         }
                     } catch (e: Exception) {
                         Log.e("RecuadroFichajesDia", "Error al parsear JSON: ${e.message}")
@@ -659,18 +661,41 @@ fun RecuadroFichajesDia(fichajes: List<String>, fecha: String) {
             }
         }
 
+        // Nuevo bloque visual equivalente al HTML propuesto
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .offset(y = (-15).dp),
+                .offset(y = (-15).dp)
+                .background(Color.White)
+                .padding(10.dp)
+                .align(Alignment.CenterHorizontally),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
             if (fichajesTexto.isNotEmpty()) {
                 fichajesTexto.forEach { fichaje ->
-                    Text(text = fichaje, color = Color(0xFF7599B6), fontSize = 18.sp)
+                    val partes = fichaje.split(" - ")
+                    Row(
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    ) {
+                        Text(
+                            text = partes.getOrNull(0)?.plus(" - ") ?: "?? - ",
+                            fontSize = 18.sp,
+                            color = Color(0xFF7599B6)
+                        )
+                        Text(
+                            text = partes.getOrNull(1) ?: "??",
+                            fontSize = 18.sp,
+                            color = Color(0xFF7599B6)
+                        )
+                    }
                 }
             } else {
-                Text(text = "No hay fichajes hoy", color = Color.Gray, fontSize = 18.sp)
+                Text(
+                    text = "No hay fichajes hoy",
+                    fontSize = 18.sp,
+                    color = Color.Gray
+                )
             }
         }
     }
