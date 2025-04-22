@@ -247,7 +247,6 @@ fun FicharScreen(
             if (showCuadroParaFichar) {
                 CuadroParaFichar(
                     isVisible = showCuadroParaFichar,
-                    onDismiss = { showCuadroParaFichar = false },
                     fichajes = fichajes,
                     onFichaje = { tipo ->
                         obtenerCoord(

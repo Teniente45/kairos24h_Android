@@ -75,7 +75,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -86,7 +85,6 @@ import java.util.Locale
 @Composable
 fun CuadroParaFichar(
     isVisible: Boolean,
-    onDismiss: () -> Unit,
     fichajes: List<String>,
     onFichaje: (tipo: String) -> Unit,
     onShowAlert: (String) -> Unit, // ✅ Se agregó correctamente
@@ -203,7 +201,6 @@ fun rememberDatosHorario(): DatosHorario {
 
 @Composable
 fun MiHorario() {
-    val context = LocalContext.current
     val datos = rememberDatosHorario()
 
     val urlHorario = datos.urlHorario
@@ -368,7 +365,7 @@ fun BotonesFichajeConPermisos(
             modifier = Modifier.fillMaxSize()
         ) {
             Image(
-                painter = painterResource(id = com.miapp.iDEMO_kairos24h.R.drawable.fichajeetrada32),
+                painter = painterResource(id = R.drawable.fichajeetrada32),
                 contentDescription = "Imagen Fichaje Entrada",
                 modifier = Modifier
                     .padding(start = 15.dp)
