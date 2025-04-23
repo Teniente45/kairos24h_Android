@@ -34,6 +34,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -67,7 +68,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         // Verificamos si es el primer arranque
-        val prefs = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+        val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val isFirstRun = prefs.getBoolean("first_run", true)
         if (isFirstRun) {
             // Limpiamos las credenciales para que se muestre siempre la pantalla de login en el primer arranque
@@ -109,14 +110,17 @@ class MainActivity : ComponentActivity() {
                                                     ""
                                                 )
                                                 runOnUiThread {
-                                                    if (success) {
+                                                    if (success && xEmpleado != null) {
                                                         AuthManager.saveUserCredentials(
                                                             this@MainActivity,
-                                                            usuario,
-                                                            password,
-                                                            xEmpleado
+                                                            xEmpleado.usuario,
+                                                            xEmpleado.password,
+                                                            xEmpleado.xEmpleado,
+                                                            xEmpleado.lComGPS,
+                                                            xEmpleado.lComIP,
+                                                            xEmpleado.lBotonesFichajeMovil
                                                         )
-                                                        navController.navigate("fichar/$usuario/$password")
+                                                        navController.navigate("fichar/${xEmpleado.usuario}/${xEmpleado.password}")
                                                     } else {
                                                         Toast.makeText(
                                                             this@MainActivity,
@@ -167,7 +171,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun navigateToLogin() {
-        val sharedPreferences = getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+        val sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE)
         with(sharedPreferences.edit()) {
             clear()
             apply()
@@ -187,7 +191,7 @@ class MainActivity : ComponentActivity() {
     }
     // 🔥 Borra las credenciales almacenadas en SharedPreferences
     private fun clearCredentials() {
-        val sharedPreferences = getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+        val sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE)
         with(sharedPreferences.edit()) {
             remove("usuario")
             remove("password")
@@ -198,7 +202,7 @@ class MainActivity : ComponentActivity() {
     // 📌 Función para verificar si hay conexión a Internet (WiFi o Datos Móviles)
     private fun isInternetAvailable(context: Context): Boolean {
         val connectivityManager =
-            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            context.getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork ?: return false
         val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
 
@@ -222,7 +226,7 @@ class MainActivity : ComponentActivity() {
         val errorMessage by remember { mutableStateOf("") } // Mensaje de error
         val context = LocalContext.current // Contexto de la app
         var isLocationChecked by remember { mutableStateOf(false) }
-        var locationPermissionDeniedCount by remember { mutableStateOf(0) }
+        var locationPermissionDeniedCount by remember { mutableIntStateOf(0) }
         val requestPermissionLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -356,10 +360,6 @@ class MainActivity : ComponentActivity() {
                             if (trimmedUsuario.isNotEmpty() && trimmedPassword.isNotEmpty()) {
                                 val encodedUsuario = URLEncoder.encode(trimmedUsuario, StandardCharsets.UTF_8.toString())
                                 val encodedPassword = URLEncoder.encode(trimmedPassword, StandardCharsets.UTF_8.toString())
-
-                                if (isChecked) {
-                                    AuthManager.saveUserCredentials(context, encodedUsuario, encodedPassword, null)
-                                }
                                 onSubmit(encodedUsuario, encodedPassword)
                             }
                         },

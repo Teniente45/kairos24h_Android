@@ -38,12 +38,7 @@ object BuildURL {
      * Kairos24h = https://controlhorario.kairos24h.es
      * Máquina = http://localhost:8008/kairos24h
      */
-    /**
-    https://democontrolhorario.kairos24h.es/index.php?r=wsExterno/consultarHorarioExterno&xGrupo=&xEntidad=1002&cKiosko=&cDomFicOri=APP
-    http://192.168.25.67:8008/kairos24h/index.php?r=wsExterno/consultarFichajesExterno&xEntidad=3&xEmpleado=413&fecha=2025-03-19
-    http://192.168.25.67:8008/kairos24h/index.php?r=wsExterno/consultarHorarioExterno&xEntidad=3&xEmpleado=413&fecha=2025-03-19
-    http://192.168.25.67:8008/kairos24h/index.php?r=wsExterno/consultarAlertasExterno&xEntidad=3&xEmpleado=413&fecha=2025-03-19
-    */
+
     /*==================================================================*/
     const val HOST = "https://democontrolhorario.kairos24h.es"
     //const val HOST = "http://192.168.25.67:8008/kairos24h"
@@ -57,6 +52,7 @@ object BuildURL {
 
     const val X_GRUPO = ""
     const val X_ENTIDAD = "1002"
+    //const val X_ENTIDAD = "3"
     const val C_KIOSKO = ""
     const val C_FIC_ORI = "APP"
 
