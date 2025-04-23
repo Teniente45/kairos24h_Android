@@ -298,6 +298,16 @@ fun FicharScreen(
     }
 }
 
+@Composable
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+fun PreviewFicharScreen() {
+    FicharScreen(
+        usuario = "demoUsuario",
+        password = "demoPassword",
+        onLogout = {}
+    )
+}
+
 
 internal fun fichar(context: Context, tipo: String, webView: WebView) {
     val hasPermission = ContextCompat.checkSelfPermission(

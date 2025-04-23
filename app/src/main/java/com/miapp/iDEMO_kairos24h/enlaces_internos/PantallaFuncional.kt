@@ -123,7 +123,9 @@ fun CuadroParaFichar(
                 rememberDatosHorario()
 
                 RecuadroFichajesDia()
-                AlertasDiarias()
+                AlertasDiarias { url ->
+                    webViewState.value?.loadUrl(url)
+                }
             }
         }
     }
@@ -690,11 +692,44 @@ fun RecuadroFichajesDia() {
 
 
 @Composable
-fun AlertasDiarias() {
-    // Control para expandir/colapsar el detalle de avisos
+fun AlertasDiarias(onAbrirWebView: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
+    var mensajeAlerta by remember { mutableStateOf("Cargando...") }
+    // Usar rememberDatosHorario, que obtiene la fecha desde ManejoDeSesion.obtenerFechaHoraInternet()
+    val datos = rememberDatosHorario()
 
-    // Card principal que imita el "jumbotron" con borde y fondo blanco
+    LaunchedEffect(Unit) {
+        try {
+            val urlAlertas = BuildURL.mostrarAlertas +
+                "&xEmpleado=${datos.xEmpleado}" +
+                "&fecha=${datos.fechaSeleccionada}"
+
+            Log.d("AlertasDiarias", "URL de alertas: $urlAlertas")
+
+            withContext(Dispatchers.IO) {
+                val client = OkHttpClient()
+                val request = Request.Builder().url(urlAlertas).build()
+                val response = client.newCall(request).execute()
+                val jsonBody = response.body?.string()
+                val json = JSONObject(jsonBody ?: "")
+
+                val dataArray = json.optJSONArray("dataAlertas")
+                if (dataArray != null && dataArray.length() > 0) {
+                    val item = dataArray.getJSONObject(0)
+                    val dAviso = item.optString("D_AVISO", "Sin aviso")
+                    val tAviso = item.optString("T_AVISO", "")
+
+                    mensajeAlerta = "$dAviso\n$tAviso"
+                } else {
+                    mensajeAlerta = "No hay alertas disponibles"
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("AlertasDiarias", "Error obteniendo alertas: ${e.message}")
+            mensajeAlerta = "Error al cargar alertas"
+        }
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -704,16 +739,10 @@ fun AlertasDiarias() {
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(8.dp)) {
-
-            // Encabezado que imita la barra "Avisos / Alertas"
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFF7599B6)) // color aproximado #7599B6
-                    .clickable {
-                        // Si quisieras permitir que hacer click en toda la barra
-                        // despliegue/colapse, puedes usar expanded = !expanded
-                    }
+                    .background(Color(0xFF7599B6))
                     .padding(8.dp)
             ) {
                 Text(
@@ -724,22 +753,15 @@ fun AlertasDiarias() {
                 )
             }
 
-            // Cuerpo de la tarjeta (similar al panel-body del HTML)
             Column(modifier = Modifier.padding(top = 8.dp)) {
-
-                // Fila que muestra "Solicitudes pendientes de tramitar"
-                // y que al hacer click despliega la zona de detalle
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .border(1.dp, Color.LightGray)
-                        .clickable {
-                            expanded = !expanded
-                        }
+                        .clickable { expanded = !expanded }
                         .padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Icono de "más" o "menos" para expandir
                     Icon(
                         imageVector = if (expanded) Icons.Default.Remove else Icons.Default.Add,
                         contentDescription = "Expandir / Colapsar",
@@ -750,32 +772,30 @@ fun AlertasDiarias() {
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Text(
-                        text = "Solicitudes pendientes de tramitar.",
+                        text = mensajeAlerta.split("\n").firstOrNull() ?: "Aviso",
                         fontSize = 14.sp,
                         color = Color(0xFF7599B6)
                     )
 
-                    // Icono a la derecha para "redireccionar"
                     Spacer(modifier = Modifier.weight(1f))
+
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = "Redireccionar",
                         modifier = Modifier
                             .size(20.dp)
                             .clickable {
-                                // Llamada a urlDireccionar(...) o la función que corresponda
+                                onAbrirWebView("https://democontrolhorario.kairos24h.es/index.php?r=explotacion/consultarExplotacion&cTipExp=SOLICITUD&xEmpleadoBandeja=&cOpcionVisual=SOLBAN")
                             },
                         tint = Color(0xFF7599B6)
                     )
                 }
 
-                // Zona colapsable que imita el <textarea readonly="readonly">
                 AnimatedVisibility(visible = expanded) {
                     Column(modifier = Modifier.padding(top = 8.dp)) {
-                        // Si deseas un aspecto de "textarea":
                         OutlinedTextField(
-                            value = "Solicitudes pendientes de tramitar",
-                            onValueChange = { /* sin cambio, es solo lectura */ },
+                            value = mensajeAlerta,
+                            onValueChange = {},
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(120.dp),
