@@ -14,7 +14,7 @@ package com.miapp.iDEMO_kairos24h.enlaces_internos
     const val ENTRY_POINT = "/index.php"
     const val URL_USADA = "$HOST$ENTRY_POINT"
 
-    const val ACTION_LOGIN = "r=wsExterno/loginExterno"
+    const val ACTION_LOGIN = "r=site/index"
     const val ACTION_FORGOTPASS = "r=site/solicitudRestablecerClave"
     const val ACTION_CONSULTAR = "r=explotacion/consultarExplotacion"
 

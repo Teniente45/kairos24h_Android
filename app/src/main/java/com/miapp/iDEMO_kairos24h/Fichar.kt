@@ -33,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -113,7 +114,7 @@ class Fichar : ComponentActivity() {
         cookieManager.removeAllCookies(null)
         cookieManager.flush()
 
-        val sharedPreferences = getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+        val sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE)
         with(sharedPreferences.edit()) {
             remove("usuario")
             remove("password")
@@ -141,17 +142,12 @@ fun FicharScreen(
     var isLoading by remember { mutableStateOf(true) }
     var showCuadroParaFichar by remember { mutableStateOf(true) }
     var fichajes by remember { mutableStateOf<List<String>>(emptyList()) }
-    var imageIndex by remember { mutableStateOf(0) }
+    var imageIndex by remember { mutableIntStateOf(0) }
     var fichajeAlertTipo by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     val imageList = listOf(
         R.drawable.cliente32,
-        R.drawable.cliente32_2,
-        R.drawable.cliente32_3,
-        R.drawable.cliente32_4,
-        R.drawable.cliente32_5,
-        R.drawable.cliente32_6
     )
 
     val webViewState = remember { mutableStateOf<WebView?>(null) }

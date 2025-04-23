@@ -120,9 +120,9 @@ fun CuadroParaFichar(
                     onShowAlert = onShowAlert,
                     webView = webViewState.value ?: return@CuadroParaFichar
                 )
-                val datos = rememberDatosHorario()
+                rememberDatosHorario()
 
-                RecuadroFichajesDia(fichajes, fecha = datos.fechaSeleccionada)
+                RecuadroFichajesDia()
                 AlertasDiarias()
             }
         }
@@ -139,7 +139,7 @@ fun Logo_empresa() {
         contentAlignment = Alignment.Center
     ) {
         Image(
-            painter = painterResource(id = com.miapp.iDEMO_kairos24h.R.drawable.logo_i3data),
+            painter = painterResource(id = R.drawable.logo_i3data),
             contentDescription = "Logo i3data",
             contentScale = ContentScale.Fit, // Ajusta la imagen para que se vea completa
             modifier = Modifier
@@ -295,14 +295,14 @@ fun BotonesFichajeConPermisos(
     var pendingFichaje by remember { mutableStateOf<String?>(null) }
 
     // Launcher para solicitar el permiso de ubicación
-    val requestPermissionLauncher = rememberLauncherForActivityResult(
+    rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
             pendingFichaje?.let { tipo ->
                 Log.d("Fichaje", "Permiso concedido. Procesando fichaje de: $tipo")
                 if (webView != null) {
-                    fichar(context, tipo, webView!!)
+                    fichar(context, tipo, webView)
                 } else {
                     Log.e("Fichaje", "webView es null. No se puede fichar.")
                 }
@@ -433,7 +433,7 @@ fun BotonesFichajeConPermisos(
             modifier = Modifier.fillMaxSize()
         ) {
             Image(
-                painter = painterResource(id = com.miapp.iDEMO_kairos24h.R.drawable.fichajesalida32),
+                painter = painterResource(id = R.drawable.fichajesalida32),
                 contentDescription = "Imagen Fichaje Salida",
                 modifier = Modifier
                     .padding(start = 15.dp)
@@ -453,7 +453,7 @@ fun BotonesFichajeConPermisos(
 }
 
 @Composable
-fun RecuadroFichajesDia(fichajes: List<String>, fecha: String) {
+fun RecuadroFichajesDia() {
     val context = LocalContext.current
     val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
 
@@ -495,16 +495,6 @@ fun RecuadroFichajesDia(fichajes: List<String>, fecha: String) {
                         val json = JSONObject(responseBody)
                         val dataFichajes = json.getJSONObject("dataFichajes")
                         val fichajesArray = dataFichajes.getJSONArray("fichajes")
-
-                        fun minutosAHora(minutos: Int?): String {
-                            return if (minutos != null) {
-                                val horas = minutos / 60
-                                val mins = minutos % 60
-                                String.format("%02d:%02d", horas, mins)
-                            } else {
-                                "??"
-                            }
-                        }
 
                         buildList {
                             for (i in 0 until fichajesArray.length()) {
@@ -613,7 +603,7 @@ fun RecuadroFichajesDia(fichajes: List<String>, fecha: String) {
                 text = "Fecha: ${try {
                     val date = sdfEntrada.parse(fechaSeleccionada.value)
                     sdfSalida.format(date ?: Date())
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     fechaSeleccionada.value
                 }}",
                 color = Color.Gray,
