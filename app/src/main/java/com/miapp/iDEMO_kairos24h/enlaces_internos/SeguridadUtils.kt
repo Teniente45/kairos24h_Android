@@ -87,4 +87,15 @@ object SeguridadUtils {
 
         return true
     }
+
+    fun proxyDetected(): Boolean {
+        return try {
+            val proxyHost = System.getProperty("http.proxyHost")
+            val proxyPort = System.getProperty("http.proxyPort")
+            !proxyHost.isNullOrEmpty() && !proxyPort.isNullOrEmpty()
+        } catch (e: Exception) {
+            Log.e("Seguridad", "Error al verificar proxy: ${e.message}")
+            false
+        }
+    }
 }

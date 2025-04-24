@@ -9,8 +9,8 @@ package com.miapp.iDEMO_kairos24h.enlaces_internos
      */
 
 
-    //const val HOST = "https://democontrolhorario.kairos24h.es"
-    const val HOST = "http://192.168.25.67:8008/kairos24h"
+    const val HOST = "https://democontrolhorario.kairos24h.es"
+    //const val HOST = "http://192.168.25.67:8008/kairos24h"
     const val ENTRY_POINT = "/index.php"
     const val URL_USADA = "$HOST$ENTRY_POINT"
 
@@ -40,8 +40,8 @@ object BuildURL {
      */
 
     /*==================================================================*/
-    //const val HOST = "https://democontrolhorario.kairos24h.es"
-    const val HOST = "http://192.168.25.67:8008/kairos24h"
+    const val HOST = "https://democontrolhorario.kairos24h.es"
+    //const val HOST = "http://192.168.25.67:8008/kairos24h"
 
     const val ENTRY_POINT = "/index.php"
     const val ACTION_FICHAJE = "r=explotacion/creaFichaje"
@@ -51,8 +51,8 @@ object BuildURL {
     const val ACTION_CONSULT_ALERTAS = "r=wsExterno/consultarAlertasExterno"
 
     const val X_GRUPO = ""
-    //const val X_ENTIDAD = "1002"
-    const val X_ENTIDAD = "3"
+    const val X_ENTIDAD = "1002"
+    //const val X_ENTIDAD = "3"
     const val C_KIOSKO = ""
     const val C_FIC_ORI = "APP"
 
@@ -66,8 +66,8 @@ object BuildURL {
     const val URL_USADA = "$HOST$ENTRY_POINT?"
     /*==================================================================*/
 
-    //const val LOGIN = URL_USADA + ACTION_LOGIN
     const val LOGIN = URL_USADA + ACTION_LOGIN
+    //const val LOGIN = URL_USADA + ACTION_LOGIN
     const val crearFichaje = URL_USADA + ACTION_FICHAJE + staticParams
 
     const val mostrarHorarios = URL_USADA + ACTION_CONSULTHORARIO + staticParams

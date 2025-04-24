@@ -56,6 +56,7 @@ import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 import com.google.android.gms.location.LocationServices
 import com.miapp.iDEMO_kairos24h.enlaces_internos.AuthManager
+import com.miapp.iDEMO_kairos24h.enlaces_internos.SeguridadUtils
 import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL
 import com.miapp.iDEMO_kairos24h.enlaces_internos.CuadroParaFichar
 import com.miapp.iDEMO_kairos24h.enlaces_internos.ManejoDeSesion
@@ -358,6 +359,13 @@ fun obtenerCoord(
     onLocationObtained: (lat: Double, lon: Double) -> Unit,
     onShowAlert: (String) -> Unit
 ) {
+    // Extraer lComGPS y lComIP desde AuthManager.getUserCredentials
+    val (_, _, _, lComGPS, lComIP, _) = AuthManager.getUserCredentials(context)
+    val permitido = SeguridadUtils.checkSecurity(context, lComGPS, lComIP) { mensaje ->
+        onShowAlert(mensaje)
+    }
+    if (!permitido) return
+
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
     // 🔍 Verificar si los permisos de ubicación están concedidos
