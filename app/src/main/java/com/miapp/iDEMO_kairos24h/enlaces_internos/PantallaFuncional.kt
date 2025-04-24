@@ -343,9 +343,7 @@ fun BotonesFichajeConPermisos(
                         return@clickable
                     }
 
-                    ContextCompat.checkSelfPermission(
-                        context, Manifest.permission.ACCESS_FINE_LOCATION
-                    ) != PackageManager.PERMISSION_GRANTED -> {
+                    !SeguridadUtils.hasLocationPermission(context) -> {
                         Log.e("Fichar", "No se cuenta con el permiso ACCESS_FINE_LOCATION")
                         onShowAlert("PROBLEMA GPS")
                         return@clickable
@@ -414,9 +412,7 @@ fun BotonesFichajeConPermisos(
                         return@clickable
                     }
 
-                    ContextCompat.checkSelfPermission(
-                        context, Manifest.permission.ACCESS_FINE_LOCATION
-                    ) != PackageManager.PERMISSION_GRANTED -> {
+                    !SeguridadUtils.hasLocationPermission(context) -> {
                         Log.e("Fichar", "No se cuenta con el permiso ACCESS_FINE_LOCATION")
                         onShowAlert("PROBLEMA GPS")
                         return@clickable

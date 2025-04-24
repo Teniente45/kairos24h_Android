@@ -10,9 +10,9 @@ data class UserCredentials(
     val usuario: String,
     val password: String,
     val xEmpleado: String?,
-    val lComGPS: Boolean,
-    val lComIP: Boolean,
-    val lBotonesFichajeMovil: Boolean
+    val lComGPS: String,
+    val lComIP: String,
+    val lBotonesFichajeMovil: String
 )
 
 object AuthManager {
@@ -23,9 +23,9 @@ object AuthManager {
         val usuario = sharedPreferences.getString("usuario", "") ?: ""
         val password = sharedPreferences.getString("password", "") ?: ""
         val xEmpleado = sharedPreferences.getString("xEmpleado", null)
-        val lComGPS = sharedPreferences.getBoolean("lComGPS", false)
-        val lComIP = sharedPreferences.getBoolean("lComIP", false)
-        val lBotonesFichajeMovil = sharedPreferences.getBoolean("lBotonesFichajeMovil", false)
+        val lComGPS = sharedPreferences.getString("lComGPS", "N") ?: "N"
+        val lComIP = sharedPreferences.getString("lComIP", "N") ?: "N"
+        val lBotonesFichajeMovil = sharedPreferences.getString("lBotonesFichajeMovil", "N") ?: "N"
         Log.d("getUserCredentials", "Estas son las getUserCredentials que te devuelvo: usuario=$usuario, password=$password, xEmpleado=$xEmpleado, lComGPS=$lComGPS, lComIP=$lComIP, lBotonesFichajeMovil=$lBotonesFichajeMovil")
         return UserCredentials(usuario, password, xEmpleado, lComGPS, lComIP, lBotonesFichajeMovil)
     }
@@ -37,9 +37,9 @@ object AuthManager {
         usuario: String,
         password: String,
         xEmpleado: String?,
-        lComGPS: Boolean,
-        lComIP: Boolean,
-        lBotonesFichajeMovil: Boolean
+        lComGPS: String,
+        lComIP: String,
+        lBotonesFichajeMovil: String
     ) {
         val sharedPreferences = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
         with(sharedPreferences.edit()) {
@@ -48,9 +48,9 @@ object AuthManager {
             if (xEmpleado != null) {
                 putString("xEmpleado", xEmpleado)
             }
-            putBoolean("lComGPS", lComGPS)
-            putBoolean("lComIP", lComIP)
-            putBoolean("lBotonesFichajeMovil", lBotonesFichajeMovil)
+            putString("lComGPS", lComGPS)
+            putString("lComIP", lComIP)
+            putString("lBotonesFichajeMovil", lBotonesFichajeMovil)
             apply()
         }
         Log.d("saveUserCredentials", "Estas son tus saveUserCredentials: usuario=$usuario, password=$password, xEmpleado=$xEmpleado, lComGPS=$lComGPS, lComIP=$lComIP, lBotonesFichajeMovil=$lBotonesFichajeMovil")
@@ -79,9 +79,9 @@ object AuthManager {
                 val code = jsonResponse.optInt("code", -1)
                 val xEmpleado = jsonResponse.optString("xEmpleado", null) // Extraer xEmpleado del JSON
                 if (code == 1) {
-                    val lComGPS = jsonResponse.optBoolean("lComGPS", false)
-                    val lComIP = jsonResponse.optBoolean("lComIP", false)
-                    val lBotonesFichajeMovil = jsonResponse.optBoolean("lBotonesFichajeMovil", false)
+                    val lComGPS = jsonResponse.optString("lComGPS", "N")
+                    val lComIP = jsonResponse.optString("lComIP", "N")
+                    val lBotonesFichajeMovil = jsonResponse.optString("lBotonesFichajeMovil", "N")
                     val credentials = UserCredentials(usuario, password, xEmpleado, lComGPS, lComIP, lBotonesFichajeMovil)
                     Pair(true, credentials)
                 } else {

@@ -50,4 +50,41 @@ object SeguridadUtils {
             false
         }
     }
+
+    fun hasLocationPermission(context: Context): Boolean {
+        return ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    fun checkSecurity(
+        context: Context,
+        lComGPS: String,
+        lComIP: String,
+        onShowAlert: (String) -> Unit
+    ): Boolean {
+        if (lComGPS == "S") {
+            if (!hasLocationPermission(context)) {
+                Log.e("Seguridad", "GPS obligatorio, pero sin permiso")
+                onShowAlert("PROBLEMA GPS")
+                return false
+            }
+
+            if (isMockLocationEnabled(context)) {
+                Log.e("Seguridad", "Ubicación simulada detectada")
+                onShowAlert("UBICACIÓN SIMULADA")
+                return false
+            }
+        }
+
+        if (lComIP == "S") {
+            if (isUsingVPN()) {
+                Log.e("Seguridad", "VPN detectada y uso de IP obligatorio")
+                onShowAlert("VPN DETECTADA")
+                return false
+            }
+        }
+
+        return true
+    }
 }
