@@ -59,11 +59,11 @@ object SeguridadUtils {
 
     fun checkSecurity(
         context: Context,
-        lComGPS: String,
-        lComIP: String,
+        validarGPS: Boolean,
+        validarIP: Boolean,
         onShowAlert: (String) -> Unit
     ): Boolean {
-        if (lComGPS == "S") {
+        if (validarGPS) {
             if (!hasLocationPermission(context)) {
                 Log.e("Seguridad", "GPS obligatorio, pero sin permiso")
                 onShowAlert("PROBLEMA GPS")
@@ -77,7 +77,7 @@ object SeguridadUtils {
             }
         }
 
-        if (lComIP == "S") {
+        if (validarIP) {
             if (isUsingVPN()) {
                 Log.e("Seguridad", "VPN detectada y uso de IP obligatorio")
                 onShowAlert("VPN DETECTADA")

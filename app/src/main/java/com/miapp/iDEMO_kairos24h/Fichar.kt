@@ -155,6 +155,8 @@ fun FicharScreen(
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
     val cUsuario = sharedPreferences.getString("usuario", "Usuario") ?: "Usuario"
+    // Obtener y convertir el valor lBotonesFichajeMovil
+    val mostrarBotonesFichaje = sharedPreferences.getString("lBotonesFichajeMovil", "S")?.equals("S", ignoreCase = true) == true
 
     LaunchedEffect(Unit) {
         isLoading = true
@@ -212,6 +214,11 @@ fun FicharScreen(
                         settings.setSupportZoom(true)
                         settings.builtInZoomControls = true
                         settings.displayZoomControls = false
+                        settings.domStorageEnabled = true
+                        settings.loadWithOverviewMode = true
+                        settings.useWideViewPort = true
+                        isVerticalScrollBarEnabled = true
+                        isHorizontalScrollBarEnabled = true
 
                         webViewClient = object : WebViewClient() {
                             override fun onPageFinished(view: WebView?, url: String?) {
@@ -222,6 +229,20 @@ fun FicharScreen(
                                         document.getElementsByName('LoginForm[username]')[0].value = '$usuario';
                                         document.getElementsByName('LoginForm[password]')[0].value = '$password';
                                         document.querySelector('form').submit();
+
+                                        setTimeout(function() {
+                                            var dialogs = document.querySelectorAll('.ui-dialog');
+                                            dialogs.forEach(function(d) {
+                                                d.style.position = 'fixed';
+                                                d.style.top = '5vh';
+                                                d.style.maxHeight = '90vh';
+                                                d.style.overflow = 'auto';
+                                                d.style.zIndex = '9999';
+                                                d.style.display = 'block';
+                                            });
+                                            document.body.style.overflow = 'auto';
+                                            document.documentElement.style.overflow = 'auto';
+                                        }, 3000);
                                     })();
                                     """.trimIndent(),
                                     null
@@ -241,7 +262,7 @@ fun FicharScreen(
             LoadingScreen(isLoading = isLoading)
 
             // Cuadro para fichar
-            if (showCuadroParaFichar) {
+            if (showCuadroParaFichar && mostrarBotonesFichaje) {
                 CuadroParaFichar(
                     isVisible = showCuadroParaFichar,
                     fichajes = fichajes,
@@ -361,7 +382,10 @@ fun obtenerCoord(
 ) {
     // Extraer lComGPS y lComIP desde AuthManager.getUserCredentials
     val (_, _, _, lComGPS, lComIP, _) = AuthManager.getUserCredentials(context)
-    val permitido = SeguridadUtils.checkSecurity(context, lComGPS, lComIP) { mensaje ->
+    val validarGPS = lComGPS.equals("S", ignoreCase = true)
+    val validarIP = lComIP.equals("S", ignoreCase = true)
+
+    val permitido = SeguridadUtils.checkSecurity(context, validarGPS, validarIP) { mensaje ->
         onShowAlert(mensaje)
     }
     if (!permitido) return
@@ -393,7 +417,7 @@ fun obtenerCoord(
             return@addOnSuccessListener
         }
 
-        if (location.isFromMockProvider) {
+        if (SeguridadUtils.isMockLocationEnabled(context)) {
             Log.e("Fichar", "Ubicación falsa detectada.")
             onShowAlert("POSIBLE UBI FALSA") // Muestra mensaje de alerta
             return@addOnSuccessListener
