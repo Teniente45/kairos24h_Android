@@ -26,11 +26,13 @@ import android.content.Context
     const val Fichaje = "$URL_USADA?$ACTION_CONSULTAR" +
             "&cTipExp=FICHAJE"
     const val Incidencia = "$URL_USADA?$ACTION_CONSULTAR" +
-            "&cTipExp=INCIDENCIA" +
-            "&cOpcionVisual=INCBAN"
+            "&cTipExp=INCIDENCIA" + "&cOpcionVisual=INCBAN"
     const val Horarios = "$URL_USADA?$ACTION_CONSULTAR" +
-            "&cTipExp=HORARIO" +
-            "&cModoVisual=HORMEN"
+            "&cTipExp=HORARIO" + "&cModoVisual=HORMEN"
+    const val Solicitudes = "$URL_USADA?$ACTION_CONSULTAR" +
+            "&cTipExp=SOLICITUD"
+    const val BandejaDeSolicitudes = "$URL_USADA?$ACTION_CONSULTAR" +
+            "&cTipExp=SOLICITUD" + "&xEmpleadoBandeja="+ "&cOpcionVisual=SOLBAN"
 }
 
 // Esta será la URL que construiremos cuando desde el login de nuestra APK introduzcamos el Usuario y la Contraseña

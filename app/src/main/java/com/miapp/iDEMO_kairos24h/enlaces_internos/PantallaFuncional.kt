@@ -1,5 +1,6 @@
 package com.miapp.iDEMO_kairos24h.enlaces_internos
 
+import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL.BandejaDeSolicitudes
 import android.Manifest
 import android.app.DatePickerDialog
 import android.content.pm.PackageManager
@@ -68,6 +69,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import com.miapp.iDEMO_kairos24h.R
+import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL.Solicitudes
 import com.miapp.iDEMO_kairos24h.fichar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -80,6 +82,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+
 
 //============================== CUADRO PARA FICHAR ======================================
 @Composable
@@ -169,7 +172,7 @@ fun RecuadroSolicitudes(onAbrirWebView: (String) -> Unit) {
             ) {
                 Button(
                     onClick = {
-                        onAbrirWebView("https://democontrolhorario.kairos24h.es/index.php?r=explotacion/consultarExplotacion&cTipExp=SOLICITUD&xEmpleadoBandeja=&cOpcionVisual=SOLBAN")
+                        onAbrirWebView(Solicitudes)
                     },
                     shape = RoundedCornerShape(6.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7599B6))
@@ -838,8 +841,7 @@ fun AlertasDiarias(onAbrirWebView: (String) -> Unit) {
                         modifier = Modifier
                             .size(20.dp)
                             .clickable {
-                                onAbrirWebView("https://democontrolhorario.kairos24h.es/index.php?r=explotacion/consultarExplotacion&cTipExp=SOLICITUD&xEmpleadoBandeja=&cOpcionVisual=SOLBAN")
-                            },
+                                onAbrirWebView(BandejaDeSolicitudes)                            },
                         tint = Color(0xFF7599B6)
                     )
                 }
