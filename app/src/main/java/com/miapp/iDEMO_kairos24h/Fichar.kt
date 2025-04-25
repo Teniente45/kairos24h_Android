@@ -22,11 +22,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -41,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -56,11 +63,11 @@ import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 import com.google.android.gms.location.LocationServices
 import com.miapp.iDEMO_kairos24h.enlaces_internos.AuthManager
-import com.miapp.iDEMO_kairos24h.enlaces_internos.SeguridadUtils
 import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL
 import com.miapp.iDEMO_kairos24h.enlaces_internos.CuadroParaFichar
 import com.miapp.iDEMO_kairos24h.enlaces_internos.ManejoDeSesion
 import com.miapp.iDEMO_kairos24h.enlaces_internos.MensajeAlerta
+import com.miapp.iDEMO_kairos24h.enlaces_internos.SeguridadUtils
 import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -146,6 +153,7 @@ fun FicharScreen(
     var imageIndex by remember { mutableIntStateOf(0) }
     var fichajeAlertTipo by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    val showLogoutDialog = remember { mutableStateOf(false) }
 
     val imageList = listOf(
         R.drawable.cliente32,
@@ -194,8 +202,8 @@ fun FicharScreen(
                 )
             }
 
-            // Cerrar sesión
-            IconButton(onClick = onLogout) {
+            // Cerrar sesión con diálogo de confirmación
+            IconButton(onClick = { showLogoutDialog.value = true }) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_cerrar32),
                     contentDescription = "Cerrar sesión",
@@ -317,8 +325,76 @@ fun FicharScreen(
                     .zIndex(3f)
             )
         }
+        }
+        // Diálogo de confirmación para cerrar sesión
+        if (showLogoutDialog.value) {
+            AlertDialog(
+                onDismissRequest = { showLogoutDialog.value = false },
+                title = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFF7599B6))
+                            .padding(12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "¿Cerrar sesión?",
+                            color = Color.White,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                },
+                text = {
+                    Text(
+                        "Si continuas cerrarás tu sesión, ¿Seguro que es lo que quieres hacer?",
+                        color = Color.Black
+                    )
+                },
+                confirmButton = {},
+                dismissButton = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Button(
+                            onClick = {
+                                showLogoutDialog.value = false
+                                onLogout()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF7599B6),
+                                contentColor = Color.White
+                            ),
+                            shape = RectangleShape,
+                            modifier = Modifier
+                                .weight(1f)
+                        ) {
+                            Text("Sí")
+                        }
+
+                        Spacer(modifier = Modifier.width(1.dp))
+
+                        Button(
+                            onClick = {
+                                showLogoutDialog.value = false
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF7599B6),
+                                contentColor = Color.White
+                            ),
+                            shape = RectangleShape,
+                            modifier = Modifier
+                                .weight(1f)
+                        ) {
+                            Text("No")
+                        }
+                    }
+                },
+                shape = RoundedCornerShape(30.dp)
+            )
+        }
     }
-}
 
 @Composable
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
@@ -351,14 +427,7 @@ internal fun fichar(context: Context, tipo: String, webView: WebView) {
                     return@obtenerCoord
                 }
 
-                val (_, _, xEmpleado) = AuthManager.getUserCredentials(context)
-                if (xEmpleado.isNullOrEmpty()) {
-                    Log.e("Fichar", "xEmpleado no está disponible")
-                    return@obtenerCoord
-                }
-
-                val urlFichaje = BuildURL.crearFichaje +
-                        "&xEmpleado=$xEmpleado" +
+                val urlFichaje = BuildURL.getCrearFichaje(context) +
                         "&cDomTipFic=$tipo" +
                         "&tGpsLat=$lat" +
                         "&tGpsLon=$lon"
@@ -532,4 +601,3 @@ fun LoadingScreen(isLoading: Boolean) {
         }
     }
 }
-

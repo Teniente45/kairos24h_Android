@@ -186,9 +186,7 @@ fun rememberDatosHorario(): DatosHorario {
             fechaSeleccionada = "0000-00-00"
         }
     }
-    val urlHorario = BuildURL.mostrarHorarios +
-            "&xEmpleado=$xEmpleado" +
-            "&fecha=$fechaSeleccionada"
+    val urlHorario = BuildURL.getMostrarHorarios(context) + "&fecha=$fechaSeleccionada"
 
 
 
@@ -478,9 +476,7 @@ fun RecuadroFichajesDia() {
         value = try {
             withContext(Dispatchers.IO) {
                 val client = OkHttpClient()
-                val urlFichajes = BuildURL.mostrarFichajes +
-                        "&xEmpleado=$xEmpleado" +
-                        "&fecha=${fechaSeleccionada.value}"
+                val urlFichajes = BuildURL.getMostrarFichajes(context) + "&fecha=${fechaSeleccionada.value}"
                 val request = Request.Builder().url(urlFichajes).build()
                 val response = client.newCall(request).execute()
                 val responseBody = response.body?.string()?.replace("\uFEFF", "")
@@ -689,6 +685,7 @@ fun RecuadroFichajesDia() {
 
 @Composable
 fun AlertasDiarias(onAbrirWebView: (String) -> Unit) {
+    val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
     var mensajeAlerta by remember { mutableStateOf("Cargando...") }
     // Usar rememberDatosHorario, que obtiene la fecha desde ManejoDeSesion.obtenerFechaHoraInternet()
@@ -696,8 +693,7 @@ fun AlertasDiarias(onAbrirWebView: (String) -> Unit) {
 
     LaunchedEffect(Unit) {
         try {
-            val urlAlertas = BuildURL.mostrarAlertas +
-                "&xEmpleado=${datos.xEmpleado}" +
+            val urlAlertas = BuildURL.getMostrarAlertas(context) +
                 "&fecha=${datos.fechaSeleccionada}"
 
             Log.d("AlertasDiarias", "URL de alertas: $urlAlertas")

@@ -118,7 +118,8 @@ class MainActivity : ComponentActivity() {
                                                             xEmpleado.xEmpleado,
                                                             xEmpleado.lComGPS,
                                                             xEmpleado.lComIP,
-                                                            xEmpleado.lBotonesFichajeMovil
+                                                            xEmpleado.lBotonesFichajeMovil,
+                                                            xEmpleado.xEntidad
                                                         )
                                                         navController.navigate("fichar/${xEmpleado.usuario}/${xEmpleado.password}")
                                                     } else {

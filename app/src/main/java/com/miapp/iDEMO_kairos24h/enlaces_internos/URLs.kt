@@ -1,5 +1,7 @@
 package com.miapp.iDEMO_kairos24h.enlaces_internos
 
+import android.content.Context
+
 // Estás son las URL que se nos mostrarán en el WebView
     object WebViewURL {
     /**
@@ -51,26 +53,28 @@ object BuildURL {
     const val ACTION_CONSULT_ALERTAS = "r=wsExterno/consultarAlertasExterno"
 
     const val X_GRUPO = ""
-    const val X_ENTIDAD = "1002"
-    //const val X_ENTIDAD = "3"
     const val C_KIOSKO = ""
     const val C_FIC_ORI = "APP"
 
 
-    const val staticParams =
-            "&xGrupo=$X_GRUPO" +
-            "&xEntidad=$X_ENTIDAD" +
-            "&cKiosko=$C_KIOSKO" +
-            "&cDomFicOri=$C_FIC_ORI"
+    fun getStaticParams(context: Context): String {
+        val creds = AuthManager.getUserCredentials(context)
+        val xEntidad = creds.xEntidad ?: ""
+        val xEmpleado = creds.xEmpleado ?: ""
+        return "&xGrupo=$X_GRUPO" +
+               "&xEntidad=$xEntidad" +
+               "&xEmpleado=$xEmpleado" +
+               "&cKiosko=$C_KIOSKO" +
+               "&cDomFicOri=$C_FIC_ORI"
+    }
 
     const val URL_USADA = "$HOST$ENTRY_POINT?"
     /*==================================================================*/
 
     const val LOGIN = URL_USADA + ACTION_LOGIN
-    //const val LOGIN = URL_USADA + ACTION_LOGIN
-    const val crearFichaje = URL_USADA + ACTION_FICHAJE + staticParams
 
-    const val mostrarHorarios = URL_USADA + ACTION_CONSULTHORARIO + staticParams
-    const val mostrarFichajes = URL_USADA + ACTION_CONSULTFIC_DIA + staticParams
-    const val mostrarAlertas = URL_USADA + ACTION_CONSULT_ALERTAS + staticParams
+    fun getCrearFichaje(context: Context): String = URL_USADA + ACTION_FICHAJE + getStaticParams(context)
+    fun getMostrarHorarios(context: Context): String = URL_USADA + ACTION_CONSULTHORARIO + getStaticParams(context)
+    fun getMostrarFichajes(context: Context): String = URL_USADA + ACTION_CONSULTFIC_DIA + getStaticParams(context)
+    fun getMostrarAlertas(context: Context): String = URL_USADA + ACTION_CONSULT_ALERTAS + getStaticParams(context)
 }
