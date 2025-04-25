@@ -29,7 +29,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -173,7 +175,7 @@ fun FicharScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Barra superior
+        // 1. TopBar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -183,7 +185,7 @@ fun FicharScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Usuario e imagen
+            // icono usuario + nombre
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
                     onClick = { imageIndex = (imageIndex + 1) % imageList.size }
@@ -201,8 +203,7 @@ fun FicharScreen(
                     fontSize = 18.sp
                 )
             }
-
-            // Cerrar sesión con diálogo de confirmación
+            // logout
             IconButton(onClick = { showLogoutDialog.value = true }) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_cerrar32),
@@ -213,7 +214,12 @@ fun FicharScreen(
             }
         }
 
-        Box(modifier = Modifier.fillMaxSize()) {
+        // 2. Contenedor de contenido scrollable entre top y bottom
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+        ) {
             // WebView de fondo
             AndroidView(
                 factory = { context ->
@@ -263,138 +269,143 @@ fun FicharScreen(
                 },
                 modifier = Modifier
                     .fillMaxSize()
-                    .zIndex(1f)
+                    .zIndex(0f)
             )
 
             // Pantalla de carga
             LoadingScreen(isLoading = isLoading)
 
-            // Cuadro para fichar
+            // Cuadro para fichar con altura adecuada, sin scroll
             if (showCuadroParaFichar && mostrarBotonesFichaje) {
-                CuadroParaFichar(
-                    isVisible = showCuadroParaFichar,
-                    fichajes = fichajes,
-                    onFichaje = { tipo ->
-                        obtenerCoord(
-                            context,
-                            onLocationObtained = { lat, lon ->
-                                if (lat == 0.0 || lon == 0.0) {
-                                    Log.e("Fichar", "Ubicación inválida, no se enviará el fichaje")
-                                    fichajeAlertTipo = "Ubicación inválida"
-                                    return@obtenerCoord
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .zIndex(1f)
+                        .background(Color.White)
+                ) {
+                    CuadroParaFichar(
+                        isVisible = showCuadroParaFichar,
+                        fichajes = fichajes,
+                        onFichaje = { tipo ->
+                            obtenerCoord(
+                                context,
+                                onLocationObtained = { lat, lon ->
+                                    if (lat == 0.0 || lon == 0.0) {
+                                        Log.e("Fichar", "Ubicación inválida, no se enviará el fichaje")
+                                        fichajeAlertTipo = "Ubicación inválida"
+                                        return@obtenerCoord
+                                    }
+                                    fichajeAlertTipo = tipo
+                                },
+                                onShowAlert = { alertTipo ->
+                                    fichajeAlertTipo = alertTipo
                                 }
-                                fichajeAlertTipo = tipo
-                            },
-                            onShowAlert = { alertTipo ->
-                                fichajeAlertTipo = alertTipo
-                            }
-                        )
-                    },
-                    onShowAlert = { alertTipo ->
-                        fichajeAlertTipo = alertTipo
-                    },
-                    modifier = Modifier.zIndex(2f),
-                    webViewState = webViewState
-                )
+                            )
+                        },
+                        onShowAlert = { alertTipo ->
+                            fichajeAlertTipo = alertTipo
+                        },
+                        webViewState = webViewState
+                    )
+                }
             }
 
-            // Mostrar alerta
+            // Mensaje de alerta
             fichajeAlertTipo?.let { tipo ->
                 MensajeAlerta(
                     tipo = tipo,
                     onClose = { fichajeAlertTipo = null }
                 )
             }
-
-            // Navegación inferior
-            BottomNavigationBar(
-                onNavigate = { url ->
-                    isLoading = true
-                    showCuadroParaFichar = false
-                    webViewState.value?.loadUrl(url)
-                    scope.launch {
-                        delay(1500)
-                        isLoading = false
-                    }
-                },
-                onToggleFichar = { showCuadroParaFichar = !showCuadroParaFichar },
-                hideCuadroParaFichar = { showCuadroParaFichar = false },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .zIndex(3f)
-            )
         }
-        }
-        // Diálogo de confirmación para cerrar sesión
-        if (showLogoutDialog.value) {
-            AlertDialog(
-                onDismissRequest = { showLogoutDialog.value = false },
-                title = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color(0xFF7599B6))
-                            .padding(12.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "¿Cerrar sesión?",
-                            color = Color.White,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                },
-                text = {
-                    Text(
-                        "Si continuas cerrarás tu sesión, ¿Seguro que es lo que quieres hacer?",
-                        color = Color.Black
-                    )
-                },
-                confirmButton = {},
-                dismissButton = {
-                    Row(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Button(
-                            onClick = {
-                                showLogoutDialog.value = false
-                                onLogout()
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF7599B6),
-                                contentColor = Color.White
-                            ),
-                            shape = RectangleShape,
-                            modifier = Modifier
-                                .weight(1f)
-                        ) {
-                            Text("Sí")
-                        }
 
-                        Spacer(modifier = Modifier.width(1.dp))
-
-                        Button(
-                            onClick = {
-                                showLogoutDialog.value = false
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF7599B6),
-                                contentColor = Color.White
-                            ),
-                            shape = RectangleShape,
-                            modifier = Modifier
-                                .weight(1f)
-                        ) {
-                            Text("No")
-                        }
-                    }
-                },
-                shape = RoundedCornerShape(30.dp)
-            )
-        }
+        // 3. BottomNavigationBar
+        BottomNavigationBar(
+            onNavigate = { url ->
+                isLoading = true
+                showCuadroParaFichar = false
+                webViewState.value?.loadUrl(url)
+                scope.launch {
+                    delay(1500)
+                    isLoading = false
+                }
+            },
+            onToggleFichar = { showCuadroParaFichar = !showCuadroParaFichar },
+            hideCuadroParaFichar = { showCuadroParaFichar = false },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+        )
     }
+    // Diálogo de confirmación para cerrar sesión
+    if (showLogoutDialog.value) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog.value = false },
+            title = {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF7599B6))
+                        .padding(12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "¿Cerrar sesión?",
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            text = {
+                Text(
+                    "Si continuas cerrarás tu sesión, ¿Seguro que es lo que quieres hacer?",
+                    color = Color.Black
+                )
+            },
+            confirmButton = {},
+            dismissButton = {
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Button(
+                        onClick = {
+                            showLogoutDialog.value = false
+                            onLogout()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF7599B6),
+                            contentColor = Color.White
+                        ),
+                        shape = RectangleShape,
+                        modifier = Modifier
+                            .weight(1f)
+                    ) {
+                        Text("Sí")
+                    }
+
+                    Spacer(modifier = Modifier.width(1.dp))
+
+                    Button(
+                        onClick = {
+                            showLogoutDialog.value = false
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF7599B6),
+                            contentColor = Color.White
+                        ),
+                        shape = RectangleShape,
+                        modifier = Modifier
+                            .weight(1f)
+                    ) {
+                        Text("No")
+                    }
+                }
+            },
+            shape = RoundedCornerShape(30.dp)
+        )
+    }
+}
 
 @Composable
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
