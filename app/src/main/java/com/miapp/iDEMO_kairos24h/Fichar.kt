@@ -229,29 +229,56 @@ fun FicharScreen(
                         settings.domStorageEnabled = true
                         settings.loadWithOverviewMode = true
                         settings.useWideViewPort = true
+                        settings.javaScriptCanOpenWindowsAutomatically = true
+                        settings.setSupportMultipleWindows(true)
+                        settings.databaseEnabled = true
+                        settings.allowFileAccess = true
+                        settings.allowContentAccess = true
                         isVerticalScrollBarEnabled = true
                         isHorizontalScrollBarEnabled = true
 
-                        webChromeClient = object : android.webkit.WebChromeClient() {}
+                        webChromeClient = object : android.webkit.WebChromeClient() {
+                            override fun onCreateWindow(
+                                view: WebView?,
+                                isDialog: Boolean,
+                                isUserGesture: Boolean,
+                                resultMsg: android.os.Message?
+                            ): Boolean {
+                                val newWebView = WebView(view!!.context)
+                                newWebView.settings.javaScriptEnabled = true
+                                newWebView.settings.javaScriptCanOpenWindowsAutomatically = true
+                                newWebView.settings.setSupportMultipleWindows(true)
+                                newWebView.settings.domStorageEnabled = true
+                                newWebView.settings.databaseEnabled = true
+                                newWebView.settings.allowFileAccess = true
+                                newWebView.settings.allowContentAccess = true
+
+                                val transport = resultMsg?.obj as WebView.WebViewTransport
+                                transport.webView = newWebView
+                                resultMsg.sendToTarget()
+
+                                return true
+                            }
+                        }
+
                         webViewClient = object : WebViewClient() {
                             override fun onPageFinished(view: WebView?, url: String?) {
                                 super.onPageFinished(view, url)
+
                                 view?.evaluateJavascript(
                                     """
                                     (function() {
                                         document.getElementsByName('LoginForm[username]')[0].value = '$usuario';
                                         document.getElementsByName('LoginForm[password]')[0].value = '$password';
                                         document.querySelector('form').submit();
-
+                                        
                                         setTimeout(function() {
-                                            var dialogs = document.querySelectorAll('.ui-dialog');
-                                            dialogs.forEach(function(d) {
-                                                d.style.position = 'fixed';
-                                                d.style.top = '5vh';
-                                                d.style.maxHeight = '90vh';
-                                                d.style.overflow = 'auto';
-                                                d.style.zIndex = '9999';
-                                                d.style.display = 'block';
+                                            var panels = document.querySelectorAll('.panel, .panel-body, .panel-heading');
+                                            panels.forEach(function(panel) {
+                                                panel.style.display = 'block';
+                                                panel.style.visibility = 'visible';
+                                                panel.style.opacity = '1';
+                                                panel.style.maxHeight = 'none';
                                             });
                                             document.body.style.overflow = 'auto';
                                             document.documentElement.style.overflow = 'auto';
@@ -262,6 +289,7 @@ fun FicharScreen(
                                 )
                             }
                         }
+
                         loadUrl(WebViewURL.LOGIN)
                         webViewState.value = this
                     }
