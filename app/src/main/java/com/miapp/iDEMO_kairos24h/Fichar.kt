@@ -29,9 +29,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -234,6 +232,7 @@ fun FicharScreen(
                         isVerticalScrollBarEnabled = true
                         isHorizontalScrollBarEnabled = true
 
+                        webChromeClient = object : android.webkit.WebChromeClient() {}
                         webViewClient = object : WebViewClient() {
                             override fun onPageFinished(view: WebView?, url: String?) {
                                 super.onPageFinished(view, url)
@@ -549,15 +548,19 @@ fun BottomNavigationBar(
         // 🔥 Modificamos las funciones de navegación para ocultar el cuadro
         NavigationButton("Fichajes", R.drawable.ic_fichajes32) {
             hideCuadroParaFichar()
-            onNavigate(WebViewURL.Fichaje)
+            onNavigate(WebViewURL.FICHAJE)
         }
         NavigationButton("Incidencias", R.drawable.ic_incidencia32) {
             hideCuadroParaFichar()
-            onNavigate(WebViewURL.Incidencia)
+            onNavigate(WebViewURL.INCIDENCIA)
         }
         NavigationButton("Horarios", R.drawable.ic_horario32) {
             hideCuadroParaFichar()
-            onNavigate(WebViewURL.Horarios)
+            onNavigate(WebViewURL.HORARIOS)
+        }
+        NavigationButton("Solicitudes", R.drawable.solicitudes32) {
+            hideCuadroParaFichar()
+            onNavigate(WebViewURL.SOLICITUDES)
         }
     }
 }

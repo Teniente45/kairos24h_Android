@@ -3,13 +3,7 @@ package com.miapp.iDEMO_kairos24h.enlaces_internos
 import android.content.Context
 
 // Estás son las URL que se nos mostrarán en el WebView
-    object WebViewURL {
-    /**
-     * Beiman = https://beimancpp.tucitamedica.es
-     * Kairos24h = https://controlhorario.kairos24h.es
-     * Máquina = http://192.168.25.67:8008/kairos24h
-     */
-
+object WebViewURL {
 
     const val HOST = "https://democontrolhorario.kairos24h.es"
     //const val HOST = "http://192.168.25.67:8008/kairos24h"
@@ -21,29 +15,23 @@ import android.content.Context
     const val ACTION_CONSULTAR = "r=explotacion/consultarExplotacion"
 
     const val LOGIN = "$URL_USADA?$ACTION_LOGIN"
-    const val forgotPassword = "$URL_USADA?$ACTION_FORGOTPASS"
+    const val FORGOT_PASSWORD = "$URL_USADA?$ACTION_FORGOTPASS"
 
-    const val Fichaje = "$URL_USADA?$ACTION_CONSULTAR" +
+    const val FICHAJE = "$URL_USADA?$ACTION_CONSULTAR" +
             "&cTipExp=FICHAJE"
-    const val Incidencia = "$URL_USADA?$ACTION_CONSULTAR" +
+    const val INCIDENCIA = "$URL_USADA?$ACTION_CONSULTAR" +
             "&cTipExp=INCIDENCIA" + "&cOpcionVisual=INCBAN"
-    const val Horarios = "$URL_USADA?$ACTION_CONSULTAR" +
+    const val HORARIOS = "$URL_USADA?$ACTION_CONSULTAR" +
             "&cTipExp=HORARIO" + "&cModoVisual=HORMEN"
-    const val Solicitudes = "$URL_USADA?$ACTION_CONSULTAR" +
+    const val SOLICITUDES = "$URL_USADA?$ACTION_CONSULTAR" +
             "&cTipExp=SOLICITUD"
-    const val BandejaDeSolicitudes = "$URL_USADA?$ACTION_CONSULTAR" +
+    const val BANDEJA_DE_SOLICITUDES = "$URL_USADA?$ACTION_CONSULTAR" +
             "&cTipExp=SOLICITUD" + "&xEmpleadoBandeja="+ "&cOpcionVisual=SOLBAN"
 }
 
 // Esta será la URL que construiremos cuando desde el login de nuestra APK introduzcamos el Usuario y la Contraseña
 object BuildURL {
-    /**
-     * Beiman = https://beimancpp.tucitamedica.es
-     * Kairos24h = https://controlhorario.kairos24h.es
-     * Máquina = http://localhost:8008/kairos24h
-     */
 
-    /*==================================================================*/
     const val HOST = "https://democontrolhorario.kairos24h.es"
     //const val HOST = "http://192.168.25.67:8008/kairos24h"
 
