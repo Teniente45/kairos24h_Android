@@ -229,7 +229,7 @@ fun MiHorario() {
                             Log.d("MiHorario", "Valor N_HORFIN: $horaFin")
 
                             if (horaIni == 0 && horaFin == 0) {
-                                "No se detectaron fichajes este día"
+                                "No Horario"
                             } else {
                                 fun minutosAHora(minutos: Int): String {
                                     val horas = minutos / 60
