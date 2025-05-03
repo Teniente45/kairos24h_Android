@@ -5,19 +5,35 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.util.Log
 import androidx.core.content.ContextCompat
 import java.net.NetworkInterface
 
+import com.google.android.gms.location.LocationServices
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import android.location.Location
+
 object SeguridadUtils {
 
-    fun isUsingVPN(): Boolean {
+    fun isUsingVPN(context: Context): Boolean {
         return try {
-            NetworkInterface.getNetworkInterfaces().toList().any {
-                it.name.equals("tun0", ignoreCase = true) || it.name.equals("ppp0", ignoreCase = true)
+            val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                val activeNetwork = connectivityManager.activeNetwork
+                if (activeNetwork != null) {
+                    val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
+                    capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
+                } else {
+                    false
+                }
+            } else {
+                // En versiones más antiguas no lo podemos detectar con certeza, así que asumimos falso positivo.
+                false
             }
         } catch (e: Exception) {
-            Log.e("Seguridad", "Error al verificar VPN: ${e.message}")
+            android.util.Log.e("Seguridad", "Error al verificar VPN: ${e.message}")
             false
         }
     }
@@ -28,25 +44,47 @@ object SeguridadUtils {
         return activeNetwork != null && activeNetwork.isConnected
     }
 
+    /**
+     * Esta función ahora simplemente devuelve false por defecto.
+     * Para la detección real, debe llamarse a detectarUbicacionReal(context) desde una corrutina.
+     */
     fun isMockLocationEnabled(context: Context): Boolean {
-        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return false
+        // El consumidor debe llamar a detectarUbicacionReal en un entorno suspendido.
+        return false
+    }
 
-        val hasPermission = ContextCompat.checkSelfPermission(
-            context, Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        if (!hasPermission) {
-            Log.e("Seguridad", "No se cuenta con el permiso ACCESS_FINE_LOCATION")
-            return false
-        }
-
+    /**
+     * Verifica si la ubicación activa es real (no simulada) usando FusedLocationProviderClient.
+     * Debe llamarse desde una corrutina.
+     */
+    suspend fun detectarUbicacionReal(context: Context): Boolean {
         return try {
-            locationManager.getProviders(true).any { provider ->
-                val location = locationManager.getLastKnownLocation(provider)
-                location?.isFromMockProvider == true
+            val permissionGranted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (!permissionGranted) {
+                android.util.Log.e("Seguridad", "Permiso ACCESS_FINE_LOCATION no concedido")
+                return false
             }
-        } catch (e: SecurityException) {
-            Log.e("Seguridad", "Error al verificar ubicación simulada: ${e.message}")
+
+            val fusedClient = LocationServices.getFusedLocationProviderClient(context)
+            val location = suspendCancellableCoroutine<Location?> { cont ->
+                fusedClient.lastLocation
+                    .addOnSuccessListener { cont.resume(it) }
+                    .addOnFailureListener { cont.resume(null) }
+            }
+
+            if (location != null && !location.isFromMockProvider) {
+                android.util.Log.i("Seguridad", "Ubicación válida detectada")
+                true
+            } else {
+                android.util.Log.w("Seguridad", "Ubicación simulada o nula detectada")
+                false
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("Seguridad", "Error al obtener ubicación en tiempo real: ${e.message}")
             false
         }
     }
@@ -78,7 +116,7 @@ object SeguridadUtils {
         }
 
         if (validarIP) {
-            if (isUsingVPN()) {
+            if (isUsingVPN(context)) {
                 Log.e("Seguridad", "VPN detectada y uso de IP obligatorio")
                 onShowAlert("VPN DETECTADA")
                 return false
@@ -86,16 +124,5 @@ object SeguridadUtils {
         }
 
         return true
-    }
-
-    fun proxyDetected(): Boolean {
-        return try {
-            val proxyHost = System.getProperty("http.proxyHost")
-            val proxyPort = System.getProperty("http.proxyPort")
-            !proxyHost.isNullOrEmpty() && !proxyPort.isNullOrEmpty()
-        } catch (e: Exception) {
-            Log.e("Seguridad", "Error al verificar proxy: ${e.message}")
-            false
-        }
     }
 }

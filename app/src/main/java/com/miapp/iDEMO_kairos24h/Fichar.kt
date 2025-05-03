@@ -116,7 +116,7 @@ class Fichar : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        ManejoDeSesion.onResume(this, webView)
+        ManejoDeSesion.onResume(webView)
     }
 
     // Redirige al usuario a la pantalla de login y limpia la actividad actual

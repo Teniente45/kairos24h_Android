@@ -1,6 +1,5 @@
 package com.miapp.iDEMO_kairos24h.enlaces_internos
 
-import android.content.Context
 import android.util.Log
 import android.webkit.WebView
 import android.os.Handler
@@ -14,17 +13,10 @@ import java.util.Locale
 
 object ManejoDeSesion {
 
-    /**
-     * Llama cuando la actividad entra en pausa.
-     */
     fun onPause() {
         Log.d("ManejoDeSesion", "Aplicación en pausa")
     }
 
-    /**
-     * Llama cuando la actividad se detiene.
-     * @param webView instancia del WebView en uso para ejecutar scripts de simulación.
-     */
     fun onStop(webView: WebView?) {
         Log.d("ManejoDeSesion", "Aplicación detenida")
         webView?.evaluateJavascript(
@@ -37,12 +29,7 @@ object ManejoDeSesion {
         )
     }
 
-    /**
-     * Llama cuando la actividad se reanuda.
-     * @param context contexto actual de la aplicación.
-     * @param webView instancia del WebView en uso para ejecutar scripts de reactivación.
-     */
-    fun onResume(context: Context, webView: WebView?) {
+    fun onResume(webView: WebView?) {
         Log.d("ManejoDeSesion", "Aplicación reanudada")
         webView?.evaluateJavascript(
             """
@@ -54,10 +41,6 @@ object ManejoDeSesion {
         )
     }
 
-    /**
-     * Obtiene la fecha y hora del servidor de Google.
-     * @return instancia de [Date] si se pudo obtener correctamente, o null si ocurrió un error.
-     */
     suspend fun obtenerFechaHoraInternet(): Date? = withContext(Dispatchers.IO) {
         try {
             val client = OkHttpClient()

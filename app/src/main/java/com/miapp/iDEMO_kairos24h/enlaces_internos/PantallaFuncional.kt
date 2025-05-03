@@ -311,7 +311,7 @@ fun BotonesFichajeConPermisos(
         pendingFichaje = null
     }
 
-// BOTÓN ENTRADA
+    // BOTÓN ENTRADA
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -320,36 +320,37 @@ fun BotonesFichajeConPermisos(
             .offset(y = (-20).dp)
             .clickable {
                 when {
-                    SeguridadUtils.isUsingVPN() -> {
+                    SeguridadUtils.isUsingVPN(context) -> {
                         Log.e("Seguridad", "Intento de fichaje con VPN activa")
                         onShowAlert("VPN DETECTADA")
                         return@clickable
                     }
-
-                    SeguridadUtils.isMockLocationEnabled(context) -> {
-                        Log.e("Seguridad", "Intento de fichaje con ubicación simulada")
-                        onShowAlert("POSIBLE UBI FALSA")
-                        return@clickable
-                    }
-
                     !SeguridadUtils.isInternetAvailable(context) -> {
                         Log.e("Fichar", "No hay conexión a Internet")
                         onShowAlert("PROBLEMA INTERNET")
                         return@clickable
                     }
-
                     !SeguridadUtils.hasLocationPermission(context) -> {
                         Log.e("Fichar", "No se cuenta con el permiso ACCESS_FINE_LOCATION")
                         onShowAlert("PROBLEMA GPS")
                         return@clickable
                     }
                 }
-                Log.d(
-                    "Fichaje",
-                    "Fichaje Entrada: Permiso concedido. Procesando fichaje de ENTRADA"
-                )
-                webView?.let { fichar(context, "ENTRADA", it) }
-                onFichaje("ENTRADA")
+                // Lanzar la comprobación real de ubicación simulada
+                CoroutineScope(Dispatchers.Main).launch {
+                    val ubicacionEsValida = SeguridadUtils.detectarUbicacionReal(context)
+                    if (!ubicacionEsValida) {
+                        Log.e("Seguridad", "Intento de fichaje con ubicación simulada")
+                        onShowAlert("POSIBLE UBI FALSA")
+                        return@launch
+                    }
+                    Log.d(
+                        "Fichaje",
+                        "Fichaje Entrada: Permiso concedido. Procesando fichaje de ENTRADA"
+                    )
+                    webView?.let { fichar(context, "ENTRADA", it) }
+                    onFichaje("ENTRADA")
+                }
             },
         color = Color(0xFFFFFFFF),
         shape = RoundedCornerShape(10.dp),
@@ -380,7 +381,7 @@ fun BotonesFichajeConPermisos(
 
     Spacer(modifier = Modifier.height(10.dp))
 
-// BOTÓN SALIDA
+    // BOTÓN SALIDA
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -389,33 +390,34 @@ fun BotonesFichajeConPermisos(
             .height(55.dp)
             .clickable {
                 when {
-                    SeguridadUtils.isUsingVPN() -> {
+                    SeguridadUtils.isUsingVPN(context) -> {
                         Log.e("Seguridad", "Intento de fichaje con VPN activa")
                         onShowAlert("VPN DETECTADA")
                         return@clickable
                     }
-
-                    SeguridadUtils.isMockLocationEnabled(context) -> {
-                        Log.e("Seguridad", "Intento de fichaje con ubicación simulada")
-                        onShowAlert("POSIBLE UBI FALSA")
-                        return@clickable
-                    }
-
                     !SeguridadUtils.isInternetAvailable(context) -> {
                         Log.e("Fichar", "No hay conexión a Internet")
                         onShowAlert("PROBLEMA INTERNET")
                         return@clickable
                     }
-
                     !SeguridadUtils.hasLocationPermission(context) -> {
                         Log.e("Fichar", "No se cuenta con el permiso ACCESS_FINE_LOCATION")
                         onShowAlert("PROBLEMA GPS")
                         return@clickable
                     }
                 }
-                Log.d("Fichaje", "Fichaje Salida: Permiso concedido. Procesando fichaje de SALIDA")
-                webView?.let { fichar(context, "SALIDA", it) }
-                onFichaje("SALIDA")
+                // Lanzar la comprobación real de ubicación simulada
+                CoroutineScope(Dispatchers.Main).launch {
+                    val ubicacionEsValida = SeguridadUtils.detectarUbicacionReal(context)
+                    if (!ubicacionEsValida) {
+                        Log.e("Seguridad", "Intento de fichaje con ubicación simulada")
+                        onShowAlert("POSIBLE UBI FALSA")
+                        return@launch
+                    }
+                    Log.d("Fichaje", "Fichaje Salida: Permiso concedido. Procesando fichaje de SALIDA")
+                    webView?.let { fichar(context, "SALIDA", it) }
+                    onFichaje("SALIDA")
+                }
             },
         color = Color(0xFFFFFFFF),
         shape = RoundedCornerShape(10.dp),
