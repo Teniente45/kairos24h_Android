@@ -364,8 +364,10 @@ fun FicharScreen(
                     isLoading = false
                 }
             },
-            onToggleFichar = { showCuadroParaFichar = !showCuadroParaFichar },
+            onToggleFichar = { showCuadroParaFichar = true },
             hideCuadroParaFichar = { showCuadroParaFichar = false },
+            setIsLoading = { isLoading = it },
+            scope = scope,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
@@ -551,7 +553,9 @@ fun BottomNavigationBar(
     onNavigate: (String) -> Unit,
     onToggleFichar: () -> Unit,
     modifier: Modifier = Modifier,
-    hideCuadroParaFichar: () -> Unit // 🔥 Nueva función para ocultar el cuadro
+    hideCuadroParaFichar: () -> Unit, // 🔥 Nueva función para ocultar el cuadro
+    setIsLoading: (Boolean) -> Unit,
+    scope: kotlinx.coroutines.CoroutineScope
 ) {
     var isChecked by remember { mutableStateOf(false) }
 
@@ -568,7 +572,12 @@ fun BottomNavigationBar(
             IconButton(
                 onClick = {
                     isChecked = !isChecked
-                    onToggleFichar() // ✅ Alterna la visibilidad del cuadro de fichar
+                    setIsLoading(true)
+                    scope.launch {
+                        delay(1500)
+                        setIsLoading(false)
+                    }
+                    onToggleFichar()
                 }
             ) {
                 Icon(

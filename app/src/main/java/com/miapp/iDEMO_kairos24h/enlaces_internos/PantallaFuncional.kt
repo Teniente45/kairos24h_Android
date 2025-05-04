@@ -91,6 +91,8 @@ fun CuadroParaFichar(
     webViewState: MutableState<WebView?>
 ) {
     if (isVisible) {
+        // 3. Agregar refreshTrigger aquí
+        val refreshTrigger = remember { mutableStateOf(System.currentTimeMillis()) }
         Box(
             modifier = modifier
                 .fillMaxSize()
@@ -117,10 +119,11 @@ fun CuadroParaFichar(
                 BotonesFichajeConPermisos(
                     onFichaje = onFichaje,
                     onShowAlert = onShowAlert,
-                    webView = webViewState.value ?: return@CuadroParaFichar
+                    webView = webViewState.value ?: return@CuadroParaFichar,
+                    refreshTrigger = refreshTrigger // 7. Pasar refreshTrigger
                 )
                 rememberDatosHorario()
-                RecuadroFichajesDia()
+                RecuadroFichajesDia(refreshTrigger) // 4. Pasar refreshTrigger a RecuadroFichajesDia
                 AlertasDiarias { url ->
                     webViewState.value?.loadUrl(url)
                 }
@@ -286,7 +289,8 @@ fun MiHorario() {
 fun BotonesFichajeConPermisos(
     onFichaje: (tipo: String) -> Unit,
     onShowAlert: (String) -> Unit,
-    webView: WebView?
+    webView: WebView?,
+    refreshTrigger: MutableState<Long> // 5. Añadir parámetro refreshTrigger
 ) {
     val context = LocalContext.current
     var pendingFichaje by remember { mutableStateOf<String?>(null) }
@@ -350,6 +354,7 @@ fun BotonesFichajeConPermisos(
                     )
                     webView?.let { fichar(context, "ENTRADA", it) }
                     onFichaje("ENTRADA")
+                    refreshTrigger.value = System.currentTimeMillis() // 6. Actualizar refreshTrigger tras fichaje
                 }
             },
         color = Color(0xFFFFFFFF),
@@ -417,6 +422,7 @@ fun BotonesFichajeConPermisos(
                     Log.d("Fichaje", "Fichaje Salida: Permiso concedido. Procesando fichaje de SALIDA")
                     webView?.let { fichar(context, "SALIDA", it) }
                     onFichaje("SALIDA")
+                    refreshTrigger.value = System.currentTimeMillis() // 6. Actualizar refreshTrigger tras fichaje
                 }
             },
         color = Color(0xFFFFFFFF),
@@ -448,12 +454,12 @@ fun BotonesFichajeConPermisos(
 }
 
 @Composable
-fun RecuadroFichajesDia() {
+fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) { // 1. Cambiar firma
     val context = LocalContext.current
     val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
 
     val fechaSeleccionada = remember { mutableStateOf("") }
-    LaunchedEffect(Unit) {
+    LaunchedEffect(refreshTrigger.value) { // 2. Usar refreshTrigger.value como clave
         if (fechaSeleccionada.value.isEmpty()) {
             val fechaServidor = ManejoDeSesion.obtenerFechaHoraInternet()
             if (fechaServidor != null) {
@@ -471,7 +477,7 @@ fun RecuadroFichajesDia() {
     val (_, _, xEmpleadoRaw) = AuthManager.getUserCredentials(context)
     val xEmpleado = xEmpleadoRaw ?: "SIN_EMPLEADO"
 
-    val fichajesTexto by produceState(initialValue = emptyList<String>(), key1 = fechaSeleccionada.value) {
+    val fichajesTexto by produceState(initialValue = emptyList<String>(), key1 = Triple(fechaSeleccionada.value, xEmpleado, refreshTrigger.value)) {
         value = try {
             withContext(Dispatchers.IO) {
                 val client = OkHttpClient()
