@@ -151,7 +151,7 @@ fun FicharScreen(
     onLogout: () -> Unit
 ) {
     var isLoading by remember { mutableStateOf(true) }
-    var showCuadroParaFichar by remember { mutableStateOf(true) }
+    val showCuadroParaFicharState = remember { mutableStateOf(true) }
     var fichajes by remember { mutableStateOf<List<String>>(emptyList()) }
     var imageIndex by remember { mutableIntStateOf(0) }
     var fichajeAlertTipo by remember { mutableStateOf<String?>(null) }
@@ -310,7 +310,7 @@ fun FicharScreen(
             LoadingScreen(isLoading = isLoading)
 
             // Cuadro para fichar con altura adecuada, sin scroll
-            if (showCuadroParaFichar && mostrarBotonesFichaje) {
+            if (showCuadroParaFicharState.value && mostrarBotonesFichaje) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -318,7 +318,7 @@ fun FicharScreen(
                         .background(Color.White)
                 ) {
                     CuadroParaFichar(
-                        isVisible = showCuadroParaFichar,
+                        isVisibleState = showCuadroParaFicharState,
                         fichajes = fichajes,
                         onFichaje = { tipo ->
                             obtenerCoord(
@@ -357,15 +357,15 @@ fun FicharScreen(
         BottomNavigationBar(
             onNavigate = { url ->
                 isLoading = true
-                showCuadroParaFichar = false
+                showCuadroParaFicharState.value = false
                 webViewState.value?.loadUrl(url)
                 scope.launch {
                     delay(1500)
                     isLoading = false
                 }
             },
-            onToggleFichar = { showCuadroParaFichar = true },
-            hideCuadroParaFichar = { showCuadroParaFichar = false },
+            onToggleFichar = { showCuadroParaFicharState.value = true },
+            hideCuadroParaFichar = { showCuadroParaFicharState.value = false },
             setIsLoading = { isLoading = it },
             scope = scope,
             modifier = Modifier

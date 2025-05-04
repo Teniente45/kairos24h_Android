@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -45,6 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -83,49 +85,52 @@ import java.util.Locale
 //============================== CUADRO PARA FICHAR ======================================
 @Composable
 fun CuadroParaFichar(
-    isVisible: Boolean,
+    isVisibleState: MutableState<Boolean>,
     fichajes: List<String>,
     onFichaje: (tipo: String) -> Unit,
     onShowAlert: (String) -> Unit, // ✅ Se agregó correctamente
     modifier: Modifier = Modifier,
     webViewState: MutableState<WebView?>
 ) {
-    if (isVisible) {
+    if (isVisibleState.value) {
         // 3. Agregar refreshTrigger aquí
         val refreshTrigger = remember { mutableStateOf(System.currentTimeMillis()) }
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .background(Color.White)
-                .zIndex(2f)
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier
+        if (isVisibleState.value) {
+            Box(
+                modifier = modifier
                     .fillMaxSize()
-                    // Habilita el scroll vertical:
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp)
+                    .background(Color.White)
+                    .zIndex(2f)
             ) {
-                // Mostrar lista de fichajes si existe
-                if (fichajes.isNotEmpty()) {
-                    Text(text = "Fichajes del Día", color = Color.Blue)
-                    fichajes.forEach { fichaje ->
-                        Text(text = fichaje, color = Color.DarkGray)
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        // Habilita el scroll vertical:
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 20.dp)
+                ) {
+                    // Mostrar lista de fichajes si existe
+                    if (fichajes.isNotEmpty()) {
+                        Text(text = "Fichajes del Día", color = Color.Blue)
+                        fichajes.forEach { fichaje ->
+                            Text(text = fichaje, color = Color.DarkGray)
+                        }
                     }
-                }
-                Logo_empresa()
-                MiHorario()
-                BotonesFichajeConPermisos(
-                    onFichaje = onFichaje,
-                    onShowAlert = onShowAlert,
-                    webView = webViewState.value ?: return@CuadroParaFichar,
-                    refreshTrigger = refreshTrigger // 7. Pasar refreshTrigger
-                )
-                rememberDatosHorario()
-                RecuadroFichajesDia(refreshTrigger) // 4. Pasar refreshTrigger a RecuadroFichajesDia
-                AlertasDiarias { url ->
-                    webViewState.value?.loadUrl(url)
+                    Logo_empresa()
+                    MiHorario()
+                    BotonesFichajeConPermisos(
+                        onFichaje = onFichaje,
+                        onShowAlert = onShowAlert,
+                        webView = webViewState.value ?: return@CuadroParaFichar,
+                        refreshTrigger = refreshTrigger // 7. Pasar refreshTrigger
+                    )
+                    rememberDatosHorario()
+                    RecuadroFichajesDia(refreshTrigger) // 4. Pasar refreshTrigger a RecuadroFichajesDia
+                    AlertasDiarias(
+                        onAbrirWebView = { url -> webViewState.value?.loadUrl(url) },
+                        hideCuadroParaFichar = { isVisibleState.value = false }
+                    )
                 }
             }
         }
@@ -688,15 +693,20 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) { 
 }
 
 
+// --- Nueva clase de datos para avisos ---
+data class AvisoItem(val titulo: String, val detalle: String, val url: String?)
+
 @Composable
-fun AlertasDiarias(onAbrirWebView: (String) -> Unit) {
+fun AlertasDiarias(
+    onAbrirWebView: (String) -> Unit,
+    hideCuadroParaFichar: () -> Unit
+) {
     val context = LocalContext.current
-    var expanded by remember { mutableStateOf(false) }
-    var mensajeAlerta by remember { mutableStateOf("Cargando...") }
-    // Usar rememberDatosHorario, que obtiene la fecha desde ManejoDeSesion.obtenerFechaHoraInternet()
+    var avisos by remember { mutableStateOf(listOf<AvisoItem>()) }
+    val expandedStates = remember { mutableStateMapOf<Int, Boolean>() }
     val datos = rememberDatosHorario()
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(datos.fechaSeleccionada) {
         try {
             val urlAlertas = BuildURL.getMostrarAlertas(context) +
                 "&fecha=${datos.fechaSeleccionada}"
@@ -705,25 +715,42 @@ fun AlertasDiarias(onAbrirWebView: (String) -> Unit) {
 
             withContext(Dispatchers.IO) {
                 val client = OkHttpClient()
-                val request = Request.Builder().url(urlAlertas).build()
+                val cookie = android.webkit.CookieManager.getInstance()
+                    .getCookie("https://democontrolhorario.kairos24h.es") ?: ""
+
+                val request = Request.Builder()
+                    .url(urlAlertas)
+                    .addHeader("Cookie", cookie)
+                    .build()
+
                 val response = client.newCall(request).execute()
                 val jsonBody = response.body?.string()
                 val json = JSONObject(jsonBody ?: "")
 
-                val dataArray = json.optJSONArray("dataAlertas")
+                val dataArray = json.optJSONArray("dataAvisos")
                 if (dataArray != null && dataArray.length() > 0) {
-                    val item = dataArray.getJSONObject(0)
-                    val dAviso = item.optString("D_AVISO", "Sin aviso")
-                    val tAviso = item.optString("T_AVISO", "")
+                    val nuevaLista = mutableListOf<AvisoItem>()
+                    for (i in 0 until dataArray.length()) {
+                        val item = dataArray.getJSONObject(i)
+                        val dAviso = item.optString("D_AVISO", "Sin aviso")
+                        val tAviso = item.optString("T_AVISO", "")
+                        val tUrl = item.optString("T_URL", "").takeIf { it.isNotBlank() && it != "null" }
 
-                    mensajeAlerta = "$dAviso\n$tAviso"
+                        Log.d("JSONAlertas", "[$i] D_AVISO: $dAviso")
+                        Log.d("JSONAlertas", "[$i] T_AVISO: $tAviso")
+                        Log.d("JSONAlertas", "[$i] T_URL: $tUrl")
+
+                        nuevaLista.add(AvisoItem(dAviso, tAviso, tUrl))
+                    }
+                    avisos = nuevaLista
                 } else {
-                    mensajeAlerta = "No hay alertas disponibles"
+                    Log.d("JSONAlertas", "Array 'dataAvisos' vacío o nulo")
+                    avisos = listOf(AvisoItem("No hay alertas disponibles", "", null))
                 }
             }
         } catch (e: Exception) {
             Log.e("AlertasDiarias", "Error obteniendo alertas: ${e.message}")
-            mensajeAlerta = "Error al cargar alertas"
+            avisos = listOf(AvisoItem("Error al cargar alertas", "", null))
         }
     }
 
@@ -751,52 +778,62 @@ fun AlertasDiarias(onAbrirWebView: (String) -> Unit) {
             }
 
             Column(modifier = Modifier.padding(top = 8.dp)) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(1.dp, Color.LightGray)
-                        .clickable { expanded = !expanded }
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = if (expanded) Icons.Default.Remove else Icons.Default.Add,
-                        contentDescription = "Expandir / Colapsar",
-                        modifier = Modifier.size(20.dp),
-                        tint = Color(0xFF7599B6)
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text(
-                        text = mensajeAlerta.split("\n").firstOrNull() ?: "Aviso",
-                        fontSize = 14.sp,
-                        color = Color(0xFF7599B6)
-                    )
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "Redireccionar",
+                avisos.forEachIndexed { index, aviso ->
+                    Column(
                         modifier = Modifier
-                            .size(20.dp)
-                            .clickable {
-                                onAbrirWebView(BANDEJA_DE_SOLICITUDES)                            },
-                        tint = Color(0xFF7599B6)
-                    )
-                }
-
-                AnimatedVisibility(visible = expanded) {
-                    Column(modifier = Modifier.padding(top = 8.dp)) {
-                        OutlinedTextField(
-                            value = mensajeAlerta,
-                            onValueChange = {},
+                            .fillMaxWidth()
+                            .padding(bottom = 4.dp)
+                    ) {
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(120.dp),
-                            readOnly = true
-                        )
+                                .border(1.dp, Color.LightGray)
+                                .clickable {
+                                    expandedStates[index] = !(expandedStates[index] ?: false)
+                                }
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = if (expandedStates[index] == true) Icons.Default.Remove else Icons.Default.Add,
+                                contentDescription = "Expandir",
+                                modifier = Modifier.size(20.dp),
+                                tint = Color(0xFF7599B6)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = aviso.titulo,
+                                fontSize = 14.sp,
+                                color = Color(0xFF7599B6),
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (!aviso.url.isNullOrEmpty()) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                    contentDescription = "Redireccionar",
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .clickable {
+                                            hideCuadroParaFichar()
+                                            onAbrirWebView(BuildURL.HOST.trimEnd('/') + "/" + aviso.url.trimStart('/'))
+                                        },
+                                    tint = Color(0xFF7599B6)
+                                )
+                            }
+                        }
+                        AnimatedVisibility(visible = expandedStates[index] == true) {
+                            Column(modifier = Modifier.padding(8.dp)) {
+                                OutlinedTextField(
+                                    value = aviso.detalle,
+                                    onValueChange = {},
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 80.dp),
+                                    readOnly = true,
+                                    label = { Text("Detalle del aviso") }
+                                )
+                            }
+                        }
                     }
                 }
             }
