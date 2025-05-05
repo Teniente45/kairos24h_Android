@@ -6,7 +6,7 @@ import android.content.Context
 object WebViewURL {
 
     const val HOST = "https://democontrolhorario.kairos24h.es"
-    //const val HOST = "http://192.168.25.67:8008/kairos24h"
+
     const val ENTRY_POINT = "/index.php"
     const val URL_USADA = "$HOST$ENTRY_POINT"
 
@@ -25,15 +25,12 @@ object WebViewURL {
             "&cTipExp=HORARIO" + "&cModoVisual=HORMEN"
     const val SOLICITUDES = "$URL_USADA?$ACTION_CONSULTAR" +
             "&cTipExp=SOLICITUD"
-    const val BANDEJA_DE_SOLICITUDES = "$URL_USADA?$ACTION_CONSULTAR" +
-            "&cTipExp=SOLICITUD" + "&xEmpleadoBandeja="+ "&cOpcionVisual=SOLBAN"
 }
 
 // Esta será la URL que construiremos cuando desde el login de nuestra APK introduzcamos el Usuario y la Contraseña
 object BuildURL {
 
     const val HOST = "https://democontrolhorario.kairos24h.es"
-    //const val HOST = "http://192.168.25.67:8008/kairos24h"
 
     const val ENTRY_POINT = "/index.php"
     const val ACTION_FICHAJE = "r=explotacion/creaFichaje"

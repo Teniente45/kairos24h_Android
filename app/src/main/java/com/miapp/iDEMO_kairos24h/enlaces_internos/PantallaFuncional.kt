@@ -1,5 +1,6 @@
 package com.miapp.iDEMO_kairos24h.enlaces_internos
 
+import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.util.Log
 import android.webkit.WebView
@@ -46,6 +47,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -94,7 +96,7 @@ fun CuadroParaFichar(
 ) {
     if (isVisibleState.value) {
         // 3. Agregar refreshTrigger aquí
-        val refreshTrigger = remember { mutableStateOf(System.currentTimeMillis()) }
+        val refreshTrigger = remember { mutableLongStateOf(System.currentTimeMillis()) }
         if (isVisibleState.value) {
             Box(
                 modifier = modifier
@@ -239,6 +241,7 @@ fun MiHorario() {
                             if (horaIni == 0 && horaFin == 0) {
                                 "No Horario"
                             } else {
+                                @SuppressLint("DefaultLocale")
                                 fun minutosAHora(minutos: Int): String {
                                     val horas = minutos / 60
                                     val mins = minutos % 60
@@ -298,7 +301,7 @@ fun BotonesFichajeConPermisos(
     refreshTrigger: MutableState<Long> // 5. Añadir parámetro refreshTrigger
 ) {
     // Añadir al principio de BotonesFichajeConPermisos
-    var ultimoFichajeTimestamp by remember { mutableStateOf(0L) }
+    var ultimoFichajeTimestamp by remember { mutableLongStateOf(0L) }
     val context = LocalContext.current
     var pendingFichaje by remember { mutableStateOf<String?>(null) }
 
@@ -545,6 +548,7 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) { 
                                 val nMinEnt = nMinEntStr.toIntOrNull()
                                 val nMinSal = nMinSalStr.toIntOrNull()
 
+                                @SuppressLint("DefaultLocale")
                                 fun minutosAHora(minutos: Int?): String {
                                     return if (minutos != null) {
                                         val horas = minutos / 60
@@ -738,7 +742,7 @@ fun AlertasDiarias(
     hideCuadroParaFichar: () -> Unit
 ) {
     // 1. Añadir trigger para refresco periódico
-    val refreshTrigger = remember { mutableStateOf(System.currentTimeMillis()) }
+    val refreshTrigger = remember { mutableLongStateOf(System.currentTimeMillis()) }
     val context = LocalContext.current
     var avisos by remember { mutableStateOf(listOf<AvisoItem>()) }
     val expandedStates = remember { mutableStateMapOf<Int, Boolean>() }
@@ -747,7 +751,7 @@ fun AlertasDiarias(
     val showLoading = remember { mutableStateOf(false) }
 
     // 2. Efecto para recargar alertas al cambiar fecha o trigger
-    LaunchedEffect(datos.fechaSeleccionada, refreshTrigger.value) {
+    LaunchedEffect(datos.fechaSeleccionada, refreshTrigger.longValue) {
         try {
             val urlAlertas = BuildURL.getMostrarAlertas(context) +
                 "&fecha=${datos.fechaSeleccionada}"
@@ -799,7 +803,7 @@ fun AlertasDiarias(
     LaunchedEffect(true) {
         while (true) {
             kotlinx.coroutines.delay(10 * 60 * 1000)
-            refreshTrigger.value = System.currentTimeMillis()
+            refreshTrigger.longValue = System.currentTimeMillis()
         }
     }
 
@@ -839,7 +843,7 @@ fun AlertasDiarias(
                                 .fillMaxWidth()
                                 .border(1.dp, Color.LightGray)
                                 .clickable {
-                                    expandedStates[index] = !(expandedStates[index] ?: false)
+                                    expandedStates[index] = expandedStates[index] != true
                                 }
                                 .padding(8.dp),
                             verticalAlignment = Alignment.CenterVertically

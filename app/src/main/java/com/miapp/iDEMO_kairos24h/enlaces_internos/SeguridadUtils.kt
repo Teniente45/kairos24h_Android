@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.miapp.iDEMO_kairos24h.enlaces_internos
 
 import android.Manifest
@@ -24,20 +26,15 @@ object SeguridadUtils {
     fun isUsingVPN(context: Context): Boolean {
         return try {
             val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                val activeNetwork = connectivityManager.activeNetwork
-                if (activeNetwork != null) {
-                    val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
-                    capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
-                } else {
-                    false
-                }
+            val activeNetwork = connectivityManager.activeNetwork
+            if (activeNetwork != null) {
+                val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
+                capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
             } else {
-                // En versiones más antiguas no lo podemos detectar con certeza, así que asumimos falso positivo.
                 false
             }
         } catch (e: Exception) {
-            android.util.Log.e("Seguridad", "Error al verificar VPN: ${e.message}")
+            Log.e("Seguridad", "Error al verificar VPN: ${e.message}")
             false
         }
     }
@@ -52,7 +49,7 @@ object SeguridadUtils {
      * Esta función ahora simplemente devuelve false por defecto.
      * Para la detección real, debe llamarse a detectarUbicacionReal(context) desde una corrutina.
      */
-    fun isMockLocationEnabled(context: Context): Boolean {
+    fun isMockLocationEnabled(): Boolean {
         // El consumidor debe llamar a detectarUbicacionReal en un entorno suspendido.
         return false
     }

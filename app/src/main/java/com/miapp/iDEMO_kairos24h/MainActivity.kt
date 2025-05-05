@@ -107,10 +107,8 @@ class MainActivity : ComponentActivity() {
                                         lifecycleScope.launch(Dispatchers.IO) {
                                             try {
                                                 val (success, xEmpleado) = AuthManager.authenticateUser(
-                                                    this@MainActivity,
                                                     usuario,
-                                                    password,
-                                                    ""
+                                                    password
                                                 )
                                                 runOnUiThread {
                                                     if (success && xEmpleado != null) {

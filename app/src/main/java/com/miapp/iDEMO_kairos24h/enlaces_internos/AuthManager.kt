@@ -1,3 +1,5 @@
+@file:Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+
 package com.miapp.iDEMO_kairos24h.enlaces_internos
 
 import android.content.Context
@@ -63,7 +65,7 @@ object AuthManager {
     }
 
     // Método para realizar el login y obtener el xEmpleado y otros flags
-    fun authenticateUser(context: Context, usuario: String, password: String, s: String): Pair<Boolean, UserCredentials?> {
+    fun authenticateUser(usuario: String, password: String): Pair<Boolean, UserCredentials?> {
         val client = OkHttpClient()
         // Se usa cUsuario y tPassword en la URL
         val url = BuildURL.LOGIN +

@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.miapp.iDEMO_kairos24h
 
 
@@ -533,7 +535,7 @@ fun obtenerCoord(
                 return@addOnSuccessListener
             }
 
-            if (SeguridadUtils.isMockLocationEnabled(context)) {
+            if (SeguridadUtils.isMockLocationEnabled()) {
                 Log.e("Fichar", "Ubicación falsa detectada.")
                 onShowAlert("POSIBLE UBI FALSA")
                 return@addOnSuccessListener
@@ -555,7 +557,7 @@ fun BottomNavigationBar(
     modifier: Modifier = Modifier,
     hideCuadroParaFichar: () -> Unit, // 🔥 Nueva función para ocultar el cuadro
     setIsLoading: (Boolean) -> Unit,
-    scope: kotlinx.coroutines.CoroutineScope
+    scope: CoroutineScope
 ) {
     var isChecked by remember { mutableStateOf(false) }
 
