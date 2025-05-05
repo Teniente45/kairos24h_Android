@@ -8,8 +8,6 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
 import androidx.core.content.ContextCompat
-import java.net.NetworkInterface
-
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
@@ -64,40 +62,73 @@ object SeguridadUtils {
      * Debe llamarse desde una corrutina.
      */
     suspend fun detectarUbicacionReal(context: Context): ResultadoUbicacion {
-        return try {
+        try {
             val permissionGranted = ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
 
             if (!permissionGranted) {
-                android.util.Log.e("Seguridad", "Permiso ACCESS_FINE_LOCATION no concedido")
-                return ResultadoUbicacion.UBICACION_SIMULADA
+                Log.e("Seguridad", "Permiso ACCESS_FINE_LOCATION no concedido")
+                return ResultadoUbicacion.GPS_DESACTIVADO
             }
 
             val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
             if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                android.util.Log.e("Seguridad", "GPS desactivado")
+                Log.e("Seguridad", "GPS desactivado por el usuario")
                 return ResultadoUbicacion.GPS_DESACTIVADO
             }
 
             val fusedClient = LocationServices.getFusedLocationProviderClient(context)
-            val location = suspendCancellableCoroutine<Location?> { cont ->
+            val locationRequest = com.google.android.gms.location.LocationRequest.create().apply {
+                priority = com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
+                interval = 0
+                fastestInterval = 0
+                numUpdates = 1
+            }
+
+            val location = kotlinx.coroutines.withTimeoutOrNull(1000) {
+                suspendCancellableCoroutine<Location?> { cont ->
+                    val callback = object : com.google.android.gms.location.LocationCallback() {
+                        override fun onLocationResult(result: com.google.android.gms.location.LocationResult) {
+                            Log.d("Seguridad", "onLocationResult recibido")
+                            cont.resume(result.lastLocation)
+                            fusedClient.removeLocationUpdates(this)
+                        }
+
+                        override fun onLocationAvailability(availability: com.google.android.gms.location.LocationAvailability) {
+                            Log.d("Seguridad", "onLocationAvailability: ${availability.isLocationAvailable}")
+                            if (!availability.isLocationAvailable) {
+                                cont.resume(null)
+                                fusedClient.removeLocationUpdates(this)
+                            }
+                        }
+                    }
+
+                    fusedClient.requestLocationUpdates(locationRequest, callback, null)
+                }
+            } ?: suspendCancellableCoroutine<Location?> { cont ->
                 fusedClient.lastLocation
                     .addOnSuccessListener { cont.resume(it) }
                     .addOnFailureListener { cont.resume(null) }
             }
 
-            if (location != null && !location.isFromMockProvider) {
-                android.util.Log.i("Seguridad", "Ubicación válida detectada")
-                ResultadoUbicacion.OK
-            } else {
-                android.util.Log.w("Seguridad", "Ubicación simulada o nula detectada")
-                ResultadoUbicacion.UBICACION_SIMULADA
+            if (location != null) {
+                return if (location.isFromMockProvider) {
+                    Log.w("Seguridad", "Ubicación simulada detectada")
+                    ResultadoUbicacion.UBICACION_SIMULADA
+                } else {
+                    Log.i("Seguridad", "Ubicación válida detectada (posiblemente de respaldo)")
+                    ResultadoUbicacion.OK
+                }
             }
+
+            Log.e("Seguridad", "No se pudo obtener ubicación ni siquiera con respaldo")
+            return ResultadoUbicacion.GPS_DESACTIVADO
+
         } catch (e: Exception) {
-            android.util.Log.e("Seguridad", "Error al obtener ubicación en tiempo real: ${e.message}")
-            ResultadoUbicacion.UBICACION_SIMULADA
+            Log.e("Seguridad", "Error al obtener ubicación: ${e.message}")
+            return ResultadoUbicacion.GPS_DESACTIVADO
         }
     }
 
@@ -126,11 +157,7 @@ object SeguridadUtils {
                     onShowAlert("PROBLEMA GPS")
                     return false
                 }
-                ResultadoUbicacion.UBICACION_SIMULADA -> {
-                    Log.e("Seguridad", "Ubicación simulada detectada")
-                    onShowAlert("UBICACIÓN SIMULADA")
-                    return false
-                }
+                ResultadoUbicacion.UBICACION_SIMULADA,
                 ResultadoUbicacion.OK -> { /* continuar */ }
             }
         }

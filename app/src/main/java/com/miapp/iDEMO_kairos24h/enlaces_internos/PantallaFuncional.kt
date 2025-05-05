@@ -66,13 +66,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
-import coil.ImageLoader
-import coil.compose.AsyncImage
-import coil.decode.ImageDecoderDecoder
-import coil.request.ImageRequest
 import com.miapp.iDEMO_kairos24h.R
 import com.miapp.iDEMO_kairos24h.enlaces_internos.SeguridadUtils.ResultadoUbicacion
-import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL.BANDEJA_DE_SOLICITUDES
 import com.miapp.iDEMO_kairos24h.fichar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -302,6 +297,8 @@ fun BotonesFichajeConPermisos(
     webView: WebView?,
     refreshTrigger: MutableState<Long> // 5. Añadir parámetro refreshTrigger
 ) {
+    // Añadir al principio de BotonesFichajeConPermisos
+    var ultimoFichajeTimestamp by remember { mutableStateOf(0L) }
     val context = LocalContext.current
     var pendingFichaje by remember { mutableStateOf<String?>(null) }
 
@@ -367,6 +364,14 @@ fun BotonesFichajeConPermisos(
                             // continuar con fichaje
                         }
                     }
+                    // --- Prevención de fichaje duplicado ---
+                    val ahora = System.currentTimeMillis()
+                    if (ahora - ultimoFichajeTimestamp < 5000) {
+                        Log.w("Fichaje", "Fichaje repetido ignorado")
+                        return@launch
+                    }
+                    ultimoFichajeTimestamp = ahora
+                    // --- Fin prevención ---
                     Log.d(
                         "Fichaje",
                         "Fichaje Entrada: Permiso concedido. Procesando fichaje de ENTRADA"
@@ -447,6 +452,14 @@ fun BotonesFichajeConPermisos(
                             // continuar con fichaje
                         }
                     }
+                    // --- Prevención de fichaje duplicado ---
+                    val ahora = System.currentTimeMillis()
+                    if (ahora - ultimoFichajeTimestamp < 5000) {
+                        Log.w("Fichaje", "Fichaje repetido ignorado")
+                        return@launch
+                    }
+                    ultimoFichajeTimestamp = ahora
+                    // --- Fin prevención ---
                     Log.d("Fichaje", "Fichaje Salida: Permiso concedido. Procesando fichaje de SALIDA")
                     webView?.let { fichar(context, "SALIDA", it) }
                     onFichaje("SALIDA")
@@ -895,7 +908,7 @@ fun MensajeAlerta(
     val mensaje = when (tipo.uppercase()) {
         "ENTRADA" -> "Fichaje de Entrada realizado correctamente"
         "SALIDA" -> "Fichaje de Salida realizado correctamente"
-        "PROBLEMA GPS" -> "No se detecta la geolocalización gps. Por favor, active la geolocalización gps para poder fichar."
+        "PROBLEMA GPS" -> "No se detecta la geolocalización gps. Por favor, active la geolocalización gps para poder fichar y vuelvalo a intentar en unos segundos."
         "PROBLEMA INTERNET" -> "El dispositivo no está conectado a la red. Revise su conexión a Internet."
         "POSIBLE UBI FALSA" -> "Se detectó una posible ubicación falsa. Reinicie su geolocalización gps y vuelva a intentarlo en unos minutos"
         "VPN DETECTADA" -> "VPN detectada. Desactive la VPN para continuar y vuelva a intentarlo en unos minutos."

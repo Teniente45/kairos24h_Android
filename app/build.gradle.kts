@@ -114,5 +114,6 @@ dependencies {
     implementation (libs.glide)
     //noinspection KaptUsageInsteadOfKsp
     kapt (libs.compiler)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4")
 }
 
