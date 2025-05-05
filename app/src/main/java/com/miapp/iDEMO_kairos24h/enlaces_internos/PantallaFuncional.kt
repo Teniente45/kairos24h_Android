@@ -66,6 +66,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
+import coil.ImageLoader
+import coil.compose.AsyncImage
+import coil.decode.ImageDecoderDecoder
+import coil.request.ImageRequest
 import com.miapp.iDEMO_kairos24h.R
 import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL.BANDEJA_DE_SOLICITUDES
 import com.miapp.iDEMO_kairos24h.fichar
@@ -701,12 +705,17 @@ fun AlertasDiarias(
     onAbrirWebView: (String) -> Unit,
     hideCuadroParaFichar: () -> Unit
 ) {
+    // 1. Añadir trigger para refresco periódico
+    val refreshTrigger = remember { mutableStateOf(System.currentTimeMillis()) }
     val context = LocalContext.current
     var avisos by remember { mutableStateOf(listOf<AvisoItem>()) }
     val expandedStates = remember { mutableStateMapOf<Int, Boolean>() }
     val datos = rememberDatosHorario()
+    // 1. Declarar variable de estado para loading
+    val showLoading = remember { mutableStateOf(false) }
 
-    LaunchedEffect(datos.fechaSeleccionada) {
+    // 2. Efecto para recargar alertas al cambiar fecha o trigger
+    LaunchedEffect(datos.fechaSeleccionada, refreshTrigger.value) {
         try {
             val urlAlertas = BuildURL.getMostrarAlertas(context) +
                 "&fecha=${datos.fechaSeleccionada}"
@@ -753,6 +762,15 @@ fun AlertasDiarias(
             avisos = listOf(AvisoItem("Error al cargar alertas", "", null))
         }
     }
+
+    // 3. Añadir efecto para refresco automático cada 10 minutos
+    LaunchedEffect(true) {
+        while (true) {
+            kotlinx.coroutines.delay(10 * 60 * 1000)
+            refreshTrigger.value = System.currentTimeMillis()
+        }
+    }
+
 
     Card(
         modifier = Modifier
@@ -813,9 +831,14 @@ fun AlertasDiarias(
                                     contentDescription = "Redireccionar",
                                     modifier = Modifier
                                         .size(20.dp)
+                                        // Ahora: primero abrir webview, luego delay, luego ocultar cuadro
                                         .clickable {
-                                            hideCuadroParaFichar()
-                                            onAbrirWebView(BuildURL.HOST.trimEnd('/') + "/" + aviso.url.trimStart('/'))
+                                            CoroutineScope(Dispatchers.Main).launch {
+                                                showLoading.value = true
+                                                onAbrirWebView(BuildURL.HOST.trimEnd('/') + "/" + aviso.url.trimStart('/'))
+                                                kotlinx.coroutines.delay(1000)
+                                                hideCuadroParaFichar()
+                                            }
                                         },
                                     tint = Color(0xFF7599B6)
                                 )
@@ -969,4 +992,4 @@ fun MensajeAlerta(
         }
     }
 }
-//============================================== FICHAJE DE LA APP =====================================
+
