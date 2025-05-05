@@ -17,6 +17,12 @@ import android.location.Location
 
 object SeguridadUtils {
 
+    enum class ResultadoUbicacion {
+        OK,
+        GPS_DESACTIVADO,
+        UBICACION_SIMULADA
+    }
+
     fun isUsingVPN(context: Context): Boolean {
         return try {
             val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -57,7 +63,7 @@ object SeguridadUtils {
      * Verifica si la ubicación activa es real (no simulada) usando FusedLocationProviderClient.
      * Debe llamarse desde una corrutina.
      */
-    suspend fun detectarUbicacionReal(context: Context): Boolean {
+    suspend fun detectarUbicacionReal(context: Context): ResultadoUbicacion {
         return try {
             val permissionGranted = ContextCompat.checkSelfPermission(
                 context,
@@ -66,7 +72,13 @@ object SeguridadUtils {
 
             if (!permissionGranted) {
                 android.util.Log.e("Seguridad", "Permiso ACCESS_FINE_LOCATION no concedido")
-                return false
+                return ResultadoUbicacion.UBICACION_SIMULADA
+            }
+
+            val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                android.util.Log.e("Seguridad", "GPS desactivado")
+                return ResultadoUbicacion.GPS_DESACTIVADO
             }
 
             val fusedClient = LocationServices.getFusedLocationProviderClient(context)
@@ -78,14 +90,14 @@ object SeguridadUtils {
 
             if (location != null && !location.isFromMockProvider) {
                 android.util.Log.i("Seguridad", "Ubicación válida detectada")
-                true
+                ResultadoUbicacion.OK
             } else {
                 android.util.Log.w("Seguridad", "Ubicación simulada o nula detectada")
-                false
+                ResultadoUbicacion.UBICACION_SIMULADA
             }
         } catch (e: Exception) {
             android.util.Log.e("Seguridad", "Error al obtener ubicación en tiempo real: ${e.message}")
-            false
+            ResultadoUbicacion.UBICACION_SIMULADA
         }
     }
 
@@ -95,7 +107,7 @@ object SeguridadUtils {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    fun checkSecurity(
+    suspend fun checkSecurity(
         context: Context,
         validarGPS: Boolean,
         validarIP: Boolean,
@@ -108,10 +120,18 @@ object SeguridadUtils {
                 return false
             }
 
-            if (isMockLocationEnabled(context)) {
-                Log.e("Seguridad", "Ubicación simulada detectada")
-                onShowAlert("UBICACIÓN SIMULADA")
-                return false
+            when (detectarUbicacionReal(context)) {
+                ResultadoUbicacion.GPS_DESACTIVADO -> {
+                    Log.e("Seguridad", "GPS desactivado")
+                    onShowAlert("PROBLEMA GPS")
+                    return false
+                }
+                ResultadoUbicacion.UBICACION_SIMULADA -> {
+                    Log.e("Seguridad", "Ubicación simulada detectada")
+                    onShowAlert("UBICACIÓN SIMULADA")
+                    return false
+                }
+                ResultadoUbicacion.OK -> { /* continuar */ }
             }
         }
 

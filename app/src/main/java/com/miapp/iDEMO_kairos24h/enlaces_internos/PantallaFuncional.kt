@@ -71,6 +71,7 @@ import coil.compose.AsyncImage
 import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 import com.miapp.iDEMO_kairos24h.R
+import com.miapp.iDEMO_kairos24h.enlaces_internos.SeguridadUtils.ResultadoUbicacion
 import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL.BANDEJA_DE_SOLICITUDES
 import com.miapp.iDEMO_kairos24h.fichar
 import kotlinx.coroutines.CoroutineScope
@@ -351,11 +352,20 @@ fun BotonesFichajeConPermisos(
                 }
                 // Lanzar la comprobación real de ubicación simulada
                 CoroutineScope(Dispatchers.Main).launch {
-                    val ubicacionEsValida = SeguridadUtils.detectarUbicacionReal(context)
-                    if (!ubicacionEsValida) {
-                        Log.e("Seguridad", "Intento de fichaje con ubicación simulada")
-                        onShowAlert("POSIBLE UBI FALSA")
-                        return@launch
+                    when (SeguridadUtils.detectarUbicacionReal(context)) {
+                        ResultadoUbicacion.GPS_DESACTIVADO -> {
+                            Log.e("Seguridad", "GPS desactivado")
+                            onShowAlert("PROBLEMA GPS")
+                            return@launch
+                        }
+                        ResultadoUbicacion.UBICACION_SIMULADA -> {
+                            Log.e("Seguridad", "Ubicación simulada detectada")
+                            onShowAlert("POSIBLE UBI FALSA")
+                            return@launch
+                        }
+                        ResultadoUbicacion.OK -> {
+                            // continuar con fichaje
+                        }
                     }
                     Log.d(
                         "Fichaje",
@@ -422,11 +432,20 @@ fun BotonesFichajeConPermisos(
                 }
                 // Lanzar la comprobación real de ubicación simulada
                 CoroutineScope(Dispatchers.Main).launch {
-                    val ubicacionEsValida = SeguridadUtils.detectarUbicacionReal(context)
-                    if (!ubicacionEsValida) {
-                        Log.e("Seguridad", "Intento de fichaje con ubicación simulada")
-                        onShowAlert("POSIBLE UBI FALSA")
-                        return@launch
+                    when (SeguridadUtils.detectarUbicacionReal(context)) {
+                        ResultadoUbicacion.GPS_DESACTIVADO -> {
+                            Log.e("Seguridad", "GPS desactivado")
+                            onShowAlert("PROBLEMA GPS")
+                            return@launch
+                        }
+                        ResultadoUbicacion.UBICACION_SIMULADA -> {
+                            Log.e("Seguridad", "Ubicación simulada detectada")
+                            onShowAlert("POSIBLE UBI FALSA")
+                            return@launch
+                        }
+                        ResultadoUbicacion.OK -> {
+                            // continuar con fichaje
+                        }
                     }
                     Log.d("Fichaje", "Fichaje Salida: Permiso concedido. Procesando fichaje de SALIDA")
                     webView?.let { fichar(context, "SALIDA", it) }

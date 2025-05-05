@@ -74,6 +74,8 @@ import com.miapp.iDEMO_kairos24h.enlaces_internos.SeguridadUtils
 import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 
 class Fichar : ComponentActivity() {
 
@@ -501,49 +503,47 @@ fun obtenerCoord(
     val validarGPS = lComGPS.equals("S", ignoreCase = true)
     val validarIP = lComIP.equals("S", ignoreCase = true)
 
-    val permitido = SeguridadUtils.checkSecurity(context, validarGPS, validarIP) { mensaje ->
-        onShowAlert(mensaje)
-    }
-    if (!permitido) return
+    val scope = CoroutineScope(Dispatchers.Main)
+    scope.launch {
+        val permitido = SeguridadUtils.checkSecurity(context, validarGPS, validarIP) { mensaje ->
+            onShowAlert(mensaje)
+        }
+        if (!permitido) return@launch
 
-    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
-    // 🔍 Verificar si los permisos de ubicación están concedidos
-    if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-        ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
-        Log.e("Fichar", "No se cuenta con los permisos de ubicación.")
-        onShowAlert("PROBLEMA GPS") // Muestra mensaje de alerta
-        return
-    }
-
-    // 🔍 Verificar si el GPS está activado
-    val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-    if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-        Log.e("Fichar", "GPS desactivado.")
-        onShowAlert("PROBLEMA GPS") // Muestra mensaje de alerta
-        return
-    }
-
-    // 🔍 Intentar obtener la última ubicación conocida
-    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-        if (location == null) {
-            Log.e("Fichar", "No se pudo obtener la ubicación.")
-            onShowAlert("PROBLEMA GPS") // Muestra mensaje de alerta
-            return@addOnSuccessListener
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+            ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            Log.e("Fichar", "No se cuenta con los permisos de ubicación.")
+            onShowAlert("PROBLEMA GPS")
+            return@launch
         }
 
-        if (SeguridadUtils.isMockLocationEnabled(context)) {
-            Log.e("Fichar", "Ubicación falsa detectada.")
-            onShowAlert("POSIBLE UBI FALSA") // Muestra mensaje de alerta
-            return@addOnSuccessListener
+        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            Log.e("Fichar", "GPS desactivado.")
+            onShowAlert("PROBLEMA GPS")
+            return@launch
         }
 
-        // ✅ Ubicación válida
-        onLocationObtained(location.latitude, location.longitude)
-    }.addOnFailureListener { e ->
-        Log.e("Fichar", "Error obteniendo ubicación: ${e.message}")
-        onShowAlert("PROBLEMA GPS") // Muestra mensaje de alerta
+        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            if (location == null) {
+                Log.e("Fichar", "No se pudo obtener la ubicación.")
+                onShowAlert("PROBLEMA GPS")
+                return@addOnSuccessListener
+            }
+
+            if (SeguridadUtils.isMockLocationEnabled(context)) {
+                Log.e("Fichar", "Ubicación falsa detectada.")
+                onShowAlert("POSIBLE UBI FALSA")
+                return@addOnSuccessListener
+            }
+
+            onLocationObtained(location.latitude, location.longitude)
+        }.addOnFailureListener { e ->
+            Log.e("Fichar", "Error obteniendo ubicación: ${e.message}")
+            onShowAlert("PROBLEMA GPS")
+        }
     }
 }
 //============================================== FICHAJE DE LA APP =====================================
