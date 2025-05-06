@@ -405,21 +405,26 @@ fun FicharScreen(
             },
             confirmButton = {},
             dismissButton = {
-                Row(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                Row(modifier = Modifier.fillMaxWidth()) {
                     Button(
                         onClick = {
                             showLogoutDialog.value = false
+
+                            webViewState.value?.apply {
+                                clearCache(true)
+                                clearHistory()
+                            }
+                            CookieManager.getInstance().removeAllCookies(null)
+                            CookieManager.getInstance().flush()
+
                             onLogout()
                         },
+                        modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF7599B6),
                             contentColor = Color.White
                         ),
-                        shape = RectangleShape,
-                        modifier = Modifier
-                            .weight(1f)
+                        shape = RectangleShape
                     ) {
                         Text("Sí")
                     }
@@ -430,13 +435,12 @@ fun FicharScreen(
                         onClick = {
                             showLogoutDialog.value = false
                         },
+                        modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF7599B6),
                             contentColor = Color.White
                         ),
-                        shape = RectangleShape,
-                        modifier = Modifier
-                            .weight(1f)
+                        shape = RectangleShape
                     ) {
                         Text("No")
                     }

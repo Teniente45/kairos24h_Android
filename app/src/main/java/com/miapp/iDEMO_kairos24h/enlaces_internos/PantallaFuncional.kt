@@ -807,6 +807,13 @@ fun AlertasDiarias(
         }
     }
 
+    // 4. Añadir efecto para simular el final del gif y refrescar tras 7.5 segundos
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(500) // duración estimada del gif en milisegundos
+            refreshTrigger.longValue = System.currentTimeMillis()
+        }
+    }
 
     Card(
         modifier = Modifier
