@@ -94,46 +94,58 @@ fun CuadroParaFichar(
     modifier: Modifier = Modifier,
     webViewState: MutableState<WebView?>
 ) {
+    // Mover refreshTrigger fuera del if para que se ejecute siempre
+    val refreshTrigger = remember { mutableLongStateOf(System.currentTimeMillis()) }
+    // Añadir observer de ON_RESUME para refrescar el trigger
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                refreshTrigger.value = System.currentTimeMillis()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
     if (isVisibleState.value) {
-        // 3. Agregar refreshTrigger aquí
-        val refreshTrigger = remember { mutableLongStateOf(System.currentTimeMillis()) }
-        if (isVisibleState.value) {
-            Box(
-                modifier = modifier
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .background(Color.White)
+                .zIndex(2f)
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.White)
-                    .zIndex(2f)
+                    // Habilita el scroll vertical:
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp)
             ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier
-                        .fillMaxSize()
-                        // Habilita el scroll vertical:
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 20.dp)
-                ) {
-                    // Mostrar lista de fichajes si existe
-                    if (fichajes.isNotEmpty()) {
-                        Text(text = "Fichajes del Día", color = Color.Blue)
-                        fichajes.forEach { fichaje ->
-                            Text(text = fichaje, color = Color.DarkGray)
-                        }
+                // Mostrar lista de fichajes si existe
+                if (fichajes.isNotEmpty()) {
+                    Text(text = "Fichajes del Día", color = Color.Blue)
+                    fichajes.forEach { fichaje ->
+                        Text(text = fichaje, color = Color.DarkGray)
                     }
-                    Logo_empresa()
-                    MiHorario()
-                    BotonesFichajeConPermisos(
-                        onFichaje = onFichaje,
-                        onShowAlert = onShowAlert,
-                        webView = webViewState.value ?: return@CuadroParaFichar,
-                        refreshTrigger = refreshTrigger // 7. Pasar refreshTrigger
-                    )
-                    rememberDatosHorario()
-                    RecuadroFichajesDia(refreshTrigger) // 4. Pasar refreshTrigger a RecuadroFichajesDia
-                    AlertasDiarias(
-                        onAbrirWebView = { url -> webViewState.value?.loadUrl(url) },
-                        hideCuadroParaFichar = { isVisibleState.value = false }
-                    )
                 }
+                Logo_empresa()
+                MiHorario()
+                BotonesFichajeConPermisos(
+                    onFichaje = onFichaje,
+                    onShowAlert = onShowAlert,
+                    webView = webViewState.value ?: return@CuadroParaFichar,
+                    refreshTrigger = refreshTrigger // 7. Pasar refreshTrigger
+                )
+                rememberDatosHorario()
+                RecuadroFichajesDia(refreshTrigger) // 4. Pasar refreshTrigger a RecuadroFichajesDia
+                AlertasDiarias(
+                    onAbrirWebView = { url -> webViewState.value?.loadUrl(url) },
+                    hideCuadroParaFichar = { isVisibleState.value = false },
+                    refreshTrigger = refreshTrigger
+                )
             }
         }
     }
@@ -739,10 +751,9 @@ data class AvisoItem(val titulo: String, val detalle: String, val url: String?)
 @Composable
 fun AlertasDiarias(
     onAbrirWebView: (String) -> Unit,
-    hideCuadroParaFichar: () -> Unit
+    hideCuadroParaFichar: () -> Unit,
+    refreshTrigger: MutableState<Long>
 ) {
-    // 1. Añadir trigger para refresco periódico
-    val refreshTrigger = remember { mutableLongStateOf(System.currentTimeMillis()) }
     val context = LocalContext.current
     var avisos by remember { mutableStateOf(listOf<AvisoItem>()) }
     val expandedStates = remember { mutableStateMapOf<Int, Boolean>() }
@@ -751,7 +762,7 @@ fun AlertasDiarias(
     val showLoading = remember { mutableStateOf(false) }
 
     // 2. Efecto para recargar alertas al cambiar fecha o trigger
-    LaunchedEffect(datos.fechaSeleccionada, refreshTrigger.longValue) {
+    LaunchedEffect(datos.fechaSeleccionada, refreshTrigger.value) {
         try {
             val urlAlertas = BuildURL.getMostrarAlertas(context) +
                 "&fecha=${datos.fechaSeleccionada}"
@@ -803,15 +814,7 @@ fun AlertasDiarias(
     LaunchedEffect(true) {
         while (true) {
             kotlinx.coroutines.delay(10 * 60 * 1000)
-            refreshTrigger.longValue = System.currentTimeMillis()
-        }
-    }
-
-    // 4. Añadir efecto para simular el final del gif y refrescar tras 7.5 segundos
-    LaunchedEffect(Unit) {
-        while (true) {
-            kotlinx.coroutines.delay(500) // duración estimada del gif en milisegundos
-            refreshTrigger.longValue = System.currentTimeMillis()
+            refreshTrigger.value = System.currentTimeMillis()
         }
     }
 
