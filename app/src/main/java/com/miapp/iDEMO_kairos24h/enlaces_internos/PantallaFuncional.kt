@@ -132,7 +132,7 @@ fun CuadroParaFichar(
                         Text(text = fichaje, color = Color.DarkGray)
                     }
                 }
-                Logo_empresa()
+                Logo_empresa_cliente()
                 MiHorario()
                 BotonesFichajeConPermisos(
                     onFichaje = onFichaje,
@@ -147,13 +147,33 @@ fun CuadroParaFichar(
                     hideCuadroParaFichar = { isVisibleState.value = false },
                     refreshTrigger = refreshTrigger
                 )
+                Logo_empresa_desarrolladora()
             }
         }
     }
 }
 
 @Composable
-fun Logo_empresa() {
+fun Logo_empresa_cliente() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .offset(y = (-10).dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.compliance_x_kairos24h),
+            contentDescription = "Logo del cliente",
+            contentScale = ContentScale.Fit, // Ajusta la imagen para que se vea completa
+            modifier = Modifier
+                .width(140.dp)
+                .height(100.dp)
+        )
+    }
+}
+
+@Composable
+fun Logo_empresa_desarrolladora() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -170,6 +190,7 @@ fun Logo_empresa() {
         )
     }
 }
+
 data class DatosHorario(
     val fechaFormateada: String,
     val fechaSeleccionada: String,
@@ -293,7 +314,7 @@ fun MiHorario() {
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
-            fontSize = 18.sp
+            fontSize = 22.sp
         )
         Text(
             text = horarioTexto,

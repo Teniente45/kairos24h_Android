@@ -260,7 +260,7 @@ class MainActivity : ComponentActivity() {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     // 🔥 Logo de la app
                     Image(
-                        painter = painterResource(id = R.drawable.logo),
+                        painter = painterResource(id = R.drawable.compliance),
                         contentDescription = "Logo",
                         modifier = Modifier
                             .width(200.dp)
