@@ -59,6 +59,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -89,10 +90,10 @@ import java.util.Locale
 fun CuadroParaFichar(
     isVisibleState: MutableState<Boolean>,
     fichajes: List<String>,
-    onFichaje: (tipo: String) -> Unit,
-    onShowAlert: (String) -> Unit, // ✅ Se agregó correctamente
-    modifier: Modifier = Modifier,
-    webViewState: MutableState<WebView?>
+    onFichaje: (String) -> Unit,
+    onShowAlert: (String) -> Unit,
+    webViewState: MutableState<WebView?>,
+    mostrarBotonesFichaje: Boolean // ← NUEVO PARÁMETRO
 ) {
     // Mover refreshTrigger fuera del if para que se ejecute siempre
     val refreshTrigger = remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -111,7 +112,7 @@ fun CuadroParaFichar(
     }
     if (isVisibleState.value) {
         Box(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize()
                 .background(Color.White)
                 .zIndex(2f)
@@ -139,7 +140,7 @@ fun CuadroParaFichar(
                     webView = webViewState.value ?: return@CuadroParaFichar,
                     refreshTrigger = refreshTrigger // 7. Pasar refreshTrigger
                 )
-                rememberDatosHorario()
+                // rememberDatosHorario()  // Eliminado porque ya no se necesita
                 RecuadroFichajesDia(refreshTrigger) // 4. Pasar refreshTrigger a RecuadroFichajesDia
                 AlertasDiarias(
                     onAbrirWebView = { url -> webViewState.value?.loadUrl(url) },
@@ -415,9 +416,14 @@ fun BotonesFichajeConPermisos(
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "Fichaje Entrada",
+                text = buildAnnotatedString {
+                    append("Fichaje ")
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                        append("Entrada")
+                    }
+                },
                 color = Color(0xFF7599B6),
-                fontSize = 20.sp,
+                fontSize = 25.sp,
                 modifier = Modifier.align(Alignment.CenterVertically)
             )
         }
@@ -500,9 +506,14 @@ fun BotonesFichajeConPermisos(
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "Fichaje Salida",
+                text = buildAnnotatedString {
+                    append("Fichaje ")
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                        append("Salida")
+                    }
+                },
                 color = Color(0xFF7599B6),
-                fontSize = 20.sp,
+                fontSize = 25.sp,
                 modifier = Modifier.align(Alignment.CenterVertically)
             )
         }
@@ -510,12 +521,13 @@ fun BotonesFichajeConPermisos(
 }
 
 @Composable
-fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) { // 1. Cambiar firma
+fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
     val context = LocalContext.current
     val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
 
+    // Necesario para la URL, mantener la lógica de fechaSeleccionada
     val fechaSeleccionada = remember { mutableStateOf("") }
-    LaunchedEffect(refreshTrigger.value) { // 2. Usar refreshTrigger.value como clave
+    LaunchedEffect(refreshTrigger.value) {
         if (fechaSeleccionada.value.isEmpty()) {
             val fechaServidor = ManejoDeSesion.obtenerFechaHoraInternet()
             if (fechaServidor != null) {
@@ -527,13 +539,15 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) { 
         }
     }
 
-    // Log de la fecha usada para la petición
     Log.d("RecuadroFichajesDia", "Fecha usada para la petición: ${fechaSeleccionada.value}")
 
     val (_, _, xEmpleadoRaw) = AuthManager.getUserCredentials(context)
     val xEmpleado = xEmpleadoRaw ?: "SIN_EMPLEADO"
 
-    val fichajesTexto by produceState(initialValue = emptyList<String>(), key1 = Triple(fechaSeleccionada.value, xEmpleado, refreshTrigger.value)) {
+    val fichajesTexto by produceState(
+        initialValue = emptyList<String>(),
+        key1 = Triple(fechaSeleccionada.value, xEmpleado, refreshTrigger.value)
+    ) {
         value = try {
             withContext(Dispatchers.IO) {
                 val client = OkHttpClient()
@@ -556,7 +570,6 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) { 
                                 val item = fichajesArray.getJSONObject(i)
                                 val nMinEntStr = item.optString("nMinEnt", "").trim()
                                 val nMinSalStr = item.optString("nMinSal", "").trim()
-
                                 val nMinEnt = nMinEntStr.toIntOrNull()
                                 val nMinSal = nMinSalStr.toIntOrNull()
 
@@ -570,10 +583,8 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) { 
                                         "??"
                                     }
                                 }
-
                                 val horaEntrada = minutosAHora(nMinEnt)
                                 val horaSalida = minutosAHora(nMinSal)
-
                                 add("$horaEntrada h - $horaSalida h")
                             }
                         }
@@ -589,7 +600,6 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) { 
         }
     }
 
-    // --- Agregado: Declaración de datePickerDialog justo antes del Row de los botones del calendario ---
     val calendar = Calendar.getInstance()
     val datePickerDialog = DatePickerDialog(
         context,
@@ -603,7 +613,6 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) { 
         calendar.get(Calendar.MONTH),
         calendar.get(Calendar.DAY_OF_MONTH)
     )
-    // --- Fin agregado ---
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -612,7 +621,7 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) { 
         Text(
             text = "Fichajes Día",
             color = Color(0xFF7599B6),
-            fontSize = 20.sp,
+            fontSize = 25.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
             modifier = Modifier.offset(y = (-20).dp)
@@ -620,7 +629,6 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) { 
 
         val sdfEntrada = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         val sdfSalida = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-
         val iconColor = Color(0xFF7599B6)
 
         Row(
@@ -638,7 +646,6 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) { 
                     tint = iconColor
                 )
             }
-
             IconButton(onClick = {
                 val actual = sdfEntrada.parse(fechaSeleccionada.value)
                 val anterior = Calendar.getInstance().apply {
@@ -654,20 +661,18 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) { 
                     tint = iconColor
                 )
             }
-
             Text(
-                text = "Fecha: ${try {
+                text = try {
                     val date = sdfEntrada.parse(fechaSeleccionada.value)
                     sdfSalida.format(date ?: Date())
                 } catch (_: Exception) {
                     fechaSeleccionada.value
-                }}",
+                },
                 color = Color.Gray,
-                fontSize = 16.sp,
+                fontSize = 22.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.weight(1f)
             )
-
             IconButton(onClick = {
                 val actual = sdfEntrada.parse(fechaSeleccionada.value)
                 val siguiente = Calendar.getInstance().apply {
@@ -683,7 +688,6 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) { 
                     tint = iconColor
                 )
             }
-
             IconButton(onClick = {
                 CoroutineScope(Dispatchers.IO).launch {
                     val fechaServidor = ManejoDeSesion.obtenerFechaHoraInternet()
@@ -695,16 +699,15 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) { 
                     }
                 }
             }) {
-                Icon(
+                Image(
                     painter = painterResource(id = R.drawable.reload),
-                    contentDescription = "Usar fecha del servidor",
-                    modifier = Modifier.size(26.dp),
-                    tint = iconColor
+                    contentDescription = "Fecha actual",
+                    modifier = Modifier.size(76.dp),
+                    contentScale = ContentScale.Fit
                 )
             }
         }
 
-        // Nuevo bloque visual equivalente al HTML propuesto
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -714,7 +717,6 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) { 
                 .align(Alignment.CenterHorizontally),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
             if (fichajesTexto.isNotEmpty()) {
                 fichajesTexto.forEach { fichaje ->
                     val partes = fichaje.split(" - ")
@@ -723,12 +725,12 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) { 
                     ) {
                         Text(
                             text = partes.getOrNull(0)?.plus(" - ") ?: "?? - ",
-                            fontSize = 18.sp,
+                            fontSize = 23.sp,
                             color = Color(0xFF7599B6)
                         )
                         Text(
                             text = partes.getOrNull(1) ?: "??",
-                            fontSize = 18.sp,
+                            fontSize = 23.sp,
                             color = Color(0xFF7599B6)
                         )
                     }
@@ -736,7 +738,7 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) { 
             } else {
                 Text(
                     text = "No hay fichajes hoy",
-                    fontSize = 18.sp,
+                    fontSize = 23.sp,
                     color = Color.Gray
                 )
             }
@@ -755,34 +757,31 @@ fun AlertasDiarias(
     refreshTrigger: MutableState<Long>
 ) {
     val context = LocalContext.current
-    var avisos by remember { mutableStateOf(listOf<AvisoItem>()) }
     val expandedStates = remember { mutableStateMapOf<Int, Boolean>() }
-    val datos = rememberDatosHorario()
-    // 1. Declarar variable de estado para loading
-    val showLoading = remember { mutableStateOf(false) }
+    // Forzar fetch inicial
+    LaunchedEffect(Unit) {
+        refreshTrigger.value = System.currentTimeMillis()
+    }
 
-    // 2. Efecto para recargar alertas al cambiar fecha o trigger
-    LaunchedEffect(datos.fechaSeleccionada, refreshTrigger.value) {
-        try {
-            val urlAlertas = BuildURL.getMostrarAlertas(context) +
-                "&fecha=${datos.fechaSeleccionada}"
-
-            Log.d("AlertasDiarias", "URL de alertas: $urlAlertas")
-
+    // produceState para avisos, similar a RecuadroFichajesDia
+    val avisos by produceState(
+        initialValue = emptyList<AvisoItem>(),
+        key1 = refreshTrigger.value
+    ) {
+        value = try {
             withContext(Dispatchers.IO) {
+                val urlAlertas = BuildURL.getMostrarAlertas(context)
+                Log.d("AlertasDiarias", "URL de alertas: $urlAlertas")
                 val client = OkHttpClient()
                 val cookie = android.webkit.CookieManager.getInstance()
                     .getCookie("https://democontrolhorario.kairos24h.es") ?: ""
-
                 val request = Request.Builder()
                     .url(urlAlertas)
                     .addHeader("Cookie", cookie)
                     .build()
-
                 val response = client.newCall(request).execute()
                 val jsonBody = response.body?.string()
                 val json = JSONObject(jsonBody ?: "")
-
                 val dataArray = json.optJSONArray("dataAvisos")
                 if (dataArray != null && dataArray.length() > 0) {
                     val nuevaLista = mutableListOf<AvisoItem>()
@@ -791,26 +790,24 @@ fun AlertasDiarias(
                         val dAviso = item.optString("D_AVISO", "Sin aviso")
                         val tAviso = item.optString("T_AVISO", "")
                         val tUrl = item.optString("T_URL", "").takeIf { it.isNotBlank() && it != "null" }
-
                         Log.d("JSONAlertas", "[$i] D_AVISO: $dAviso")
                         Log.d("JSONAlertas", "[$i] T_AVISO: $tAviso")
                         Log.d("JSONAlertas", "[$i] T_URL: $tUrl")
-
                         nuevaLista.add(AvisoItem(dAviso, tAviso, tUrl))
                     }
-                    avisos = nuevaLista
+                    nuevaLista
                 } else {
                     Log.d("JSONAlertas", "Array 'dataAvisos' vacío o nulo")
-                    avisos = listOf(AvisoItem("No hay alertas disponibles", "", null))
+                    listOf(AvisoItem("No hay alertas disponibles", "", null))
                 }
             }
         } catch (e: Exception) {
             Log.e("AlertasDiarias", "Error obteniendo alertas: ${e.message}")
-            avisos = listOf(AvisoItem("Error al cargar alertas", "", null))
+            listOf(AvisoItem("Error al cargar alertas", "", null))
         }
     }
 
-    // 3. Añadir efecto para refresco automático cada 10 minutos
+    // Refresco automático cada 10 minutos
     LaunchedEffect(true) {
         while (true) {
             kotlinx.coroutines.delay(10 * 60 * 1000)
@@ -837,11 +834,19 @@ fun AlertasDiarias(
                     text = "Avisos / Alertas",
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
+                    fontSize = 23.sp,
                     modifier = Modifier.align(Alignment.CenterStart)
                 )
             }
 
             Column(modifier = Modifier.padding(top = 8.dp)) {
+                if (avisos.isEmpty()) {
+                    Text(
+                        text = "Cargando alertas...",
+                        color = Color.Gray,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
                 avisos.forEachIndexed { index, aviso ->
                     Column(
                         modifier = Modifier
@@ -867,7 +872,7 @@ fun AlertasDiarias(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = aviso.titulo,
-                                fontSize = 14.sp,
+                                fontSize = 18.sp,
                                 color = Color(0xFF7599B6),
                                 modifier = Modifier.weight(1f)
                             )
@@ -877,10 +882,8 @@ fun AlertasDiarias(
                                     contentDescription = "Redireccionar",
                                     modifier = Modifier
                                         .size(20.dp)
-                                        // Ahora: primero abrir webview, luego delay, luego ocultar cuadro
                                         .clickable {
                                             CoroutineScope(Dispatchers.Main).launch {
-                                                showLoading.value = true
                                                 onAbrirWebView(BuildURL.HOST.trimEnd('/') + "/" + aviso.url.trimStart('/'))
                                                 kotlinx.coroutines.delay(1000)
                                                 hideCuadroParaFichar()

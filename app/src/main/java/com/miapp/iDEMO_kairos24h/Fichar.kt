@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION")
-
 package com.miapp.iDEMO_kairos24h
 
 
@@ -314,7 +312,7 @@ fun FicharScreen(
             LoadingScreen(isLoading = isLoading)
 
             // Cuadro para fichar con altura adecuada, sin scroll
-            if (showCuadroParaFicharState.value && mostrarBotonesFichaje) {
+            if (showCuadroParaFicharState.value) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -343,7 +341,8 @@ fun FicharScreen(
                         onShowAlert = { alertTipo ->
                             fichajeAlertTipo = alertTipo
                         },
-                        webViewState = webViewState
+                        webViewState = webViewState,
+                        mostrarBotonesFichaje = mostrarBotonesFichaje
                     )
                 }
             }
