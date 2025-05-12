@@ -166,8 +166,8 @@ fun Logo_empresa_cliente() {
             contentDescription = "Logo del cliente",
             contentScale = ContentScale.Fit, // Ajusta la imagen para que se vea completa
             modifier = Modifier
-                .width(140.dp)
-                .height(100.dp)
+                .width(500.dp)
+                .height(150.dp)
         )
     }
 }
@@ -284,7 +284,7 @@ fun MiHorario() {
                                 minutosAHora(horaIni) + " - " + minutosAHora(horaFin)
                             }
                         } else {
-                            "No hay horario"
+                            "No Horario"
                         }
                     } catch (e: Exception) {
                         Log.e("MiHorario", "Error al parsear JSON: ${e.message}\nResponse body: $responseBody")
@@ -546,6 +546,33 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
     val context = LocalContext.current
     val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
 
+    // --- NUEVO: Variables para horario ---
+    val datosHorario = rememberDatosHorario()
+    val horaInicioHorario = remember { mutableStateOf(0) }
+    val horaFinHorario = remember { mutableStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        val fechaServidor = ManejoDeSesion.obtenerFechaHoraInternet()
+        if (fechaServidor != null) {
+            val urlHorario = BuildURL.getMostrarHorarios(context) + "&fecha=${dateFormatter.format(fechaServidor)}"
+            withContext(Dispatchers.IO) {
+                try {
+                    val client = OkHttpClient()
+                    val request = Request.Builder().url(urlHorario).build()
+                    val response = client.newCall(request).execute()
+                    val jsonBody = response.body?.string()?.replace("\uFEFF", "")
+                    val json = JSONObject(jsonBody ?: "")
+                    val dataArray = json.getJSONArray("dataHorario")
+                    if (dataArray.length() > 0) {
+                        val item = dataArray.getJSONObject(0)
+                        horaInicioHorario.value = item.optInt("N_HORINI", 0)
+                        horaFinHorario.value = item.optInt("N_HORFIN", 0)
+                    }
+                } catch (_: Exception) { }
+            }
+        }
+    }
+
     // Necesario para la URL, mantener la lógica de fechaSeleccionada
     val fechaSeleccionada = remember { mutableStateOf("") }
     LaunchedEffect(refreshTrigger.value) {
@@ -741,18 +768,40 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
             if (fichajesTexto.isNotEmpty()) {
                 fichajesTexto.forEach { fichaje ->
                     val partes = fichaje.split(" - ")
+                    val entradaMin = partes.getOrNull(0)?.replace(" h", "")?.split(":")?.let {
+                        it.getOrNull(0)?.toIntOrNull()?.times(60)?.plus(it.getOrNull(1)?.toIntOrNull() ?: 0)
+                    }
+                    val salidaMin = partes.getOrNull(1)?.replace(" h", "")?.split(":")?.let {
+                        it.getOrNull(0)?.toIntOrNull()?.times(60)?.plus(it.getOrNull(1)?.toIntOrNull() ?: 0)
+                    }
+
+                    // NUEVO: Determinar si el horario es válido
+                    val horarioValido = horaInicioHorario.value != 0 || horaFinHorario.value != 0
+
+                    val colorEntrada = when {
+                        !horarioValido -> Color.Gray
+                        entradaMin != null && entradaMin <= horaInicioHorario.value -> Color.Green
+                        else -> Color.Red
+                    }
+
+                    val colorSalida = when {
+                        !horarioValido -> Color.Gray
+                        salidaMin != null && salidaMin >= horaFinHorario.value -> Color.Green
+                        else -> Color.Red
+                    }
+
                     Row(
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     ) {
                         Text(
                             text = partes.getOrNull(0)?.plus(" - ") ?: "?? - ",
                             fontSize = 23.sp,
-                            color = Color(0xFF7599B6)
+                            color = colorEntrada
                         )
                         Text(
                             text = partes.getOrNull(1) ?: "??",
                             fontSize = 23.sp,
-                            color = Color(0xFF7599B6)
+                            color = colorSalida
                         )
                     }
                 }
