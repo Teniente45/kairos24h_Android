@@ -134,12 +134,14 @@ fun CuadroParaFichar(
                 }
                 Logo_empresa_cliente()
                 MiHorario()
-                BotonesFichajeConPermisos(
-                    onFichaje = onFichaje,
-                    onShowAlert = onShowAlert,
-                    webView = webViewState.value ?: return@CuadroParaFichar,
-                    refreshTrigger = refreshTrigger // 7. Pasar refreshTrigger
-                )
+                if (mostrarBotonesFichaje) {
+                    BotonesFichajeConPermisos(
+                        onFichaje = onFichaje,
+                        onShowAlert = onShowAlert,
+                        webView = webViewState.value ?: return@CuadroParaFichar,
+                        refreshTrigger = refreshTrigger // 7. Pasar refreshTrigger
+                    )
+                }
                 // rememberDatosHorario()  // Eliminado porque ya no se necesita
                 RecuadroFichajesDia(refreshTrigger) // 4. Pasar refreshTrigger a RecuadroFichajesDia
                 AlertasDiarias(
@@ -242,12 +244,31 @@ fun rememberDatosHorario(): DatosHorario {
 
 @Composable
 fun MiHorario() {
-    val datos = rememberDatosHorario()
+    // Obtener contexto y formateadores de fecha
+    val context = LocalContext.current
+    val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+    var urlHorario by remember { mutableStateOf("") }
+    var fechaFormateada by remember { mutableStateOf("Cargando...") }
 
-    val urlHorario = datos.urlHorario
+    LaunchedEffect(Unit) {
+        val fechaServidor = ManejoDeSesion.obtenerFechaHoraInternet()
+        if (fechaServidor != null) {
+            val fecha = dateFormatter.format(fechaServidor)
+            urlHorario = BuildURL.getMostrarHorarios(context) + "&fecha=$fecha"
+            val dateFormatterTexto = SimpleDateFormat("EEEE, d 'de' MMMM 'de' yyyy", Locale("es", "ES"))
+            fechaFormateada = dateFormatterTexto.format(fechaServidor)
+                .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale("es", "ES")) else it.toString() }
+        }
+    }
+
+    Log.d("MiHorario", "URL solicitada: $urlHorario")
 
     // Estado para mostrar el horario
-    val horarioTexto by produceState(initialValue = "Cargando horario...") {
+    val horarioTexto by produceState(initialValue = "Cargando horario...", key1 = urlHorario) {
+        if (urlHorario.isBlank()) {
+            value = "Cargando horario..."
+            return@produceState
+        }
         value = try {
             withContext(Dispatchers.IO) {
                 val client = OkHttpClient()
@@ -308,7 +329,7 @@ fun MiHorario() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = datos.fechaFormateada,
+            text = fechaFormateada,
             color = Color(0xFF7599B6),
             fontWeight = FontWeight.Bold,
             style = MaterialTheme.typography.bodyMedium,
@@ -416,6 +437,11 @@ fun BotonesFichajeConPermisos(
                     webView?.let { fichar(context, "ENTRADA", it) }
                     onFichaje("ENTRADA")
                     refreshTrigger.value = System.currentTimeMillis() // 6. Actualizar refreshTrigger tras fichaje
+                    // Retardo y actualización adicional tras 1 segundo
+                    CoroutineScope(Dispatchers.Main).launch {
+                        kotlinx.coroutines.delay(1000)
+                        refreshTrigger.value = System.currentTimeMillis()
+                    }
                 }
             },
         color = Color(0xFFFFFFFF),
@@ -506,6 +532,11 @@ fun BotonesFichajeConPermisos(
                     webView?.let { fichar(context, "SALIDA", it) }
                     onFichaje("SALIDA")
                     refreshTrigger.value = System.currentTimeMillis() // 6. Actualizar refreshTrigger tras fichaje
+                    // Retardo y actualización adicional tras 1 segundo
+                    CoroutineScope(Dispatchers.Main).launch {
+                        kotlinx.coroutines.delay(1000)
+                        refreshTrigger.value = System.currentTimeMillis()
+                    }
                 }
             },
         color = Color(0xFFFFFFFF),
@@ -540,6 +571,8 @@ fun BotonesFichajeConPermisos(
         }
     }
 }
+
+data class FichajeVisual(val entrada: String, val salida: String, val lcumEnt: String, val lcumSal: String)
 
 @Composable
 fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
@@ -593,16 +626,18 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
     val xEmpleado = xEmpleadoRaw ?: "SIN_EMPLEADO"
 
     val fichajesTexto by produceState(
-        initialValue = emptyList<String>(),
+        initialValue = emptyList<FichajeVisual>(),
         key1 = Triple(fechaSeleccionada.value, xEmpleado, refreshTrigger.value)
     ) {
         value = try {
             withContext(Dispatchers.IO) {
                 val client = OkHttpClient()
                 val urlFichajes = BuildURL.getMostrarFichajes(context) + "&fecha=${fechaSeleccionada.value}"
+                Log.d("RecuadroFichajesDia", "URL completa invocada: $urlFichajes")
                 val request = Request.Builder().url(urlFichajes).build()
                 val response = client.newCall(request).execute()
                 val responseBody = response.body?.string()?.replace("\uFEFF", "")
+                Log.d("RecuadroFichajesDia", "Respuesta desde consultarFichajeExterno (URL: ${response.request.url}): $responseBody")
 
                 if (!response.isSuccessful || responseBody.isNullOrEmpty()) {
                     Log.e("RecuadroFichajesDia", "Error: ${response.code}")
@@ -610,8 +645,7 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
                 } else {
                     try {
                         val json = JSONObject(responseBody)
-                        val dataFichajes = json.getJSONObject("dataFichajes")
-                        val fichajesArray = dataFichajes.getJSONArray("fichajes")
+                        val fichajesArray = json.getJSONArray("dataFichajes")
 
                         buildList {
                             for (i in 0 until fichajesArray.length()) {
@@ -620,6 +654,11 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
                                 val nMinSalStr = item.optString("nMinSal", "").trim()
                                 val nMinEnt = nMinEntStr.toIntOrNull()
                                 val nMinSal = nMinSalStr.toIntOrNull()
+                                val lcumEnt = if (item.has("lCumEnt")) item.getBoolean("lCumEnt").toString() else ""
+                                val lcumSal = if (item.has("lCumSal")) item.getBoolean("lCumSal").toString() else ""
+
+                                // Registro de valores individuales
+                                Log.d("RecuadroFichajesDia", "Fichaje $i → nMinEnt: $nMinEnt, nMinSal: $nMinSal, LCUMENT: $lcumEnt, LCUMSAL: $lcumSal")
 
                                 @SuppressLint("DefaultLocale")
                                 fun minutosAHora(minutos: Int?): String {
@@ -633,7 +672,7 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
                                 }
                                 val horaEntrada = minutosAHora(nMinEnt)
                                 val horaSalida = minutosAHora(nMinSal)
-                                add("$horaEntrada h - $horaSalida h")
+                                add(FichajeVisual(horaEntrada, horaSalida, lcumEnt, lcumSal))
                             }
                         }
                     } catch (e: Exception) {
@@ -767,39 +806,24 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
         ) {
             if (fichajesTexto.isNotEmpty()) {
                 fichajesTexto.forEach { fichaje ->
-                    val partes = fichaje.split(" - ")
-                    val entradaMin = partes.getOrNull(0)?.replace(" h", "")?.split(":")?.let {
-                        it.getOrNull(0)?.toIntOrNull()?.times(60)?.plus(it.getOrNull(1)?.toIntOrNull() ?: 0)
+                    val colorEntrada = when (fichaje.lcumEnt) {
+                        "false" -> Color.Red
+                        "true" -> Color.Green
+                        else -> Color(0xFF7599B6)
                     }
-                    val salidaMin = partes.getOrNull(1)?.replace(" h", "")?.split(":")?.let {
-                        it.getOrNull(0)?.toIntOrNull()?.times(60)?.plus(it.getOrNull(1)?.toIntOrNull() ?: 0)
+                    val colorSalida = when (fichaje.lcumSal) {
+                        "false" -> Color.Red
+                        "true" -> Color.Green
+                        else -> Color(0xFF7599B6)
                     }
-
-                    // NUEVO: Determinar si el horario es válido
-                    val horarioValido = horaInicioHorario.value != 0 || horaFinHorario.value != 0
-
-                    val colorEntrada = when {
-                        !horarioValido -> Color.Gray
-                        entradaMin != null && entradaMin <= horaInicioHorario.value -> Color.Green
-                        else -> Color.Red
-                    }
-
-                    val colorSalida = when {
-                        !horarioValido -> Color.Gray
-                        salidaMin != null && salidaMin >= horaFinHorario.value -> Color.Green
-                        else -> Color.Red
-                    }
-
-                    Row(
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    ) {
+                    Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
                         Text(
-                            text = partes.getOrNull(0)?.plus(" - ") ?: "?? - ",
+                            text = "${fichaje.entrada} - ",
                             fontSize = 23.sp,
                             color = colorEntrada
                         )
                         Text(
-                            text = partes.getOrNull(1) ?: "??",
+                            text = fichaje.salida,
                             fontSize = 23.sp,
                             color = colorSalida
                         )

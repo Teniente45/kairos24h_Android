@@ -503,14 +503,25 @@ fun obtenerCoord(
     onLocationObtained: (lat: Double, lon: Double) -> Unit,
     onShowAlert: (String) -> Unit
 ) {
-    // Extraer lComGPS y lComIP desde AuthManager.getUserCredentials
-    val (_, _, _, lComGPS, lComIP, _) = AuthManager.getUserCredentials(context)
-    val validarGPS = lComGPS.equals("S", ignoreCase = true)
-    val validarIP = lComIP.equals("S", ignoreCase = true)
+    // Extraer lComGPS, lComIP y lBotonesFichajeMovil desde AuthManager.getUserCredentials
+    val (_, _, _, lComGPS, lComIP, lBotonesFichajeMovil) = AuthManager.getUserCredentials(context)
+    // Log para verificar los valores de seguridad
+    Log.d("Seguridad", "lComGPS=$lComGPS, lComIP=$lComIP, lBotonesFichajeMovil=$lBotonesFichajeMovil")
+    // Añadir bloque de logs para comprobar si alguno impide fichar
+    if (lComGPS != "S") Log.w("Seguridad", "El fichaje está deshabilitado por GPS: lComGPS=$lComGPS")
+    if (lComIP != "S") Log.w("Seguridad", "El fichaje está deshabilitado por IP: lComIP=$lComIP")
+    if (lBotonesFichajeMovil != "S") Log.w("Seguridad", "Los botones de fichaje están deshabilitados: lBotonesFichajeMovil=$lBotonesFichajeMovil")
+    val validarGPS = lComGPS == "S"
+    val validarIP = lComIP == "S"
 
     val scope = CoroutineScope(Dispatchers.Main)
     scope.launch {
-        val permitido = SeguridadUtils.checkSecurity(context, validarGPS, validarIP) { mensaje ->
+        val permitido = SeguridadUtils.checkSecurity(
+            context,
+            if (validarGPS) "S" else "N",
+            if (validarIP) "S" else "N",
+            lBotonesFichajeMovil
+        ) { mensaje ->
             onShowAlert(mensaje)
         }
         if (!permitido) return@launch

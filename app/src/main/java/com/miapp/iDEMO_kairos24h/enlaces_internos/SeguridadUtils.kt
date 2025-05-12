@@ -137,10 +137,17 @@ object SeguridadUtils {
 
     suspend fun checkSecurity(
         context: Context,
-        validarGPS: Boolean,
-        validarIP: Boolean,
+        lComGPS: String,
+        lComIP: String,
+        lBotonesFichajeMovil: String,
         onShowAlert: (String) -> Unit
     ): Boolean {
+        val validarGPS = lComGPS == "S"
+        val validarIP = lComIP == "S"
+        val mostrarBotones = lBotonesFichajeMovil == "S"
+
+        Log.d("Seguridad", "Validaciones: GPS=$validarGPS, IP=$validarIP, Botones=$mostrarBotones")
+
         if (validarGPS) {
             if (!hasLocationPermission(context)) {
                 Log.e("Seguridad", "GPS obligatorio, pero sin permiso")
