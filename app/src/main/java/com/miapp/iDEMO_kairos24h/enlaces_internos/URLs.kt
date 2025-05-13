@@ -1,11 +1,34 @@
 package com.miapp.iDEMO_kairos24h.enlaces_internos
 
 import android.content.Context
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import com.miapp.iDEMO_kairos24h.R
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+
+// Este objeto centraliza el acceso a los recursos gráficos usados en la aplicación
+object ImagenesApp {
+    // Imagen del logo principal que se muestra en la pantalla de login
+    @DrawableRes
+    val logoCliente = R.drawable.compliance
+    val logoCliente_x_programa = R.drawable.compliance_x_kairos24h
+    val lodoDesarrolladora = R.drawable.logo_i3data
+
+
+    // Estilo aplicado al logo (tamaño y proporción)
+    val logoModifier = Modifier
+        .width(500.dp)
+        .height(150.dp)
+}
+
+
 
 // Estás son las URL que se nos mostrarán en el WebView
 object WebViewURL {
 
-    const val HOST = "https://democontrolhorario.kairos24h.es"
+    const val HOST = "https://controlhorario.kairos24h.es"
 
     const val ENTRY_POINT = "/index.php"
     const val URL_USADA = "$HOST$ENTRY_POINT"
@@ -30,7 +53,7 @@ object WebViewURL {
 // Esta será la URL que construiremos cuando desde el login de nuestra APK introduzcamos el Usuario y la Contraseña
 object BuildURL {
 
-    const val HOST = "https://democontrolhorario.kairos24h.es"
+    const val HOST = "https://controlhorario.kairos24h.es"
 
     const val ENTRY_POINT = "/index.php"
     const val ACTION_FICHAJE = "r=explotacion/creaFichaje"
@@ -49,10 +72,10 @@ object BuildURL {
         val xEntidad = creds.xEntidad ?: ""
         val xEmpleado = creds.xEmpleado ?: ""
         return "&xGrupo=$X_GRUPO" +
-               "&xEntidad=$xEntidad" +
-               "&xEmpleado=$xEmpleado" +
-               "&cKiosko=$C_KIOSKO" +
-               "&cDomFicOri=$C_FIC_ORI"
+                "&xEntidad=$xEntidad" +
+                "&xEmpleado=$xEmpleado" +
+                "&cKiosko=$C_KIOSKO" +
+                "&cDomFicOri=$C_FIC_ORI"
     }
 
     const val URL_USADA = "$HOST$ENTRY_POINT?"
@@ -65,3 +88,5 @@ object BuildURL {
     fun getMostrarFichajes(context: Context): String = URL_USADA + ACTION_CONSULTFIC_DIA + getStaticParams(context)
     fun getMostrarAlertas(context: Context): String = URL_USADA + ACTION_CONSULT_ALERTAS + getStaticParams(context)
 }
+
+

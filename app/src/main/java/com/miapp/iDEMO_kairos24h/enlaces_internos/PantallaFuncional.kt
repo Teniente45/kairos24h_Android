@@ -166,12 +166,9 @@ fun Logo_empresa_cliente() {
         contentAlignment = Alignment.Center
     ) {
         Image(
-            painter = painterResource(id = R.drawable.compliance_x_kairos24h),
-            contentDescription = "Logo del cliente",
-            contentScale = ContentScale.Fit, // Ajusta la imagen para que se vea completa
-            modifier = Modifier
-                .width(500.dp)
-                .height(150.dp)
+            painter = painterResource(id = ImagenesApp.logoCliente_x_programa),
+            contentDescription = "Logo de la empresa cliente y el programa de control horario",
+            modifier = ImagenesApp.logoModifier
         )
     }
 }
@@ -185,12 +182,9 @@ fun Logo_empresa_desarrolladora() {
         contentAlignment = Alignment.Center
     ) {
         Image(
-            painter = painterResource(id = R.drawable.logo_i3data),
-            contentDescription = "Logo i3data",
-            contentScale = ContentScale.Fit, // Ajusta la imagen para que se vea completa
-            modifier = Modifier
-                .width(140.dp)
-                .height(100.dp)
+            painter = painterResource(id = ImagenesApp.lodoDesarrolladora),
+            contentDescription = "logo de la desarrolladora",
+            modifier = ImagenesApp.logoModifier
         )
     }
 }
@@ -1117,4 +1111,5 @@ fun MensajeAlerta(
         }
     }
 }
+
 
