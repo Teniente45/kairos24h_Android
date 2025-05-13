@@ -104,7 +104,9 @@ class MainActivity : ComponentActivity() {
                                         return@DisplayLogo
                                     }
 
-                                    if (usuario.isNotEmpty() && password.isNotEmpty()) {
+                                   // Si el usuario y la contraseña no están vacíos, iniciamos el proceso de autenticación
+                                   if (usuario.isNotEmpty() && password.isNotEmpty()) {
+                                        // Ejecuta la autenticación en un hilo de fondo usando coroutine
                                         lifecycleScope.launch(Dispatchers.IO) {
                                             try {
                                                 val (success, xEmpleado) = AuthManager.authenticateUser(
@@ -112,6 +114,7 @@ class MainActivity : ComponentActivity() {
                                                     password
                                                 )
                                                 runOnUiThread {
+                                                    // Si la autenticación es exitosa y se obtiene xEmpleado, se guardan las credenciales y se navega a la pantalla de fichaje
                                                     if (success && xEmpleado != null) {
                                                         AuthManager.saveUserCredentials(
                                                             this@MainActivity,
@@ -125,6 +128,7 @@ class MainActivity : ComponentActivity() {
                                                         )
                                                         navController.navigate("fichar/${xEmpleado.usuario}/${xEmpleado.password}")
                                                     } else {
+                                                        // Si no se autentica correctamente, se muestra un mensaje de error al usuario
                                                         Toast.makeText(
                                                             this@MainActivity,
                                                             "Usuario o contraseña incorrectos",
@@ -133,6 +137,7 @@ class MainActivity : ComponentActivity() {
                                                     }
                                                 }
                                             } catch (e: Exception) {
+                                                // Captura errores de red u otros problemas de autenticación y los muestra como un Toast
                                                 runOnUiThread {
                                                     Toast.makeText(
                                                         this@MainActivity,
@@ -143,6 +148,7 @@ class MainActivity : ComponentActivity() {
                                             }
                                         }
                                     } else {
+                                        // Si los campos de usuario o contraseña están vacíos, se muestra un aviso al usuario
                                         Toast.makeText(
                                             this@MainActivity,
                                             "Por favor, completa ambos campos",
@@ -173,6 +179,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // Redirige al usuario a la pantalla de login y limpia las preferencias
     private fun navigateToLogin() {
         val sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE)
         with(sharedPreferences.edit()) {
@@ -184,7 +191,7 @@ class MainActivity : ComponentActivity() {
         startActivity(intent)
     }
 
-    // 🔥 Redirige al usuario a la pantalla de fichaje pasando las credenciales como intent extras
+    // Inicia la actividad Fichar pasando usuario y contraseña como extras
     private fun navigateToFichar(usuario: String, password: String) {
         val intent = Intent(this, Fichar::class.java)
         intent.putExtra("usuario", usuario)
@@ -192,7 +199,9 @@ class MainActivity : ComponentActivity() {
         startActivity(intent)
         finish() // Finaliza la actividad actual para evitar volver atrás
     }
-    // 🔥 Borra las credenciales almacenadas en SharedPreferences
+
+
+    // Borra credenciales almacenadas para forzar nuevo login
     private fun clearCredentials() {
         val sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE)
         with(sharedPreferences.edit()) {
@@ -202,7 +211,7 @@ class MainActivity : ComponentActivity() {
             apply()
         }
     }
-    // 📌 Función para verificar si hay conexión a Internet (WiFi o Datos Móviles)
+    // Verifica si el dispositivo tiene conexión a Internet activa, ya sea por WiFi o datos móviles.
     private fun isInternetAvailable(context: Context): Boolean {
         val connectivityManager =
             context.getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -214,40 +223,47 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-    // 🔥 Pantalla de inicio de sesión con formulario de usuario y contraseña
+    // Composable que representa la pantalla de login, mostrando el formulario de acceso, gestión de permisos y logo de la app.
     @Composable
     fun DisplayLogo(
         onSubmit: (String, String) -> Unit,
         onForgotPassword: () -> Unit
     ) {
+        // Estado que almacena el texto ingresado en el campo de usuario
         val usuario = remember { mutableStateOf("") }
+        // Estado que almacena el texto ingresado en el campo de contraseña
         val password = remember { mutableStateOf("") }
 
-        // 🔥 Estados para gestionar la UI del login
-        var isChecked by remember { mutableStateOf(false) } // Estado del CheckBox para guardar datos localmente
-        var passwordVisible by remember { mutableStateOf(false) } // Estado para mostrar/ocultar la contraseña
-        val errorMessage by remember { mutableStateOf("") } // Mensaje de error
-        val context = LocalContext.current // Contexto de la app
+        // Controla si el usuario acepta guardar sus datos localmente
+        var isChecked by remember { mutableStateOf(false) }
+        // Controla si la contraseña se muestra en texto plano o se oculta
+        var passwordVisible by remember { mutableStateOf(false) }
+        // Mensaje de error a mostrar si los datos de acceso son incorrectos
+        val errorMessage by remember { mutableStateOf("") }
+        // Obtiene el contexto actual de la aplicación
+        val context = LocalContext.current
+        // Indica si el usuario ha concedido el permiso de ubicación
         var isLocationChecked by remember { mutableStateOf(false) }
+        // Lleva la cuenta de las veces que el permiso de ubicación ha sido denegado
         var locationPermissionDeniedCount by remember { mutableIntStateOf(0) }
+        // Lanza la solicitud de permiso de ubicación y maneja su resultado
         val requestPermissionLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        isLocationChecked = isGranted
-        if (!isGranted) {
-            locationPermissionDeniedCount++
-            if (locationPermissionDeniedCount >= 3) {
-                Toast.makeText(context, "Debe habilitar los permisos de GPS manualmente en los ajustes.", Toast.LENGTH_LONG).show()
-                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                    data = Uri.fromParts("package", context.packageName, null)
+        ) { isGranted ->
+            isLocationChecked = isGranted
+            if (!isGranted) {
+                locationPermissionDeniedCount++
+                if (locationPermissionDeniedCount >= 3) {
+                    Toast.makeText(context, "Debe habilitar los permisos de GPS manualmente en los ajustes.", Toast.LENGTH_LONG).show()
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts("package", context.packageName, null)
+                    }
+                    context.startActivity(intent)
+                } else {
+                    Toast.makeText(context, "Debe aceptar los permisos de GPS para continuar.", Toast.LENGTH_SHORT).show()
                 }
-                context.startActivity(intent)
-            } else {
-                Toast.makeText(context, "Debe aceptar los permisos de GPS para continuar.", Toast.LENGTH_SHORT).show()
             }
         }
-    }
-
 
         Column(
             modifier = Modifier
@@ -257,13 +273,14 @@ class MainActivity : ComponentActivity() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // Contenedor principal del contenido de login, desplazado hacia arriba
             Box(
                 modifier = Modifier
                     .padding(4.dp)
                     .offset(y = (-40).dp)
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    // 🔥 Logo de la app
+                    // Imagen del logo de la empresa o aplicación
                     Image(
                         painter = painterResource(id = R.drawable.compliance),
                         contentDescription = "Logo",
@@ -273,7 +290,7 @@ class MainActivity : ComponentActivity() {
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // 🔥 Campo de usuario
+                    // Campo de texto para el nombre de usuario
                     OutlinedTextField(
                         value = usuario.value,
                         onValueChange = { newValue ->
@@ -284,7 +301,7 @@ class MainActivity : ComponentActivity() {
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // 🔥 Campo de contraseña
+                    // Campo de texto para la contraseña
                     OutlinedTextField(
                         value = password.value,
                         onValueChange = { newValue ->
@@ -295,7 +312,7 @@ class MainActivity : ComponentActivity() {
                         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done)
                     )
 
-                    // 🔥 Checkbox para mostrar contraseña
+                    // Opción para mostrar u ocultar la contraseña introducida
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
@@ -312,7 +329,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // 🔥 Checkbox para guardar datos localmente
+                    // Opción para permitir guardar los datos de acceso localmente
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
@@ -327,7 +344,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // 🔥 Muestra mensaje de error si los datos son incorrectos
+                    // Muestra un mensaje de error si existe
                     if (errorMessage.isNotEmpty()) {
                         Text(
                             text = errorMessage,
@@ -337,7 +354,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // 🔥 Checkbox obligatorio para aceptar permisos de ubicación
+                    // Solicita al usuario que acepte el permiso de ubicación
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(top = 16.dp)
@@ -358,7 +375,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // 🔥 Botón de acceso
+                    // Botón para enviar los datos de acceso
                     Button(
                         onClick = {
                             val trimmedUsuario = usuario.value.trim()
@@ -380,7 +397,7 @@ class MainActivity : ComponentActivity() {
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // 🔥 Botón de recuperación de contraseña
+                    // Texto interactivo para recuperar la contraseña
                     Text(
                         text = "¿Olvidaste la contraseña?",
                         color = Color(0xFF7599B6),
@@ -390,7 +407,7 @@ class MainActivity : ComponentActivity() {
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // 🔥 Mensaje de trazabilidad
+                    // Mensaje informativo sobre la trazabilidad y seguridad del sistema
                     Text(
                         text = """
                         Para control de calidad y aumentar la seguridad de nuestro sistema, todos los accesos, acciones, consultas o cambios (Trazabilidad) que realice dentro de Kairos24h serán almacenados.
@@ -408,7 +425,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // 🔥 Vista previa para Android Studio
+    // Vista previa para Android Studio
     @Preview(showBackground = true)
     @Composable
     fun DefaultPreview() {

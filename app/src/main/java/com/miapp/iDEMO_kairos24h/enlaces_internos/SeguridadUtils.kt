@@ -23,6 +23,7 @@ object SeguridadUtils {
         UBICACION_SIMULADA
     }
 
+    // Verifica si el dispositivo está usando una conexión VPN activa
     fun isUsingVPN(context: Context): Boolean {
         return try {
             val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -39,25 +40,19 @@ object SeguridadUtils {
         }
     }
 
+    // Comprueba si hay conexión a Internet disponible (cualquier tipo)
     fun isInternetAvailable(context: Context): Boolean {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val activeNetwork = connectivityManager.activeNetworkInfo
         return activeNetwork != null && activeNetwork.isConnected
     }
 
-    /**
-     * Esta función ahora simplemente devuelve false por defecto.
-     * Para la detección real, debe llamarse a detectarUbicacionReal(context) desde una corrutina.
-     */
+    // Devuelve false por defecto. La verificación real se hace desde detectarUbicacionReal()
     fun isMockLocationEnabled(): Boolean {
-        // El consumidor debe llamar a detectarUbicacionReal en un entorno suspendido.
         return false
     }
 
-    /**
-     * Verifica si la ubicación activa es real (no simulada) usando FusedLocationProviderClient.
-     * Debe llamarse desde una corrutina.
-     */
+    // Verifica si la ubicación recibida es real o simulada usando FusedLocationProviderClient
     suspend fun detectarUbicacionReal(context: Context): ResultadoUbicacion {
         try {
             val permissionGranted = ContextCompat.checkSelfPermission(
@@ -129,12 +124,14 @@ object SeguridadUtils {
         }
     }
 
+    // Comprueba si se ha concedido el permiso de ubicación ACCESS_FINE_LOCATION
     fun hasLocationPermission(context: Context): Boolean {
         return ContextCompat.checkSelfPermission(
             context, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
     }
 
+    // Verifica las condiciones de seguridad para permitir fichaje (GPS, VPN, botones activados)
     suspend fun checkSecurity(
         context: Context,
         lComGPS: String,

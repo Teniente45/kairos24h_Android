@@ -215,6 +215,7 @@ fun MiHorario() {
         }
     }
 
+    // Muestra en el log la URL que se va a usar para consultar el horario del usuario
     Log.d("MiHorario", "URL solicitada: $urlHorario")
 
     // Estado para mostrar el horario
@@ -229,6 +230,7 @@ fun MiHorario() {
                 val request = Request.Builder().url(urlHorario).build()
                 val response = client.newCall(request).execute()
                 val responseBody = response.body?.string()
+                // Muestra la respuesta completa del servidor tras pedir el horario
                 Log.d("MiHorario", "Respuesta completa del servidor:\n$responseBody")
 
                 val cleanedBody = responseBody?.replace("\uFEFF", "")
@@ -244,7 +246,9 @@ fun MiHorario() {
                             val item = dataArray.getJSONObject(0)
                             val horaIni = item.optInt("N_HORINI", 0)
                             val horaFin = item.optInt("N_HORFIN", 0)
+                            // Muestra el valor obtenido del campo N_HORINI en el JSON
                             Log.d("MiHorario", "Valor N_HORINI: $horaIni")
+                            // Muestra el valor obtenido del campo N_HORFIN en el JSON
                             Log.d("MiHorario", "Valor N_HORFIN: $horaFin")
 
                             if (horaIni == 0 && horaFin == 0) {
@@ -262,12 +266,14 @@ fun MiHorario() {
                             "No Horario"
                         }
                     } catch (e: Exception) {
+                        // Informa si hubo un error al parsear el JSON del horario
                         Log.e("MiHorario", "Error al parsear JSON: ${e.message}\nResponse body: $responseBody")
                         "Error al procesar horario"
                     }
                 }
             }
         } catch (e: Exception) {
+            // Informa si hubo un error general al obtener el horario
             Log.e("MiHorario", "Excepción al obtener horario: ${e.message}")
             "Error de conexión"
         }
@@ -320,15 +326,18 @@ fun BotonesFichajeConPermisos(
     ) { isGranted ->
         if (isGranted) {
             pendingFichaje?.let { tipo ->
+                // Informa que se ha concedido el permiso para fichar, se indica el tipo (ENTRADA/SALIDA)
                 Log.d("Fichaje", "Permiso concedido. Procesando fichaje de: $tipo")
                 if (webView != null) {
                     fichar(context, tipo, webView)
                 } else {
+                    // Informa que el WebView es null y por eso no se puede proceder con el fichaje
                     Log.e("Fichaje", "webView es null. No se puede fichar.")
                 }
                 onFichaje(tipo)
             }
         } else {
+            // Informa que se ha denegado el permiso de ubicación
             Log.d("Fichaje", "Permiso denegado para ACCESS_FINE_LOCATION")
         }
         pendingFichaje = null
@@ -344,16 +353,19 @@ fun BotonesFichajeConPermisos(
             .clickable {
                 when {
                     SeguridadUtils.isUsingVPN(context) -> {
+                        // Informa que se ha intentado fichar con VPN activa
                         Log.e("Seguridad", "Intento de fichaje con VPN activa")
                         onShowAlert("VPN DETECTADA")
                         return@clickable
                     }
                     !SeguridadUtils.isInternetAvailable(context) -> {
+                        // Informa que no hay conexión a internet en el momento del fichaje
                         Log.e("Fichar", "No hay conexión a Internet")
                         onShowAlert("PROBLEMA INTERNET")
                         return@clickable
                     }
                     !SeguridadUtils.hasLocationPermission(context) -> {
+                        // Informa que no se tiene permiso de ubicación GPS
                         Log.e("Fichar", "No se cuenta con el permiso ACCESS_FINE_LOCATION")
                         onShowAlert("PROBLEMA GPS")
                         return@clickable
@@ -363,11 +375,13 @@ fun BotonesFichajeConPermisos(
                 CoroutineScope(Dispatchers.Main).launch {
                     when (SeguridadUtils.detectarUbicacionReal(context)) {
                         ResultadoUbicacion.GPS_DESACTIVADO -> {
+                            // Informa que el GPS está desactivado
                             Log.e("Seguridad", "GPS desactivado")
                             onShowAlert("PROBLEMA GPS")
                             return@launch
                         }
                         ResultadoUbicacion.UBICACION_SIMULADA -> {
+                            // Informa que se detectó una ubicación simulada
                             Log.e("Seguridad", "Ubicación simulada detectada")
                             onShowAlert("POSIBLE UBI FALSA")
                             return@launch
@@ -379,11 +393,13 @@ fun BotonesFichajeConPermisos(
                     // --- Prevención de fichaje duplicado ---
                     val ahora = System.currentTimeMillis()
                     if (ahora - ultimoFichajeTimestamp < 5000) {
+                        // Previene fichajes duplicados en corto intervalo de tiempo
                         Log.w("Fichaje", "Fichaje repetido ignorado")
                         return@launch
                     }
                     ultimoFichajeTimestamp = ahora
                     // --- Fin prevención ---
+                    // Informa que se está procesando el fichaje de ENTRADA
                     Log.d(
                         "Fichaje",
                         "Fichaje Entrada: Permiso concedido. Procesando fichaje de ENTRADA"
@@ -442,16 +458,19 @@ fun BotonesFichajeConPermisos(
             .clickable {
                 when {
                     SeguridadUtils.isUsingVPN(context) -> {
+                        // Informa que se ha intentado fichar con VPN activa
                         Log.e("Seguridad", "Intento de fichaje con VPN activa")
                         onShowAlert("VPN DETECTADA")
                         return@clickable
                     }
                     !SeguridadUtils.isInternetAvailable(context) -> {
+                        // Informa que no hay conexión a internet en el momento del fichaje
                         Log.e("Fichar", "No hay conexión a Internet")
                         onShowAlert("PROBLEMA INTERNET")
                         return@clickable
                     }
                     !SeguridadUtils.hasLocationPermission(context) -> {
+                        // Informa que no se tiene permiso de ubicación GPS
                         Log.e("Fichar", "No se cuenta con el permiso ACCESS_FINE_LOCATION")
                         onShowAlert("PROBLEMA GPS")
                         return@clickable
@@ -461,11 +480,13 @@ fun BotonesFichajeConPermisos(
                 CoroutineScope(Dispatchers.Main).launch {
                     when (SeguridadUtils.detectarUbicacionReal(context)) {
                         ResultadoUbicacion.GPS_DESACTIVADO -> {
+                            // Informa que el GPS está desactivado
                             Log.e("Seguridad", "GPS desactivado")
                             onShowAlert("PROBLEMA GPS")
                             return@launch
                         }
                         ResultadoUbicacion.UBICACION_SIMULADA -> {
+                            // Informa que se detectó una ubicación simulada
                             Log.e("Seguridad", "Ubicación simulada detectada")
                             onShowAlert("POSIBLE UBI FALSA")
                             return@launch
@@ -477,11 +498,13 @@ fun BotonesFichajeConPermisos(
                     // --- Prevención de fichaje duplicado ---
                     val ahora = System.currentTimeMillis()
                     if (ahora - ultimoFichajeTimestamp < 5000) {
+                        // Previene fichajes duplicados en corto intervalo de tiempo
                         Log.w("Fichaje", "Fichaje repetido ignorado")
                         return@launch
                     }
                     ultimoFichajeTimestamp = ahora
                     // --- Fin prevención ---
+                    // Informa que se está procesando el fichaje de SALIDA
                     Log.d("Fichaje", "Fichaje Salida: Permiso concedido. Procesando fichaje de SALIDA")
                     webView?.let { fichar(context, "SALIDA", it) }
                     onFichaje("SALIDA")
@@ -573,6 +596,7 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
         }
     }
 
+    // Muestra la fecha que se está usando para consultar los fichajes del día
     Log.d("RecuadroFichajesDia", "Fecha usada para la petición: ${fechaSeleccionada.value}")
 
     val (_, _, xEmpleadoRaw) = AuthManager.getUserCredentials(context)
@@ -586,10 +610,12 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
             withContext(Dispatchers.IO) {
                 val client = OkHttpClient()
                 val urlFichajes = BuildURL.getMostrarFichajes(context) + "&fecha=${fechaSeleccionada.value}"
+                // Muestra la URL completa que se usa para obtener los fichajes
                 Log.d("RecuadroFichajesDia", "URL completa invocada: $urlFichajes")
                 val request = Request.Builder().url(urlFichajes).build()
                 val response = client.newCall(request).execute()
                 val responseBody = response.body?.string()?.replace("\uFEFF", "")
+                // Muestra la respuesta del servidor con los fichajes recibidos
                 Log.d("RecuadroFichajesDia", "Respuesta desde consultarFichajeExterno (URL: ${response.request.url}): $responseBody")
 
                 if (!response.isSuccessful || responseBody.isNullOrEmpty()) {
@@ -611,6 +637,7 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
                                 val lcumSal = if (item.has("lCumSal")) item.getBoolean("lCumSal").toString() else ""
 
                                 // Registro de valores individuales
+                                // Muestra los valores obtenidos para cada fichaje (entrada, salida y cumplimiento)
                                 Log.d("RecuadroFichajesDia", "Fichaje $i → nMinEnt: $nMinEnt, nMinSal: $nMinSal, LCUMENT: $lcumEnt, LCUMSAL: $lcumSal")
 
                                 fun minutosAHora(minutos: Int?): String {
@@ -628,12 +655,14 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
                             }
                         }
                     } catch (e: Exception) {
+                        // Informa que hubo un error al parsear el JSON de los fichajes
                         Log.e("RecuadroFichajesDia", "Error al parsear JSON: ${e.message}")
                         emptyList()
                     }
                 }
             }
         } catch (e: Exception) {
+            // Informa de una excepción general al obtener los fichajes
             Log.e("RecuadroFichajesDia", "Excepción al obtener fichajes: ${e.message}")
             emptyList()
         }
@@ -817,6 +846,7 @@ fun AlertasDiarias(
         value = try {
             withContext(Dispatchers.IO) {
                 val urlAlertas = BuildURL.getMostrarAlertas(context)
+                // Muestra la URL que se utilizará para obtener alertas diarias
                 Log.d("AlertasDiarias", "URL de alertas: $urlAlertas")
                 val client = OkHttpClient()
                 val cookie = android.webkit.CookieManager.getInstance()
@@ -836,18 +866,23 @@ fun AlertasDiarias(
                         val dAviso = item.optString("D_AVISO", "Sin aviso")
                         val tAviso = item.optString("T_AVISO", "")
                         val tUrl = item.optString("T_URL", "").takeIf { it.isNotBlank() && it != "null" }
+                        // Muestra el contenido del campo D_AVISO de cada alerta
                         Log.d("JSONAlertas", "[$i] D_AVISO: $dAviso")
+                        // Muestra el contenido del campo T_AVISO de cada alerta
                         Log.d("JSONAlertas", "[$i] T_AVISO: $tAviso")
+                        // Muestra el contenido del campo T_URL de cada alerta (si existe)
                         Log.d("JSONAlertas", "[$i] T_URL: $tUrl")
                         nuevaLista.add(AvisoItem(dAviso, tAviso, tUrl))
                     }
                     nuevaLista
                 } else {
+                    // Informa que el array de alertas vino vacío o nulo
                     Log.d("JSONAlertas", "Array 'dataAvisos' vacío o nulo")
                     listOf(AvisoItem("No hay alertas disponibles", "", null))
                 }
             }
         } catch (e: Exception) {
+            // Informa si hubo un error general al obtener las alertas
             Log.e("AlertasDiarias", "Error obteniendo alertas: ${e.message}")
             listOf(AvisoItem("Error al cargar alertas", "", null))
         }
@@ -978,7 +1013,6 @@ fun MensajeAlerta(
         else -> "Fichaje de $tipo realizado correctamente"
     }
 
-    // 🎨 Color por tipo
     val colorFondo = when (tipo.uppercase()) {
         "ENTRADA" -> Color(0xFF124672) // Azul oscuro
         "SALIDA" -> Color(0xFFd7ebfa)  // Azul claro
@@ -996,7 +1030,6 @@ fun MensajeAlerta(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
 
-                // 🎨 Encabezado con color y texto según tipo
                 val textoEncabezado = when (tipo.uppercase()) {
                     "ENTRADA" -> "ENTRADA"
                     "SALIDA" -> "SALIDA"
@@ -1026,7 +1059,6 @@ fun MensajeAlerta(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 📝 Mensaje del fichaje
                 Text(
                     text = mensaje,
                     color = Color.Black,
@@ -1036,7 +1068,6 @@ fun MensajeAlerta(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 🕒 Fecha + hora con hora en negrita y más grande
                 val partes = currentDateTime.split(" ")
                 val fechaSolo = partes.getOrNull(0) ?: ""
                 val horaSolo = partes.getOrNull(1) ?: ""
@@ -1061,7 +1092,6 @@ fun MensajeAlerta(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 🔘 Botón Cerrar
                 Box(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center

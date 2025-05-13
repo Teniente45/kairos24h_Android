@@ -13,10 +13,12 @@ import java.util.Locale
 
 object ManejoDeSesion {
 
+    // Marca el estado de la app como en pausa. Ideal para logging y control de sesión.
     fun onPause() {
         Log.d("ManejoDeSesion", "Aplicación en pausa")
     }
 
+    // Marca la app como detenida y simula inactividad dentro del WebView mediante JavaScript.
     fun onStop(webView: WebView?) {
         Log.d("ManejoDeSesion", "Aplicación detenida")
         webView?.evaluateJavascript(
@@ -29,6 +31,7 @@ object ManejoDeSesion {
         )
     }
 
+    // Marca la reanudación de la app y simula reactivación en el WebView con un evento JavaScript.
     fun onResume(webView: WebView?) {
         Log.d("ManejoDeSesion", "Aplicación reanudada")
         webView?.evaluateJavascript(
@@ -41,6 +44,7 @@ object ManejoDeSesion {
         )
     }
 
+    // Obtiene la fecha y hora actual desde la cabecera HTTP de una web externa (Google).
     suspend fun obtenerFechaHoraInternet(): Date? = withContext(Dispatchers.IO) {
         try {
             val client = OkHttpClient()
@@ -58,6 +62,7 @@ object ManejoDeSesion {
         }
     }
 
+    // Inicia un temporizador que simula actividad periódica en el WebView para evitar cierre de sesión por inactividad.
     fun startActivitySimulationTimer(handler: Handler, webView: WebView?, sessionTimeoutMillis: Long) {
         handler.postDelayed(object : Runnable {
             override fun run() {

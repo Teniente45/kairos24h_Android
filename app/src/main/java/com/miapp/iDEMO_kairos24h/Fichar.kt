@@ -81,9 +81,10 @@ import kotlinx.coroutines.Dispatchers
 
 class Fichar : ComponentActivity() {
 
-    // Variable para almacenar el WebView creado en Compose
+    // Referencia al WebView principal de la actividad, utilizado para cargar y manipular contenido web
     private var webView: WebView? = null
 
+    // Método principal que se ejecuta al crear la actividad; valida credenciales y lanza la interfaz FicharScreen
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("Fichar", "onCreate iniciado")
@@ -104,26 +105,30 @@ class Fichar : ComponentActivity() {
                 onLogout = { navigateToLogin() }
             )
         }
+        // Inicia el temporizador de simulación de actividad para gestionar la caducidad de la sesión del usuario
         ManejoDeSesion.startActivitySimulationTimer(handler, webView, sessionTimeoutMillis)
     }
 
 
+    // Método del ciclo de vida que notifica pausa a la lógica de sesión
     override fun onPause() {
         super.onPause()
         ManejoDeSesion.onPause()
     }
 
+    // Método del ciclo de vida que detiene lógica de sesión y la vincula al WebView actual
     override fun onStop() {
         super.onStop()
         ManejoDeSesion.onStop(webView)
     }
 
+    // Método del ciclo de vida que reanuda la lógica de sesión y la vincula al WebView actual
     override fun onResume() {
         super.onResume()
         ManejoDeSesion.onResume(webView)
     }
 
-    // Redirige al usuario a la pantalla de login y limpia la actividad actual
+    // Redirige a la pantalla de login eliminando cookies, datos de sesión y reinicia la actividad
     private fun navigateToLogin() {
         val cookieManager = CookieManager.getInstance()
         cookieManager.removeAllCookies(null)
@@ -141,12 +146,14 @@ class Fichar : ComponentActivity() {
         startActivity(intent)
         finish()
     }
-    // Handler y duración de sesión para ManejoDeSesion
+    // Manejador principal usado para controlar los tiempos de la sesión activa
     private val handler = Handler(Looper.getMainLooper())
+    // Tiempo máximo de inactividad permitido antes de cerrar sesión (2 horas)
     private val sessionTimeoutMillis = 2 * 60 * 60 * 1000L // 2 horas
 }
 
 
+// Composable principal de la pantalla de fichaje. Muestra WebView con login automático, cuadro para fichar, barra superior e inferior y lógica de navegación.
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun FicharScreen(
@@ -154,37 +161,51 @@ fun FicharScreen(
     password: String,
     onLogout: () -> Unit
 ) {
+    // Controla si debe mostrarse la pantalla de carga
     var isLoading by remember { mutableStateOf(true) }
+    // Controla la visibilidad del cuadro para fichar
     val showCuadroParaFicharState = remember { mutableStateOf(true) }
+    // Lista de fichajes realizados (puede ser usada para mostrar historial o control)
     var fichajes by remember { mutableStateOf<List<String>>(emptyList()) }
+    // Índice para alternar entre imágenes de usuario (cambia el avatar)
     var imageIndex by remember { mutableIntStateOf(0) }
+    // Tipo de alerta de fichaje actual (usado para mostrar mensajes al usuario)
     var fichajeAlertTipo by remember { mutableStateOf<String?>(null) }
+    // Ámbito de corrutina usado para manejar delays y tareas asincrónicas
     val scope = rememberCoroutineScope()
+    // Controla la visibilidad del diálogo de confirmación para cerrar sesión
     val showLogoutDialog = remember { mutableStateOf(false) }
 
+    // Lista de recursos de imagen para el avatar del usuario
     val imageList = listOf(
         R.drawable.cliente32,
     )
 
+    // Referencia reactiva al WebView utilizado para interactuar desde el Compose
     val webViewState = remember { mutableStateOf<WebView?>(null) }
+    // Contexto actual de la aplicación (necesario para acceder a preferencias y otros recursos)
     val context = LocalContext.current
+    // Accede a las preferencias guardadas del usuario (credenciales y flags)
     val sharedPreferences = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+    // Recupera el nombre de usuario desde las preferencias o usa valor por defecto
     val cUsuario = sharedPreferences.getString("usuario", "Usuario") ?: "Usuario"
-    // Obtener y convertir el valor lBotonesFichajeMovil
+    // Determina si deben mostrarse los botones de fichaje en la interfaz
     val mostrarBotonesFichaje = sharedPreferences.getString("lBotonesFichajeMovil", "S")?.equals("S", ignoreCase = true) == true
 
+    // Simula carga inicial de 1,5 segundos antes de mostrar contenido
     LaunchedEffect(Unit) {
         isLoading = true
         delay(1500)
         isLoading = false
     }
 
+    // Estructura principal vertical de la pantalla, contiene barra superior, contenido central (WebView + fichar), y barra inferior
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(WindowInsets.systemBars.asPaddingValues())
     ) {
-        // 1. TopBar
+        // Barra superior con avatar del usuario y botón para cerrar sesión
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -194,7 +215,7 @@ fun FicharScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // icono usuario + nombre
+            // Sección izquierda: botón avatar que alterna imagen + nombre del usuario
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
                     onClick = { imageIndex = (imageIndex + 1) % imageList.size }
@@ -212,7 +233,7 @@ fun FicharScreen(
                     fontSize = 18.sp
                 )
             }
-            // logout
+            // Sección derecha: botón para cerrar sesión, abre un diálogo de confirmación
             IconButton(onClick = { showLogoutDialog.value = true }) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_cerrar32),
@@ -223,13 +244,13 @@ fun FicharScreen(
             }
         }
 
-        // 2. Contenedor de contenido scrollable entre top y bottom
+        // Contenedor central que ocupa el espacio restante; contiene el WebView, cuadro de fichaje y mensajes
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
         ) {
-            // WebView de fondo
+            // WebView que carga la URL de login y realiza login automático con JavaScript
             AndroidView(
                 factory = { context ->
                     WebView(context).apply {
@@ -310,10 +331,10 @@ fun FicharScreen(
                     .zIndex(0f)
             )
 
-            // Pantalla de carga
+            // Pantalla de carga que se muestra mientras se realiza la autenticación automática
             LoadingScreen(isLoading = isLoading)
 
-            // Cuadro para fichar con altura adecuada, sin scroll
+            // Cuadro emergente con botones de fichaje (Entrada/Salida) que solicita la ubicación GPS
             if (showCuadroParaFicharState.value) {
                 Box(
                     modifier = Modifier
@@ -349,7 +370,7 @@ fun FicharScreen(
                 }
             }
 
-            // Mensaje de alerta
+            // Muestra un mensaje emergente si hay un error o advertencia en el proceso de fichaje
             fichajeAlertTipo?.let { tipo ->
                 MensajeAlerta(
                     tipo = tipo,
@@ -358,7 +379,7 @@ fun FicharScreen(
             }
         }
 
-        // 3. BottomNavigationBar
+        // Barra inferior con navegación entre secciones y botón para mostrar el cuadro de fichaje
         BottomNavigationBar(
             onNavigate = { url ->
                 isLoading = true
@@ -378,7 +399,7 @@ fun FicharScreen(
                 .height(56.dp)
         )
     }
-    // Diálogo de confirmación para cerrar sesión
+    // Diálogo modal que solicita confirmación para cerrar la sesión
     if (showLogoutDialog.value) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog.value = false },
@@ -464,16 +485,19 @@ fun PreviewFicharScreen() {
 
 
 internal fun fichar(context: Context, tipo: String, webView: WebView) {
+    // Verifica si se tiene permiso de ubicación fina antes de continuar
     val hasPermission = ContextCompat.checkSelfPermission(
         context, Manifest.permission.ACCESS_FINE_LOCATION
     ) == PackageManager.PERMISSION_GRANTED
 
+    // Si no hay permisos de GPS, muestra un mensaje y no continúa con el fichaje
     if (!hasPermission) {
         Log.e("Fichar", "No se cuenta con el permiso ACCESS_FINE_LOCATION")
         Toast.makeText(context, "Debe aceptar los permisos de GPS para poder fichar.", Toast.LENGTH_SHORT).show()
         return
     }
 
+    // Intenta obtener las coordenadas del dispositivo y realizar el fichaje con ellas
     try {
         obtenerCoord(
             context,
@@ -483,12 +507,14 @@ internal fun fichar(context: Context, tipo: String, webView: WebView) {
                     return@obtenerCoord
                 }
 
+                // Construye la URL de fichaje con el tipo y las coordenadas
                 val urlFichaje = BuildURL.getCrearFichaje(context) +
                         "&cDomTipFic=$tipo" +
                         "&tGpsLat=$lat" +
                         "&tGpsLon=$lon"
 
                 Log.d("Fichar", "URL que se va a enviar desde WebView: $urlFichaje")
+                // Ejecuta la URL de fichaje en el WebView
                 webView.evaluateJavascript("window.location.href = '$urlFichaje';", null)
             },
             onShowAlert = { alertTipo ->
@@ -505,19 +531,21 @@ fun obtenerCoord(
     onLocationObtained: (lat: Double, lon: Double) -> Unit,
     onShowAlert: (String) -> Unit
 ) {
-    // Extraer lComGPS, lComIP y lBotonesFichajeMovil desde AuthManager.getUserCredentials
+    // Obtiene los valores de control de seguridad desde AuthManager
     val (_, _, _, lComGPS, lComIP, lBotonesFichajeMovil) = AuthManager.getUserCredentials(context)
     // Log para verificar los valores de seguridad
     Log.d("Seguridad", "lComGPS=$lComGPS, lComIP=$lComIP, lBotonesFichajeMovil=$lBotonesFichajeMovil")
-    // Añadir bloque de logs para comprobar si alguno impide fichar
+    // Registra advertencias si alguna de las condiciones de seguridad deshabilita el fichaje
     if (lComGPS != "S") Log.w("Seguridad", "El fichaje está deshabilitado por GPS: lComGPS=$lComGPS")
     if (lComIP != "S") Log.w("Seguridad", "El fichaje está deshabilitado por IP: lComIP=$lComIP")
     if (lBotonesFichajeMovil != "S") Log.w("Seguridad", "Los botones de fichaje están deshabilitados: lBotonesFichajeMovil=$lBotonesFichajeMovil")
+    // Define si se debe validar el GPS e IP para el fichaje
     val validarGPS = lComGPS == "S"
     val validarIP = lComIP == "S"
 
     val scope = CoroutineScope(Dispatchers.Main)
     scope.launch {
+        // Verifica que se cumplan las condiciones de seguridad configuradas antes de obtener ubicación
         val permitido = SeguridadUtils.checkSecurity(
             context,
             if (validarGPS) "S" else "N",
@@ -528,8 +556,10 @@ fun obtenerCoord(
         }
         if (!permitido) return@launch
 
+        // Cliente de ubicación para obtener la última localización disponible
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
+        // Verifica que los permisos de GPS estén concedidos
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
             ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Log.e("Fichar", "No se cuenta con los permisos de ubicación.")
@@ -537,6 +567,7 @@ fun obtenerCoord(
             return@launch
         }
 
+        // Verifica que el GPS esté activado en el dispositivo
         val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
             Log.e("Fichar", "GPS desactivado.")
@@ -544,6 +575,7 @@ fun obtenerCoord(
             return@launch
         }
 
+        // Intenta obtener la última ubicación del dispositivo y valida si es real o falsa
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
             if (location == null) {
                 Log.e("Fichar", "No se pudo obtener la ubicación.")
@@ -551,6 +583,7 @@ fun obtenerCoord(
                 return@addOnSuccessListener
             }
 
+            // Verifica si la ubicación está siendo falsificada (mock location)
             if (SeguridadUtils.isMockLocationEnabled()) {
                 Log.e("Fichar", "Ubicación falsa detectada.")
                 onShowAlert("POSIBLE UBI FALSA")
@@ -566,17 +599,20 @@ fun obtenerCoord(
 }
 //============================================== FICHAJE DE LA APP =====================================
 
+// Barra de navegación inferior que permite acceder a distintas secciones (Fichajes, Incidencias, etc.) y abrir el cuadro para fichar
 @Composable
 fun BottomNavigationBar(
     onNavigate: (String) -> Unit,
     onToggleFichar: () -> Unit,
     modifier: Modifier = Modifier,
-    hideCuadroParaFichar: () -> Unit, // 🔥 Nueva función para ocultar el cuadro
+    hideCuadroParaFichar: () -> Unit,
     setIsLoading: (Boolean) -> Unit,
     scope: CoroutineScope
 ) {
+    // Controla si se ha pulsado el botón de fichar (para alternar su estado visual o funcional)
     var isChecked by remember { mutableStateOf(false) }
 
+    // Contenedor horizontal que agrupa todos los botones de navegación
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -586,6 +622,7 @@ fun BottomNavigationBar(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Botón de fichar: lanza el cuadro para fichar y activa animación de carga
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             IconButton(
                 onClick = {
@@ -607,19 +644,22 @@ fun BottomNavigationBar(
             }
             Text(text = "Fichar", textAlign = TextAlign.Center, modifier = Modifier.padding(top = 2.dp))
         }
-        // 🔥 Modificamos las funciones de navegación para ocultar el cuadro
+        // Botón de navegación que cambia de sección y oculta el cuadro para fichar
         NavigationButton("Fichajes", R.drawable.ic_fichajes32) {
             hideCuadroParaFichar()
             onNavigate(WebViewURL.FICHAJE)
         }
+        // Botón de navegación que cambia de sección y oculta el cuadro para fichar
         NavigationButton("Incidencias", R.drawable.ic_incidencia32) {
             hideCuadroParaFichar()
             onNavigate(WebViewURL.INCIDENCIA)
         }
+        // Botón de navegación que cambia de sección y oculta el cuadro para fichar
         NavigationButton("Horarios", R.drawable.ic_horario32) {
             hideCuadroParaFichar()
             onNavigate(WebViewURL.HORARIOS)
         }
+        // Botón de navegación que cambia de sección y oculta el cuadro para fichar
         NavigationButton("Solicitudes", R.drawable.solicitudes32) {
             hideCuadroParaFichar()
             onNavigate(WebViewURL.SOLICITUDES)
@@ -627,7 +667,7 @@ fun BottomNavigationBar(
     }
 }
 
-
+// Botón reutilizable de navegación inferior, con icono e identificador de sección
 @Composable
 fun NavigationButton(text: String, iconResId: Int, onClick: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -648,6 +688,7 @@ fun NavigationButton(text: String, iconResId: Int, onClick: () -> Unit) {
 }
 //============================== CUADRO PARA FICHAR ======================================
 
+// Pantalla de carga que muestra un GIF mientras se carga la vista principal (WebView o datos)
 @Composable
 fun LoadingScreen(isLoading: Boolean) {
     if (isLoading) {
