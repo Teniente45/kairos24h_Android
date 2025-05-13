@@ -1,8 +1,6 @@
 /*******************************
  * LOGS DE FICHAR.KT
- *******************************/
-
-/**
+ *******************************
  *  // Log de depuración que indica que se ha iniciado el método onCreate
  *  Log.d("Fichar", "onCreate iniciado")
  *
@@ -48,9 +46,7 @@
 
 /*******************************
  * LOGS DE PANTALLAFUNCIONAL.KT
- *******************************/
-
-/**
+ *******************************
  * // Muestra en el log la URL que se va a usar para consultar el horario del usuario
  * Log.d("MiHorario", "URL solicitada: $urlHorario")
  *

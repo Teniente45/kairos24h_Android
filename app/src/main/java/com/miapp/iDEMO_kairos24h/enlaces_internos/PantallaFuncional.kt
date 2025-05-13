@@ -184,7 +184,7 @@ fun Logo_empresa_desarrolladora() {
         Image(
             painter = painterResource(id = ImagenesApp.lodoDesarrolladora),
             contentDescription = "logo de la desarrolladora",
-            modifier = ImagenesApp.logoModifier
+            modifier = ImagenesApp.logoModifierDev
         )
     }
 }
@@ -618,7 +618,8 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
                 } else {
                     try {
                         val json = JSONObject(responseBody)
-                        val fichajesArray = json.getJSONArray("dataFichajes")
+                        val dataFichajesObject = json.getJSONObject("dataFichajes")
+                        val fichajesArray = dataFichajesObject.getJSONArray("fichajes")
 
                         buildList {
                             for (i in 0 until fichajesArray.length()) {
