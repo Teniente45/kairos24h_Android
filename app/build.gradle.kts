@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose.v287)
 
     implementation (libs.play.services.location.v2101)
+    implementation (libs.androidx.lifecycle.runtime.compose)
 
     // Dependencias de Jetpack Compose
     implementation (libs.androidx.ui.v178)
@@ -114,6 +115,6 @@ dependencies {
     implementation (libs.glide)
     //noinspection KaptUsageInsteadOfKsp
     kapt (libs.compiler)
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4")
+    implementation(libs.kotlinx.coroutines.play.services)
 }
 

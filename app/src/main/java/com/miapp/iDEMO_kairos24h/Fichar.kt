@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.miapp.iDEMO_kairos24h
 
 

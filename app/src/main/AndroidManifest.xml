@@ -27,7 +27,8 @@
             android:name="com.miapp.iDEMO_kairos24h.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.Kairos24h"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait"
+            tools:ignore="DiscouragedApi,LockedOrientation,LockedOrientationActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -39,7 +40,8 @@
             android:name="com.miapp.iDEMO_kairos24h.Fichar"
             android:exported="true"
             android:theme="@style/Theme.Kairos24h"
-            android:screenOrientation="portrait" />
+            android:screenOrientation="portrait"
+            tools:ignore="DiscouragedApi,LockedOrientation,LockedOrientationActivity" />
 
     </application>
 

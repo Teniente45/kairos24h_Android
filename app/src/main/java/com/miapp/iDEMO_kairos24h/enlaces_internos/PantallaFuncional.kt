@@ -3,6 +3,7 @@ package com.miapp.iDEMO_kairos24h.enlaces_internos
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.util.Log
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import android.webkit.WebView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -47,6 +48,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -98,11 +100,11 @@ fun CuadroParaFichar(
     // Mover refreshTrigger fuera del if para que se ejecute siempre
     val refreshTrigger = remember { mutableLongStateOf(System.currentTimeMillis()) }
     // Añadir observer de ON_RESUME para refrescar el trigger
-    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
             if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
-                refreshTrigger.value = System.currentTimeMillis()
+                refreshTrigger.longValue = System.currentTimeMillis()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -193,54 +195,6 @@ fun Logo_empresa_desarrolladora() {
     }
 }
 
-data class DatosHorario(
-    val fechaFormateada: String,
-    val fechaSeleccionada: String,
-    val xEmpleado: String,
-    val urlHorario: String
-)
-
-
-@Composable
-fun rememberDatosHorario(): DatosHorario {
-    val context = LocalContext.current
-
-    val dateFormatterTexto = remember {
-        SimpleDateFormat("EEEE, d 'de' MMMM 'de' yyyy", Locale("es", "ES"))
-    }
-    val dateFormatterURL = remember {
-        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-    }
-
-    var fechaFormateada by remember { mutableStateOf("Cargando...") }
-    var fechaSeleccionada by remember { mutableStateOf("") }
-
-    val (_, _, xEmpleadoRaw) = AuthManager.getUserCredentials(context)
-    val xEmpleado = xEmpleadoRaw ?: "SIN_EMPLEADO"
-
-    LaunchedEffect(Unit) {
-        val fechaServidor = ManejoDeSesion.obtenerFechaHoraInternet()
-        if (fechaServidor != null) {
-            fechaFormateada = dateFormatterTexto.format(fechaServidor)
-                .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale("es", "ES")) else it.toString() }
-            fechaSeleccionada = dateFormatterURL.format(fechaServidor)
-        } else {
-            fechaFormateada = "Error al obtener fecha"
-            fechaSeleccionada = "0000-00-00"
-        }
-    }
-    val urlHorario = BuildURL.getMostrarHorarios(context) + "&fecha=$fechaSeleccionada"
-
-
-
-    return DatosHorario(
-        fechaFormateada = fechaFormateada,
-        fechaSeleccionada = fechaSeleccionada,
-        xEmpleado = xEmpleado,
-        urlHorario = urlHorario
-    )
-}
-
 
 @Composable
 fun MiHorario() {
@@ -300,7 +254,7 @@ fun MiHorario() {
                                 fun minutosAHora(minutos: Int): String {
                                     val horas = minutos / 60
                                     val mins = minutos % 60
-                                    return String.format("%02d:%02d", horas, mins)
+                                    return String.format(Locale.getDefault(), "%02d:%02d", horas, mins)
                                 }
                                 minutosAHora(horaIni) + " - " + minutosAHora(horaFin)
                             }
@@ -580,9 +534,8 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
     val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
 
     // --- NUEVO: Variables para horario ---
-    val datosHorario = rememberDatosHorario()
-    val horaInicioHorario = remember { mutableStateOf(0) }
-    val horaFinHorario = remember { mutableStateOf(0) }
+    val horaInicioHorario = remember { mutableIntStateOf(0) }
+    val horaFinHorario = remember { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
         val fechaServidor = ManejoDeSesion.obtenerFechaHoraInternet()
@@ -598,8 +551,8 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
                     val dataArray = json.getJSONArray("dataHorario")
                     if (dataArray.length() > 0) {
                         val item = dataArray.getJSONObject(0)
-                        horaInicioHorario.value = item.optInt("N_HORINI", 0)
-                        horaFinHorario.value = item.optInt("N_HORFIN", 0)
+                        horaInicioHorario.intValue = item.optInt("N_HORINI", 0)
+                        horaFinHorario.intValue = item.optInt("N_HORFIN", 0)
                     }
                 } catch (_: Exception) { }
             }
@@ -660,12 +613,11 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
                                 // Registro de valores individuales
                                 Log.d("RecuadroFichajesDia", "Fichaje $i → nMinEnt: $nMinEnt, nMinSal: $nMinSal, LCUMENT: $lcumEnt, LCUMSAL: $lcumSal")
 
-                                @SuppressLint("DefaultLocale")
                                 fun minutosAHora(minutos: Int?): String {
                                     return if (minutos != null) {
                                         val horas = minutos / 60
                                         val mins = minutos % 60
-                                        String.format("%02d:%02d", horas, mins)
+                                        String.format(Locale.getDefault(), "%02d:%02d", horas, mins)
                                     } else {
                                         "??"
                                     }
@@ -808,12 +760,12 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
                 fichajesTexto.forEach { fichaje ->
                     val colorEntrada = when (fichaje.lcumEnt) {
                         "false" -> Color.Red
-                        "true" -> Color.Green
+                        "true" -> Color(0xFF449B1B)
                         else -> Color(0xFF7599B6)
                     }
                     val colorSalida = when (fichaje.lcumSal) {
                         "false" -> Color.Red
-                        "true" -> Color.Green
+                        "true" -> Color(0xFF449B1B)
                         else -> Color(0xFF7599B6)
                     }
                     Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
@@ -1093,7 +1045,7 @@ fun MensajeAlerta(
                     text = buildAnnotatedString {
                         append("$fechaSolo ")
                         withStyle(
-                            style = androidx.compose.ui.text.SpanStyle(
+                            style = SpanStyle(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 20.sp
                             )
