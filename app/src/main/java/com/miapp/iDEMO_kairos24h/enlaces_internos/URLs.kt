@@ -21,6 +21,10 @@ object ImagenesApp {
     val logoModifier = Modifier
         .width(500.dp)
         .height(150.dp)
+
+    val logoModifierDev = Modifier
+        .width(200.dp)
+        .height(75.dp)
 }
 
 
