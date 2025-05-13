@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
-import com.miapp.iDEMO_kairos24h.R
+import com.miapp.Compilance.R
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
