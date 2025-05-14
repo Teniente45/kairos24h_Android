@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.miapp.Compilance"
+    namespace = "com.miapp.BeimanCPP"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.miapp.Compilance"
+        applicationId = "com.miapp.BeimanCPP"
         minSdk = 28
         targetSdk = 35
         versionCode = 1

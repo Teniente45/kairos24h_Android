@@ -141,7 +141,7 @@ object SeguridadUtils {
     ): Boolean {
         val validarGPS = lComGPS == "S"
         val validarIP = lComIP == "S"
-        val mostrarBotones = lBotonesFichajeMovil == "S"
+        val mostrarBotones = lBotonesFichajeMovil.isNullOrBlank() || lBotonesFichajeMovil == "S"
 
         Log.d("Seguridad", "Validaciones: GPS=$validarGPS, IP=$validarIP, Botones=$mostrarBotones")
 

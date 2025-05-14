@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
-import com.miapp.Compilance.R
+import com.miapp.BeimanCPP.R
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
@@ -12,8 +12,8 @@ import androidx.compose.ui.unit.dp
 object ImagenesApp {
     // Imagen del logo principal que se muestra en la pantalla de login
     @DrawableRes
-    val logoCliente = R.drawable.compliance
-    val logoCliente_x_programa = R.drawable.compliance_x_kairos24h
+    val logoCliente = R.drawable.beiman
+    val logoCliente_x_programa = R.drawable.beiman_x_kairos24h
     val lodoDesarrolladora = R.drawable.logo_i3data
 
 
@@ -32,7 +32,7 @@ object ImagenesApp {
 // Estás son las URL que se nos mostrarán en el WebView
 object WebViewURL {
 
-    const val HOST = "https://controlhorario.kairos24h.es"
+    const val HOST = "https://beimancpp.tucitamedica.es"
 
     const val ENTRY_POINT = "/index.php"
     const val URL_USADA = "$HOST$ENTRY_POINT"
@@ -57,7 +57,7 @@ object WebViewURL {
 // Esta será la URL que construiremos cuando desde el login de nuestra APK introduzcamos el Usuario y la Contraseña
 object BuildURL {
 
-    const val HOST = "https://controlhorario.kairos24h.es"
+    const val HOST = "https://beimancpp.tucitamedica.es"
 
     const val ENTRY_POINT = "/index.php"
     const val ACTION_FICHAJE = "r=explotacion/creaFichaje"

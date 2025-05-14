@@ -54,6 +54,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,7 +72,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
-import com.miapp.Compilance.R
+import com.miapp.BeimanCPP.R
 import com.miapp.iDEMO_kairos24h.enlaces_internos.SeguridadUtils.ResultadoUbicacion
 import com.miapp.iDEMO_kairos24h.fichar
 import kotlinx.coroutines.CoroutineScope
@@ -618,8 +619,7 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
                 } else {
                     try {
                         val json = JSONObject(responseBody)
-                        val dataFichajesObject = json.getJSONObject("dataFichajes")
-                        val fichajesArray = dataFichajesObject.getJSONArray("fichajes")
+                        val fichajesArray = json.getJSONArray("dataFichajes")
 
                         buildList {
                             for (i in 0 until fichajesArray.length()) {
@@ -828,58 +828,62 @@ fun AlertasDiarias(
 ) {
     val context = LocalContext.current
     val expandedStates = remember { mutableStateMapOf<Int, Boolean>() }
+
     // Forzar fetch inicial
     LaunchedEffect(Unit) {
         refreshTrigger.value = System.currentTimeMillis()
     }
 
-    // produceState para avisos, similar a RecuadroFichajesDia
-    val avisos by produceState(
-        initialValue = emptyList<AvisoItem>(),
-        key1 = refreshTrigger.value
-    ) {
-        value = try {
-            withContext(Dispatchers.IO) {
+    // Nuevo: State para avisos y scope estable
+    val coroutineScope = rememberCoroutineScope()
+    val avisosState = remember { mutableStateOf<List<AvisoItem>>(emptyList()) }
+
+    LaunchedEffect(refreshTrigger.value) {
+        coroutineScope.launch(Dispatchers.IO) {
+            try {
                 val urlAlertas = BuildURL.getMostrarAlertas(context)
-                // Muestra la URL que se utilizará para obtener alertas diarias
                 Log.d("AlertasDiarias", "URL de alertas: $urlAlertas")
                 val client = OkHttpClient()
+                // Usar siempre el dominio correcto definido en BuildURL.HOST
+                val dominio = BuildURL.HOST
                 val cookie = android.webkit.CookieManager.getInstance()
-                    .getCookie("https://democontrolhorario.kairos24h.es") ?: ""
+                    .getCookie(dominio) ?: ""
                 val request = Request.Builder()
                     .url(urlAlertas)
                     .addHeader("Cookie", cookie)
                     .build()
                 val response = client.newCall(request).execute()
                 val jsonBody = response.body?.string()
+                Log.d("JSONAlertas", "JSON crudo recibido: $jsonBody")
                 val json = JSONObject(jsonBody ?: "")
                 val dataArray = json.optJSONArray("dataAvisos")
-                if (dataArray != null && dataArray.length() > 0) {
-                    val nuevaLista = mutableListOf<AvisoItem>()
-                    for (i in 0 until dataArray.length()) {
-                        val item = dataArray.getJSONObject(i)
-                        val dAviso = item.optString("D_AVISO", "Sin aviso")
-                        val tAviso = item.optString("T_AVISO", "")
-                        val tUrl = item.optString("T_URL", "").takeIf { it.isNotBlank() && it != "null" }
-                        // Muestra el contenido del campo D_AVISO de cada alerta
-                        Log.d("JSONAlertas", "[$i] D_AVISO: $dAviso")
-                        // Muestra el contenido del campo T_AVISO de cada alerta
-                        Log.d("JSONAlertas", "[$i] T_AVISO: $tAviso")
-                        // Muestra el contenido del campo T_URL de cada alerta (si existe)
-                        Log.d("JSONAlertas", "[$i] T_URL: $tUrl")
-                        nuevaLista.add(AvisoItem(dAviso, tAviso, tUrl))
+                if (dataArray != null) {
+                    Log.d("JSONAlertas", "dataAvisos length = ${dataArray.length()}")
+                    if (dataArray.length() > 0) {
+                        val nuevaLista = mutableListOf<AvisoItem>()
+                        for (i in 0 until dataArray.length()) {
+                            val item = dataArray.getJSONObject(i)
+                            val dAviso = item.optString("D_AVISO", "Sin aviso")
+                            val tAviso = item.optString("T_AVISO", "")
+                            val tUrl = item.optString("T_URL", "").takeIf { it.isNotBlank() && it != "null" }
+                            Log.d("JSONAlertas", "[$i] D_AVISO: $dAviso")
+                            Log.d("JSONAlertas", "[$i] T_AVISO: $tAviso")
+                            Log.d("JSONAlertas", "[$i] T_URL: $tUrl")
+                            nuevaLista.add(AvisoItem(dAviso, tAviso, tUrl))
+                        }
+                        avisosState.value = nuevaLista
+                    } else {
+                        Log.d("JSONAlertas", "Array 'dataAvisos' está presente pero vacío")
+                        avisosState.value = listOf(AvisoItem("No hay alertas disponibles", "", null))
                     }
-                    nuevaLista
                 } else {
-                    // Informa que el array de alertas vino vacío o nulo
-                    Log.d("JSONAlertas", "Array 'dataAvisos' vacío o nulo")
-                    listOf(AvisoItem("No hay alertas disponibles", "", null))
+                    Log.d("JSONAlertas", "Array 'dataAvisos' es null")
+                    avisosState.value = listOf(AvisoItem("No hay alertas disponibles", "", null))
                 }
+            } catch (e: Exception) {
+                Log.e("AlertasDiarias", "Error obteniendo alertas: ${e.message}")
+                avisosState.value = listOf(AvisoItem("Error al cargar alertas", "", null))
             }
-        } catch (e: Exception) {
-            // Informa si hubo un error general al obtener las alertas
-            Log.e("AlertasDiarias", "Error obteniendo alertas: ${e.message}")
-            listOf(AvisoItem("Error al cargar alertas", "", null))
         }
     }
 
@@ -916,14 +920,14 @@ fun AlertasDiarias(
             }
 
             Column(modifier = Modifier.padding(top = 8.dp)) {
-                if (avisos.isEmpty()) {
+                if (avisosState.value.isEmpty()) {
                     Text(
                         text = "Cargando alertas...",
                         color = Color.Gray,
                         modifier = Modifier.padding(8.dp)
                     )
                 }
-                avisos.forEachIndexed { index, aviso ->
+                avisosState.value.forEachIndexed { index, aviso ->
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
