@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2025 Juan López
+ * Todos los derechos reservados.
+ *
+ * Este archivo forma parte de la aplicación Kairos24h.
+ * Proyecto académico de desarrollo Android.
+ */
+
 @file:Suppress("DEPRECATION")
 
 package com.miapp.iDEMO_kairos24h
@@ -67,7 +75,7 @@ import coil.compose.AsyncImage
 import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 import com.google.android.gms.location.LocationServices
-import com.miapp.Kairos24h.R
+import com.miapp.kairos24h.R
 import com.miapp.iDEMO_kairos24h.enlaces_internos.AuthManager
 import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL
 import com.miapp.iDEMO_kairos24h.enlaces_internos.CuadroParaFichar

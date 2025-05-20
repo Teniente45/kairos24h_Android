@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2025 Juan López
+ * Todos los derechos reservados.
+ *
+ * Este archivo forma parte de la aplicación Kairos24h.
+ * Proyecto académico de desarrollo Android.
+ */
+
 @file:Suppress("DEPRECATION")
 
 package com.miapp.iDEMO_kairos24h.enlaces_internos
@@ -141,7 +149,7 @@ object SeguridadUtils {
     ): Boolean {
         val validarGPS = lComGPS == "S"
         val validarIP = lComIP == "S"
-        val mostrarBotones = lBotonesFichajeMovil.isNullOrBlank() || lBotonesFichajeMovil == "S"
+        val mostrarBotones = lBotonesFichajeMovil.isBlank() || lBotonesFichajeMovil == "S"
 
         Log.d("Seguridad", "Validaciones: GPS=$validarGPS, IP=$validarIP, Botones=$mostrarBotones")
 

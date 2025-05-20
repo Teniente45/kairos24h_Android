@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2025 Juan López
+ * Todos los derechos reservados.
+ *
+ * Este archivo forma parte de la aplicación Kairos24h.
+ * Proyecto académico de desarrollo Android.
+ */
+
 package com.miapp.iDEMO_kairos24h.enlaces_internos
 
 import android.annotation.SuppressLint
@@ -72,7 +80,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
-import com.miapp.Kairos24h.R
+import com.miapp.kairos24h.R
 import com.miapp.iDEMO_kairos24h.enlaces_internos.SeguridadUtils.ResultadoUbicacion
 import com.miapp.iDEMO_kairos24h.fichar
 import kotlinx.coroutines.CoroutineScope

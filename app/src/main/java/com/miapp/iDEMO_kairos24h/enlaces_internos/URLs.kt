@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2025 Juan López
+ * Todos los derechos reservados.
+ *
+ * Este archivo forma parte de la aplicación Kairos24h.
+ * Proyecto académico de desarrollo Android.
+ */
+
 package com.miapp.iDEMO_kairos24h.enlaces_internos
 
 import android.content.Context
@@ -6,7 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import com.miapp.Kairos24h.R
+import com.miapp.kairos24h.R
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
@@ -15,7 +23,7 @@ object ImagenesApp {
     // Imagen del logo principal que se muestra en la pantalla de login
     @DrawableRes
     val logoCliente = R.drawable.kairos24h
-    val logoCliente_x_programa = R.drawable.rfag
+    val logoCliente_x_programa = R.drawable.compliance
     val lodoDesarrolladora = R.drawable.logo_i3data
 
 
@@ -45,7 +53,7 @@ object ImagenesApp {
 // Estás son las URL que se nos mostrarán en el WebView
 object WebViewURL {
 
-    const val HOST = "https://controlhorario.kairos24h.es"
+    const val HOST = "https://democontrolhorario.kairos24h.es"
 
     const val ENTRY_POINT = "/index.php"
     const val URL_USADA = "$HOST$ENTRY_POINT"
@@ -70,7 +78,7 @@ object WebViewURL {
 // Esta será la URL que construiremos cuando desde el login de nuestra APK introduzcamos el Usuario y la Contraseña
 object BuildURL {
 
-    const val HOST = "https://controlhorario.kairos24h.es"
+    const val HOST = "https://democontrolhorario.kairos24h.es"
 
     const val ENTRY_POINT = "/index.php"
     const val ACTION_FICHAJE = "r=explotacion/creaFichaje"

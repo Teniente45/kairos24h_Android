@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2025 Juan López
+ * Todos los derechos reservados.
+ *
+ * Este archivo forma parte de la aplicación Kairos24h.
+ * Proyecto académico de desarrollo Android.
+ */
+
 package com.miapp.iDEMO_kairos24h
 
 import android.Manifest
