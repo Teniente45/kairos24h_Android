@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.miapp.Tragabuche"
+    namespace = "com.miapp.Kairos24h"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.miapp.Tragabuche"
+        applicationId = "com.miapp.Kairos24h"
         minSdk = 28
         targetSdk = 35
         versionCode = 1

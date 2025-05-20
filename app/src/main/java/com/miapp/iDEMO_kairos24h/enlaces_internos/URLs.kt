@@ -2,9 +2,11 @@ package com.miapp.iDEMO_kairos24h.enlaces_internos
 
 import android.content.Context
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import com.miapp.Tragabuche.R
+import com.miapp.Kairos24h.R
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
@@ -13,18 +15,29 @@ object ImagenesApp {
     // Imagen del logo principal que se muestra en la pantalla de login
     @DrawableRes
     val logoCliente = R.drawable.kairos24h
-    val logoCliente_x_programa = R.drawable.tragabuche
+    val logoCliente_x_programa = R.drawable.rfag
     val lodoDesarrolladora = R.drawable.logo_i3data
 
 
+
+    // Centraliza las características del logo de empresa cliente
+    val logoBoxModifier = Modifier
+        .fillMaxWidth()
+        .padding(vertical = 5.dp)
     // Estilo aplicado al logo (tamaño y proporción)
     val logoModifier = Modifier
         .width(500.dp)
-        .height(150.dp)
+        .height(200.dp)
 
+
+    // Centraliza las características del contenedor del logo de desarrolladora
+    val logoBoxModifierDev = Modifier
+        .fillMaxWidth()
+    // Estilo aplicado al logo de desarrolladora (tamaño y proporción)
     val logoModifierDev = Modifier
         .width(200.dp)
         .height(75.dp)
+
 }
 
 
@@ -32,7 +45,7 @@ object ImagenesApp {
 // Estás son las URL que se nos mostrarán en el WebView
 object WebViewURL {
 
-    const val HOST = "https://rincontragabuche.kairos24h.es"
+    const val HOST = "https://controlhorario.kairos24h.es"
 
     const val ENTRY_POINT = "/index.php"
     const val URL_USADA = "$HOST$ENTRY_POINT"
@@ -57,7 +70,7 @@ object WebViewURL {
 // Esta será la URL que construiremos cuando desde el login de nuestra APK introduzcamos el Usuario y la Contraseña
 object BuildURL {
 
-    const val HOST = "https://rincontragabuche.kairos24h.es"
+    const val HOST = "https://controlhorario.kairos24h.es"
 
     const val ENTRY_POINT = "/index.php"
     const val ACTION_FICHAJE = "r=explotacion/creaFichaje"
@@ -92,5 +105,3 @@ object BuildURL {
     fun getMostrarFichajes(context: Context): String = URL_USADA + ACTION_CONSULTFIC_DIA + getStaticParams(context)
     fun getMostrarAlertas(context: Context): String = URL_USADA + ACTION_CONSULT_ALERTAS + getStaticParams(context)
 }
-
-

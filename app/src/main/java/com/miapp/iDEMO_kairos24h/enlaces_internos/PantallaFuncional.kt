@@ -72,7 +72,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
-import com.miapp.Tragabuche.R
+import com.miapp.Kairos24h.R
 import com.miapp.iDEMO_kairos24h.enlaces_internos.SeguridadUtils.ResultadoUbicacion
 import com.miapp.iDEMO_kairos24h.fichar
 import kotlinx.coroutines.CoroutineScope
@@ -161,9 +161,7 @@ fun CuadroParaFichar(
 @Composable
 fun Logo_empresa_cliente() {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .offset(y = (-10).dp),
+        modifier = ImagenesApp.logoBoxModifier,
         contentAlignment = Alignment.Center
     ) {
         Image(
@@ -177,9 +175,7 @@ fun Logo_empresa_cliente() {
 @Composable
 fun Logo_empresa_desarrolladora() {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .offset(y = (-10).dp),
+        modifier = ImagenesApp.logoBoxModifierDev,
         contentAlignment = Alignment.Center
     ) {
         Image(
@@ -278,7 +274,7 @@ fun MiHorario() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .offset(y = (-40).dp)
+            .padding(bottom = 20.dp)
             .border(width = 1.dp, color = Color(0xFFC0C0C0))
             .background(Color.White),
         horizontalAlignment = Alignment.CenterHorizontally
