@@ -23,7 +23,10 @@ data class UserCredentials(
     val lComGPS: String,
     val lComIP: String,
     val lBotonesFichajeMovil: String,
-    val xEntidad: String?
+    val xEntidad: String?,
+    val sEmpleado: String,
+    val tUrlCPP: String,
+    val tLogo: String
 )
 
 object AuthManager {
@@ -38,8 +41,27 @@ object AuthManager {
         val lComIP = sharedPreferences.getString("lComIP", "N") ?: "N"
         val lBotonesFichajeMovil = sharedPreferences.getString("lBotonesFichajeMovil", "N") ?: "N"
         val xEntidad = sharedPreferences.getString("xEntidad", null)
-        Log.d("getUserCredentials", "Estas son las getUserCredentials que te devuelvo: usuario=$usuario, password=$password, xEmpleado=$xEmpleado, lComGPS=$lComGPS, lComIP=$lComIP, lBotonesFichajeMovil=$lBotonesFichajeMovil, xEntidad=$xEntidad")
-        return UserCredentials(usuario, password, xEmpleado, lComGPS, lComIP, lBotonesFichajeMovil, xEntidad)
+        val sEmpleado = sharedPreferences.getString("sEmpleado", "") ?: ""
+        val tUrlCPP = sharedPreferences.getString("tUrlCPP", "") ?: ""
+        val tLogo = sharedPreferences.getString("tLogo", "") ?: ""
+
+        Log.d(
+            "getUserCredentials",
+            "usuario=$usuario, password=$password, xEmpleado=$xEmpleado, lComGPS=$lComGPS, lComIP=$lComIP, lBotonesFichajeMovil=$lBotonesFichajeMovil, xEntidad=$xEntidad, sEmpleado=$sEmpleado, tUrlCPP=$tUrlCPP, tLogo=$tLogo"
+        )
+
+        return UserCredentials(
+            usuario,
+            password,
+            xEmpleado,
+            lComGPS,
+            lComIP,
+            lBotonesFichajeMovil,
+            xEntidad,
+            sEmpleado,
+            tUrlCPP,
+            tLogo
+        )
     }
 
 
@@ -52,7 +74,10 @@ object AuthManager {
         lComGPS: String,
         lComIP: String,
         lBotonesFichajeMovil: String,
-        xEntidad: String?
+        xEntidad: String?,
+        sEmpleado: String,
+        tUrlCPP: String,
+        tLogo: String
     ) {
         val sharedPreferences = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
         with(sharedPreferences.edit()) {
@@ -67,13 +92,19 @@ object AuthManager {
             if (xEntidad != null) {
                 putString("xEntidad", xEntidad)
             }
+            putString("sEmpleado", sEmpleado)
+            putString("tUrlCPP", tUrlCPP)
+            putString("tLogo", tLogo)
             apply()
         }
-        Log.d("saveUserCredentials", "Estas son tus saveUserCredentials: usuario=$usuario, password=$password, xEmpleado=$xEmpleado, lComGPS=$lComGPS, lComIP=$lComIP, lBotonesFichajeMovil=$lBotonesFichajeMovil, xEntidad=$xEntidad")
+        Log.d(
+            "saveUserCredentials",
+            "usuario=$usuario, password=$password, xEmpleado=$xEmpleado, lComGPS=$lComGPS, lComIP=$lComIP, lBotonesFichajeMovil=$lBotonesFichajeMovil, xEntidad=$xEntidad, sEmpleado=$sEmpleado, tUrlCPP=$tUrlCPP, tLogo=$tLogo"
+        )
     }
 
     // Método para realizar el login y obtener el xEmpleado y otros flags
-    fun authenticateUser(usuario: String, password: String): Pair<Boolean, UserCredentials?> {
+    fun authenticateUser(context: Context, usuario: String, password: String): Pair<Boolean, UserCredentials?> {
         val client = OkHttpClient()
         // Se usa cUsuario y tPassword en la URL
         val url = BuildURL.LOGIN +
@@ -99,7 +130,14 @@ object AuthManager {
                     val lComIP = jsonResponse.optString("lComIP", "S")
                     val lBotonesFichajeMovil = jsonResponse.optString("lBotonesFichajeMovil", "S")
                     val xEntidad = jsonResponse.optString("xEntidad", null)
-                    val credentials = UserCredentials(usuario, password, xEmpleado, lComGPS, lComIP, lBotonesFichajeMovil, xEntidad)
+                    val sEmpleado = jsonResponse.optString("sEmpleado", "")
+                    val tUrlCPP = jsonResponse.optString("tUrlCPP", "")
+                    val tLogo = jsonResponse.optString("tLogo", "")
+                    val credentials = UserCredentials(
+                        usuario, password, xEmpleado,
+                        lComGPS, lComIP, lBotonesFichajeMovil, xEntidad,
+                        sEmpleado, tUrlCPP, tLogo
+                    )
                     Pair(true, credentials)
                 } else {
                     Pair(false, null)

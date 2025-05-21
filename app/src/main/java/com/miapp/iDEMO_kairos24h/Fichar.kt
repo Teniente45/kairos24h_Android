@@ -96,6 +96,7 @@ class Fichar : ComponentActivity() {
     // Método principal que se ejecuta al crear la actividad; valida credenciales y lanza la interfaz FicharScreen
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WebView.setWebContentsDebuggingEnabled(true)
         Log.d("Fichar", "onCreate iniciado")
 
         val (storedUser, storedPassword, _) = AuthManager.getUserCredentials(this)
@@ -198,8 +199,6 @@ fun FicharScreen(
     val sharedPreferences = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
     // Recupera el nombre de usuario desde las preferencias o usa valor por defecto
     val cUsuario = sharedPreferences.getString("usuario", "Usuario") ?: "Usuario"
-    // Determina si deben mostrarse los botones de fichaje en la interfaz
-    val mostrarBotonesFichaje = sharedPreferences.getString("lBotonesFichajeMovil", "S")?.equals("S", ignoreCase = true) == true
 
     // Simula carga inicial de 1,5 segundos antes de mostrar contenido
     LaunchedEffect(Unit) {
@@ -259,24 +258,29 @@ fun FicharScreen(
                 .weight(1f)
                 .fillMaxWidth()
         ) {
-            // WebView que carga la URL de login y realiza login automático con JavaScript
+            // WebView que carga la URL de login y realiza login automático con JavaScript.
+            // Configurado para permitir JavaScript, usar el viewport completo, y soportar DOM storage.
             AndroidView(
                 factory = { context ->
                     WebView(context).apply {
-                        settings.javaScriptEnabled = true
-                        settings.setSupportZoom(true)
-                        settings.builtInZoomControls = true
-                        settings.displayZoomControls = false
-                        settings.domStorageEnabled = true
-                        settings.loadWithOverviewMode = true
-                        settings.useWideViewPort = true
-                        settings.javaScriptCanOpenWindowsAutomatically = true
-                        settings.setSupportMultipleWindows(true)
-                        settings.databaseEnabled = true
-                        settings.allowFileAccess = true
-                        settings.allowContentAccess = true
+                        val webSettings = settings
+                        webSettings.javaScriptEnabled = true
+                        webSettings.loadWithOverviewMode = true
+                        webSettings.useWideViewPort = true
+                        webSettings.domStorageEnabled = true
+                        webSettings.setSupportZoom(true)
+                        webSettings.builtInZoomControls = true
+                        webSettings.displayZoomControls = false
+                        webSettings.javaScriptCanOpenWindowsAutomatically = true
+                        webSettings.setSupportMultipleWindows(true)
+                        webSettings.databaseEnabled = true
+                        webSettings.allowFileAccess = true
+                        webSettings.allowContentAccess = true
                         isVerticalScrollBarEnabled = true
                         isHorizontalScrollBarEnabled = true
+                        // Establece un user agent moderno de navegador móvil
+                        webSettings.userAgentString =
+                            "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Mobile Safari/537.36"
 
                         webChromeClient = object : android.webkit.WebChromeClient() {
                             override fun onCreateWindow(
@@ -309,6 +313,7 @@ fun FicharScreen(
                                 view?.evaluateJavascript(
                                     """
                                     (function() {
+                                        isMobile = () => true;
                                         document.getElementsByName('LoginForm[username]')[0].value = '$usuario';
                                         document.getElementsByName('LoginForm[password]')[0].value = '$password';
                                         document.querySelector('form').submit();
@@ -374,7 +379,7 @@ fun FicharScreen(
                             fichajeAlertTipo = alertTipo
                         },
                         webViewState = webViewState,
-                        mostrarBotonesFichaje = mostrarBotonesFichaje
+                        mostrarBotonesFichaje = true
                     )
                 }
             }
@@ -547,7 +552,6 @@ fun obtenerCoord(
     // Registra advertencias si alguna de las condiciones de seguridad deshabilita el fichaje
     if (lComGPS != "S") Log.w("Seguridad", "El fichaje está deshabilitado por GPS: lComGPS=$lComGPS")
     if (lComIP != "S") Log.w("Seguridad", "El fichaje está deshabilitado por IP: lComIP=$lComIP")
-    if (lBotonesFichajeMovil != "S") Log.w("Seguridad", "Los botones de fichaje están deshabilitados: lBotonesFichajeMovil=$lBotonesFichajeMovil")
     // Define si se debe validar el GPS e IP para el fichaje
     val validarGPS = lComGPS == "S"
     val validarIP = lComIP == "S"
@@ -559,7 +563,7 @@ fun obtenerCoord(
             context,
             if (validarGPS) "S" else "N",
             if (validarIP) "S" else "N",
-            lBotonesFichajeMovil
+            "S"
         ) { mensaje ->
             onShowAlert(mensaje)
         }

@@ -413,9 +413,9 @@ fun BotonesFichajeConPermisos(
                     }
                 }
             },
-        color = Color(0xFFFFFFFF),
+        color = Color(0xFF7599B6),
         shape = RoundedCornerShape(10.dp),
-        border = BorderStroke(2.dp, Color(0xFF7599B6))
+        border = BorderStroke(2.dp, Color(0xFF0E4879))
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -438,7 +438,7 @@ fun BotonesFichajeConPermisos(
                         append("Entrada")
                     }
                 },
-                color = Color(0xFF7599B6),
+                color = Color.White,
                 fontSize = 25.sp,
                 modifier = Modifier.align(Alignment.CenterVertically)
             )
@@ -515,9 +515,9 @@ fun BotonesFichajeConPermisos(
                     }
                 }
             },
-        color = Color(0xFFFFFFFF),
+        color = Color(0xFF7599B6),
         shape = RoundedCornerShape(10.dp),
-        border = BorderStroke(2.dp, Color(0xFF7599B6))
+        border = BorderStroke(2.dp, Color(0xFF0E4879))
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -540,7 +540,7 @@ fun BotonesFichajeConPermisos(
                         append("Salida")
                     }
                 },
-                color = Color(0xFF7599B6),
+                color = Color.White,
                 fontSize = 25.sp,
                 modifier = Modifier.align(Alignment.CenterVertically)
             )
@@ -911,12 +911,12 @@ fun AlertasDiarias(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFF7599B6))
+                    .background(Color.White)
                     .padding(8.dp)
             ) {
                 Text(
                     text = "Avisos / Alertas",
-                    color = Color.White,
+                    color = Color(0xFF7599B6),
                     fontWeight = FontWeight.Bold,
                     fontSize = 23.sp,
                     modifier = Modifier.align(Alignment.CenterStart)

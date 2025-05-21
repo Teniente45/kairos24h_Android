@@ -118,6 +118,7 @@ class MainActivity : ComponentActivity() {
                                         lifecycleScope.launch(Dispatchers.IO) {
                                             try {
                                                 val (success, xEmpleado) = AuthManager.authenticateUser(
+                                                    this@MainActivity,
                                                     usuario,
                                                     password
                                                 )
@@ -132,7 +133,10 @@ class MainActivity : ComponentActivity() {
                                                             xEmpleado.lComGPS,
                                                             xEmpleado.lComIP,
                                                             xEmpleado.lBotonesFichajeMovil,
-                                                            xEmpleado.xEntidad
+                                                            xEmpleado.xEntidad,
+                                                            xEmpleado.sEmpleado,
+                                                            xEmpleado.tUrlCPP,
+                                                            xEmpleado.tLogo
                                                         )
                                                         navController.navigate("fichar/${xEmpleado.usuario}/${xEmpleado.password}")
                                                     } else {
