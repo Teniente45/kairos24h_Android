@@ -282,7 +282,7 @@ fun MiHorario() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 20.dp)
+            .padding(bottom = 20.dp, top = (-10).dp)
             .border(width = 1.dp, color = Color(0xFFC0C0C0))
             .background(Color.White),
         horizontalAlignment = Alignment.CenterHorizontally
