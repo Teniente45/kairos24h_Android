@@ -282,6 +282,7 @@ fun MiHorario() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .offset(y = (-10).dp)
             .padding(bottom = 20.dp)
             .border(width = 1.dp, color = Color(0xFFC0C0C0))
             .background(Color.White),
