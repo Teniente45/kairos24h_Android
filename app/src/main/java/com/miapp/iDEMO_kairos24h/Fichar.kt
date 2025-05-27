@@ -317,15 +317,27 @@ fun FicharScreen(
                                         document.getElementsByName('LoginForm[username]')[0].value = '$usuario';
                                         document.getElementsByName('LoginForm[password]')[0].value = '$password';
                                         document.querySelector('form').submit();
-                                        
+
                                         setTimeout(function() {
-                                            var panels = document.querySelectorAll('.panel, .panel-body, .panel-heading');
-                                            panels.forEach(function(panel) {
-                                                panel.style.display = 'block';
-                                                panel.style.visibility = 'visible';
-                                                panel.style.opacity = '1';
-                                                panel.style.maxHeight = 'none';
+                                            const dialogs = document.querySelectorAll('.ui-dialog-content');
+                                            dialogs.forEach(d => {
+                                                d.style.display = 'block';
+                                                d.style.visibility = 'visible';
+                                                d.style.opacity = '1';
+                                                d.style.zIndex = '9999';
+                                                d.style.position = 'fixed';
+                                                d.style.top = '10%';
+                                                d.style.maxHeight = '80vh';
+                                                d.style.overflowY = 'auto';
                                             });
+
+                                            const panels = document.querySelectorAll('.panel, .panel-body, .panel-heading');
+                                            panels.forEach(p => {
+                                                p.style.display = 'block';
+                                                p.style.visibility = 'visible';
+                                                p.style.maxHeight = 'none';
+                                            });
+
                                             document.body.style.overflow = 'auto';
                                             document.documentElement.style.overflow = 'auto';
                                         }, 3000);
