@@ -138,7 +138,7 @@ class MainActivity : ComponentActivity() {
                                                             xEmpleado.tUrlCPP,
                                                             xEmpleado.tLogo
                                                         )
-                                                        navController.navigate("fichar/${xEmpleado.usuario}/${xEmpleado.password}")
+                                                        navigateToFichar(xEmpleado.usuario, xEmpleado.password)
                                                     } else {
                                                         // Si no se autentica correctamente, se muestra un mensaje de error al usuario
                                                         Toast.makeText(
@@ -175,32 +175,11 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
-                        composable("fichar/{usuario}/{password}") { backStackEntry ->
-                            val usuario = backStackEntry.arguments?.getString("usuario") ?: ""
-                            val password = backStackEntry.arguments?.getString("password") ?: ""
-
-                            FicharScreen(
-                                usuario = usuario,
-                                password = password,
-                                onLogout = { navigateToLogin() }
-                            ) // 🔥 Se pasa un valor vacío
-                        }
+                        // La navegación a Fichar se realiza únicamente mediante navigateToFichar(usuario, password)
                     }
                 }
             }
         }
-    }
-
-    // Redirige al usuario a la pantalla de login y limpia las preferencias
-    private fun navigateToLogin() {
-        val sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE)
-        with(sharedPreferences.edit()) {
-            clear()
-            apply()
-        }
-        val intent = Intent(this, MainActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        startActivity(intent)
     }
 
     // Inicia la actividad Fichar pasando usuario y contraseña como extras

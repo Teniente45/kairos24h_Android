@@ -90,10 +90,10 @@ import kotlinx.coroutines.Dispatchers
 
 class Fichar : ComponentActivity() {
 
-    // Referencia al WebView principal de la actividad, utilizado para cargar y manipular contenido web
-    private var webView: WebView? = null
+    private lateinit var webView: WebView
+    private val handler = Handler(Looper.getMainLooper())
+    private val sessionTimeoutMillis = 2 * 60 * 60 * 1000L // 2 horas
 
-    // Método principal que se ejecuta al crear la actividad; valida credenciales y lanza la interfaz FicharScreen
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WebView.setWebContentsDebuggingEnabled(true)
@@ -105,17 +105,115 @@ class Fichar : ComponentActivity() {
             navigateToLogin()
             return
         }
-        // Usamos las credenciales del Intent, o las almacenadas
         val usuario = intent.getStringExtra("usuario") ?: storedUser
         val password = intent.getStringExtra("password") ?: storedPassword
-        setContent {
-            FicharScreen(
-                usuario = usuario,
-                password = password,
-                onLogout = { navigateToLogin() }
-            )
+
+        // Creamos el FrameLayout raíz
+        val root = android.widget.FrameLayout(this).apply { id = android.view.View.generateViewId() }
+
+        // Creamos y configuramos el WebView
+        webView = WebView(this).apply {
+            val webSettings = settings
+            webSettings.javaScriptEnabled = true
+            webSettings.loadWithOverviewMode = true
+            webSettings.useWideViewPort = true
+            webSettings.domStorageEnabled = true
+            webSettings.setSupportZoom(true)
+            webSettings.builtInZoomControls = true
+            webSettings.displayZoomControls = false
+            webSettings.javaScriptCanOpenWindowsAutomatically = true
+            webSettings.setSupportMultipleWindows(true)
+            webSettings.databaseEnabled = true
+            webSettings.allowFileAccess = true
+            webSettings.allowContentAccess = true
+            webSettings.userAgentString =
+                "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Mobile Safari/537.36"
+
+            webChromeClient = object : android.webkit.WebChromeClient() {
+                override fun onCreateWindow(
+                    view: WebView?,
+                    isDialog: Boolean,
+                    isUserGesture: Boolean,
+                    resultMsg: android.os.Message?
+                ): Boolean {
+                    val newWebView = WebView(view!!.context)
+                    newWebView.settings.javaScriptEnabled = true
+                    newWebView.settings.javaScriptCanOpenWindowsAutomatically = true
+                    newWebView.settings.setSupportMultipleWindows(true)
+                    newWebView.settings.domStorageEnabled = true
+                    newWebView.settings.databaseEnabled = true
+                    newWebView.settings.allowFileAccess = true
+                    newWebView.settings.allowContentAccess = true
+
+                    val transport = resultMsg?.obj as WebView.WebViewTransport
+                    transport.webView = newWebView
+                    resultMsg.sendToTarget()
+
+                    return true
+                }
+            }
+
+            webViewClient = object : WebViewClient() {
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    super.onPageFinished(view, url)
+                    view?.evaluateJavascript(
+                        """
+                        (function() {
+                            isMobile = () => true;
+                            document.getElementsByName('LoginForm[username]')[0].value = '$usuario';
+                            document.getElementsByName('LoginForm[password]')[0].value = '$password';
+                            document.querySelector('form').submit();
+                            
+                            setTimeout(function() {
+                                var panels = document.querySelectorAll('.panel, .panel-body, .panel-heading');
+                                panels.forEach(function(panel) {
+                                    panel.style.display = 'block';
+                                    panel.style.visibility = 'visible';
+                                    panel.style.opacity = '1';
+                                    panel.style.maxHeight = 'none';
+                                });
+                                document.body.style.overflow = 'auto';
+                                document.documentElement.style.overflow = 'auto';
+                            }, 3000);
+                        })();
+                        """.trimIndent(),
+                        null
+                    )
+                }
+            }
+
+            loadUrl(WebViewURL.LOGIN)
         }
-        // Inicia el temporizador de simulación de actividad para gestionar la caducidad de la sesión del usuario
+
+        // ComposeView superpuesto
+        val composeView = androidx.compose.ui.platform.ComposeView(this).apply {
+            setContent {
+                FicharScreen(
+                    usuario = usuario,
+                    password = password,
+                    webView = webView,
+                    onLogout = { navigateToLogin() }
+                )
+            }
+        }
+
+        root.addView(
+            webView,
+            android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
+        root.addView(
+            composeView,
+            android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
+
+        setContentView(root)
+
         ManejoDeSesion.startActivitySimulationTimer(handler, webView, sessionTimeoutMillis)
     }
 
@@ -126,13 +224,11 @@ class Fichar : ComponentActivity() {
         ManejoDeSesion.onPause()
     }
 
-    // Método del ciclo de vida que detiene lógica de sesión y la vincula al WebView actual
     override fun onStop() {
         super.onStop()
         ManejoDeSesion.onStop(webView)
     }
 
-    // Método del ciclo de vida que reanuda la lógica de sesión y la vincula al WebView actual
     override fun onResume() {
         super.onResume()
         ManejoDeSesion.onResume(webView)
@@ -157,9 +253,6 @@ class Fichar : ComponentActivity() {
         finish()
     }
     // Manejador principal usado para controlar los tiempos de la sesión activa
-    private val handler = Handler(Looper.getMainLooper())
-    // Tiempo máximo de inactividad permitido antes de cerrar sesión (2 horas)
-    private val sessionTimeoutMillis = 2 * 60 * 60 * 1000L // 2 horas
 }
 
 
@@ -169,6 +262,7 @@ class Fichar : ComponentActivity() {
 fun FicharScreen(
     usuario: String,
     password: String,
+    webView: WebView,
     onLogout: () -> Unit
 ) {
     // Controla si debe mostrarse la pantalla de carga
@@ -191,8 +285,7 @@ fun FicharScreen(
         R.drawable.cliente32,
     )
 
-    // Referencia reactiva al WebView utilizado para interactuar desde el Compose
-    val webViewState = remember { mutableStateOf<WebView?>(null) }
+    // Ya no se necesita webViewState; usamos webView directamente
     // Contexto actual de la aplicación (necesario para acceder a preferencias y otros recursos)
     val context = LocalContext.current
     // Accede a las preferencias guardadas del usuario (credenciales y flags)
@@ -207,7 +300,6 @@ fun FicharScreen(
         isLoading = false
     }
 
-    // Estructura principal vertical de la pantalla, contiene barra superior, contenido central (WebView + fichar), y barra inferior
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -258,92 +350,7 @@ fun FicharScreen(
                 .weight(1f)
                 .fillMaxWidth()
         ) {
-            // WebView que carga la URL de login y realiza login automático con JavaScript.
-            // Configurado para permitir JavaScript, usar el viewport completo, y soportar DOM storage.
-            AndroidView(
-                factory = { context ->
-                    WebView(context).apply {
-                        val webSettings = settings
-                        webSettings.javaScriptEnabled = true
-                        webSettings.loadWithOverviewMode = true
-                        webSettings.useWideViewPort = true
-                        webSettings.domStorageEnabled = true
-                        webSettings.setSupportZoom(true)
-                        webSettings.builtInZoomControls = true
-                        webSettings.displayZoomControls = false
-                        webSettings.javaScriptCanOpenWindowsAutomatically = true
-                        webSettings.setSupportMultipleWindows(true)
-                        webSettings.databaseEnabled = true
-                        webSettings.allowFileAccess = true
-                        webSettings.allowContentAccess = true
-                        isVerticalScrollBarEnabled = true
-                        isHorizontalScrollBarEnabled = true
-                        // Establece un user agent moderno de navegador móvil
-                        webSettings.userAgentString =
-                            "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Mobile Safari/537.36"
-
-                        webChromeClient = object : android.webkit.WebChromeClient() {
-                            override fun onCreateWindow(
-                                view: WebView?,
-                                isDialog: Boolean,
-                                isUserGesture: Boolean,
-                                resultMsg: android.os.Message?
-                            ): Boolean {
-                                val newWebView = WebView(view!!.context)
-                                newWebView.settings.javaScriptEnabled = true
-                                newWebView.settings.javaScriptCanOpenWindowsAutomatically = true
-                                newWebView.settings.setSupportMultipleWindows(true)
-                                newWebView.settings.domStorageEnabled = true
-                                newWebView.settings.databaseEnabled = true
-                                newWebView.settings.allowFileAccess = true
-                                newWebView.settings.allowContentAccess = true
-
-                                val transport = resultMsg?.obj as WebView.WebViewTransport
-                                transport.webView = newWebView
-                                resultMsg.sendToTarget()
-
-                                return true
-                            }
-                        }
-
-                        webViewClient = object : WebViewClient() {
-                            override fun onPageFinished(view: WebView?, url: String?) {
-                                super.onPageFinished(view, url)
-
-                                view?.evaluateJavascript(
-                                    """
-                                    (function() {
-                                        isMobile = () => true;
-                                        document.getElementsByName('LoginForm[username]')[0].value = '$usuario';
-                                        document.getElementsByName('LoginForm[password]')[0].value = '$password';
-                                        document.querySelector('form').submit();
-                                        
-                                        setTimeout(function() {
-                                            var panels = document.querySelectorAll('.panel, .panel-body, .panel-heading');
-                                            panels.forEach(function(panel) {
-                                                panel.style.display = 'block';
-                                                panel.style.visibility = 'visible';
-                                                panel.style.opacity = '1';
-                                                panel.style.maxHeight = 'none';
-                                            });
-                                            document.body.style.overflow = 'auto';
-                                            document.documentElement.style.overflow = 'auto';
-                                        }, 3000);
-                                    })();
-                                    """.trimIndent(),
-                                    null
-                                )
-                            }
-                        }
-
-                        loadUrl(WebViewURL.LOGIN)
-                        webViewState.value = this
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxSize()
-                    .zIndex(0f)
-            )
+            // El WebView ya está en el FrameLayout de la Activity, no se necesita AndroidView aquí.
 
             // Pantalla de carga que se muestra mientras se realiza la autenticación automática
             LoadingScreen(isLoading = isLoading)
@@ -378,7 +385,7 @@ fun FicharScreen(
                         onShowAlert = { alertTipo ->
                             fichajeAlertTipo = alertTipo
                         },
-                        webViewState = webViewState,
+                        webViewState = remember { mutableStateOf(webView) },
                         mostrarBotonesFichaje = true
                     )
                 }
@@ -398,7 +405,7 @@ fun FicharScreen(
             onNavigate = { url ->
                 isLoading = true
                 showCuadroParaFicharState.value = false
-                webViewState.value?.loadUrl(url)
+                webView.loadUrl(url)
                 scope.launch {
                     delay(1500)
                     isLoading = false
@@ -445,14 +452,12 @@ fun FicharScreen(
                     Button(
                         onClick = {
                             showLogoutDialog.value = false
-
-                            webViewState.value?.apply {
+                            webView.apply {
                                 clearCache(true)
                                 clearHistory()
                             }
                             CookieManager.getInstance().removeAllCookies(null)
                             CookieManager.getInstance().flush()
-
                             onLogout()
                         },
                         modifier = Modifier.weight(1f),
@@ -490,9 +495,11 @@ fun FicharScreen(
 @Composable
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 fun PreviewFicharScreen() {
+    // No se puede previsualizar el WebView real en preview, así que pasamos un dummy
     FicharScreen(
         usuario = "demoUsuario",
         password = "demoPassword",
+        webView = WebView(androidx.compose.ui.platform.LocalContext.current),
         onLogout = {}
     )
 }
