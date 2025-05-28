@@ -26,7 +26,6 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -66,7 +65,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -94,6 +92,7 @@ class Fichar : ComponentActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private val sessionTimeoutMillis = 2 * 60 * 60 * 1000L // 2 horas
 
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WebView.setWebContentsDebuggingEnabled(true)
@@ -128,6 +127,11 @@ class Fichar : ComponentActivity() {
             webSettings.allowContentAccess = true
             webSettings.userAgentString =
                 "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Mobile Safari/537.36"
+
+            // Habilitar scrollbars dentro del área visible
+            isVerticalScrollBarEnabled = true
+            isHorizontalScrollBarEnabled = true
+            scrollBarStyle = WebView.SCROLLBARS_INSIDE_OVERLAY
 
             webChromeClient = object : android.webkit.WebChromeClient() {
                 override fun onCreateWindow(
@@ -189,20 +193,28 @@ class Fichar : ComponentActivity() {
         val composeView = androidx.compose.ui.platform.ComposeView(this).apply {
             setContent {
                 FicharScreen(
-                    usuario = usuario,
-                    password = password,
                     webView = webView,
                     onLogout = { navigateToLogin() }
                 )
             }
         }
 
+        // Ajuste de LayoutParams para WebView: altura delimitada por barra superior (30dp) y barra inferior (56dp)
+        val displayMetrics = resources.displayMetrics
+        val topMarginPx = (30 * displayMetrics.density).toInt()
+        val bottomMarginPx = (56 * displayMetrics.density).toInt()
+
+        val webViewLayoutParams = android.widget.FrameLayout.LayoutParams(
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT
+        ).apply {
+            topMargin = topMarginPx
+            bottomMargin = bottomMarginPx
+        }
+
         root.addView(
             webView,
-            android.widget.FrameLayout.LayoutParams(
-                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                android.view.ViewGroup.LayoutParams.MATCH_PARENT
-            )
+            webViewLayoutParams
         )
         root.addView(
             composeView,
@@ -260,8 +272,6 @@ class Fichar : ComponentActivity() {
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun FicharScreen(
-    usuario: String,
-    password: String,
     webView: WebView,
     onLogout: () -> Unit
 ) {
@@ -420,6 +430,7 @@ fun FicharScreen(
                 .height(56.dp)
         )
     }
+
     // Diálogo modal que solicita confirmación para cerrar la sesión
     if (showLogoutDialog.value) {
         AlertDialog(
@@ -470,7 +481,7 @@ fun FicharScreen(
                         Text("Sí")
                     }
 
-                    Spacer(modifier = Modifier.width(1.dp))
+                    Spacer(modifier = Modifier.width(30.dp))
 
                     Button(
                         onClick = {
@@ -492,17 +503,18 @@ fun FicharScreen(
     }
 }
 
+// ================================== Preview de la pantalla ==================================
 @Composable
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 fun PreviewFicharScreen() {
     // No se puede previsualizar el WebView real en preview, así que pasamos un dummy
     FicharScreen(
-        usuario = "demoUsuario",
-        password = "demoPassword",
-        webView = WebView(androidx.compose.ui.platform.LocalContext.current),
+        webView = WebView(LocalContext.current),
         onLogout = {}
     )
 }
+// ================================== Preview de la pantalla ==================================
+
 
 
 internal fun fichar(context: Context, tipo: String, webView: WebView) {
