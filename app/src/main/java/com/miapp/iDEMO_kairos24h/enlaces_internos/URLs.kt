@@ -91,17 +91,17 @@ object BuildURL {
     const val ACTION_CONSULTFIC_DIA = "r=wsExterno/consultarFichajesExterno"
     const val ACTION_CONSULT_ALERTAS = "r=wsExterno/consultarAlertasExterno"
 
-    const val INDEX = "$URL_USADA?$ACTION_LOGIN"
+    const val INDEX = "$URL_USADA$ACTION_LOGIN"
     const val FORGOT_PASSWORD = "$URL_USADA?$ACTION_FORGOTPASS"
 
 
-    const val FICHAJE = "$URL_USADA?$ACTION_CONSULTAR" +
+    const val FICHAJE = "$URL_USADA$ACTION_CONSULTAR" +
             "&cTipExp=FICHAJE"
-    const val INCIDENCIA = "$URL_USADA?$ACTION_CONSULTAR" +
+    const val INCIDENCIA = "$URL_USADA$ACTION_CONSULTAR" +
             "&cTipExp=INCIDENCIA" + "&cOpcionVisual=INCBAN"
-    const val HORARIOS = "$URL_USADA?$ACTION_CONSULTAR" +
+    const val HORARIOS = "$URL_USADA$ACTION_CONSULTAR" +
             "&cTipExp=HORARIO" + "&cModoVisual=HORMEN"
-    const val SOLICITUDES = "$URL_USADA?$ACTION_CONSULTAR" +
+    const val SOLICITUDES = "$URL_USADA$ACTION_CONSULTAR" +
             "&cTipExp=SOLICITUD"
 
 
