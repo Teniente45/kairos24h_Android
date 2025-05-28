@@ -541,7 +541,7 @@ internal fun fichar(context: Context, tipo: String, webView: WebView) {
 
                 // Construye la URL de fichaje con el tipo y las coordenadas
                 val urlFichaje = BuildURL.getCrearFichaje(context) +
-                        "&cDomTipFic=$tipo" +
+                        "&cTipFic=$tipo" +
                         "&tGpsLat=$lat" +
                         "&tGpsLon=$lon"
 

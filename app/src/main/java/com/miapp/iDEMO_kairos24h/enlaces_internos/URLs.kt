@@ -52,32 +52,18 @@ object ImagenesApp {
 
 // Estás son las URL que se nos mostrarán en el WebView, se usa sólo para logearse desde la APK
 object WebViewURL {
-    const val HOST = "https://democontrolhorario.kairos24h.es"
+    const val HOST = "https://rincontragabuche.kairos24h.es"
     const val ENTRY_POINT = "/index.php"
     const val URL_USADA = "$HOST$ENTRY_POINT"
 
     const val ACTION_LOGIN = "r=wsExterno/loginExterno"
 
     const val LOGINAPK = "$URL_USADA?$ACTION_LOGIN"
-
-    /*
-    const val ACTION_CONSULTAR = "r=explotacion/consultarExplotacion"
-
-    const val FICHAJE = "$URL_USADA?$ACTION_CONSULTAR" +
-            "&cTipExp=FICHAJE"
-    const val INCIDENCIA = "$URL_USADA?$ACTION_CONSULTAR" +
-            "&cTipExp=INCIDENCIA" + "&cOpcionVisual=INCBAN"
-    const val HORARIOS = "$URL_USADA?$ACTION_CONSULTAR" +
-            "&cTipExp=HORARIO" + "&cModoVisual=HORMEN"
-    const val SOLICITUDES = "$URL_USADA?$ACTION_CONSULTAR" +
-            "&cTipExp=SOLICITUD"
-
-     */
 }
 
 // Esta será la URL que construiremos cuando desde el login de nuestra APK introduzcamos el Usuario y la Contraseña
 object BuildURL {
-    const val HOST = "https://democontrolhorario.kairos24h.es"
+    const val HOST = "https://rincontragabuche.kairos24h.es"
     const val ENTRY_POINT = "/index.php"
     const val URL_USADA = "$HOST$ENTRY_POINT?"
 
@@ -119,7 +105,7 @@ object BuildURL {
                 "&xEntidad=$xEntidad" +
                 "&xEmpleado=$xEmpleado" +
                 "&cKiosko=$C_KIOSKO" +
-                "&cDomFicOri=$C_FIC_ORI"
+                "&cFicOri=$C_FIC_ORI"
     }
     /*==================================================================*/
 
