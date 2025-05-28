@@ -67,8 +67,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.miapp.iDEMO_kairos24h.enlaces_internos.AuthManager
+import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURL
 import com.miapp.iDEMO_kairos24h.enlaces_internos.ImagenesApp
-import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.net.URLEncoder
@@ -118,7 +118,6 @@ class MainActivity : ComponentActivity() {
                                         lifecycleScope.launch(Dispatchers.IO) {
                                             try {
                                                 val (success, xEmpleado) = AuthManager.authenticateUser(
-                                                    this@MainActivity,
                                                     usuario,
                                                     password
                                                 )
@@ -169,7 +168,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 onForgotPassword = {
-                                    val url = WebViewURL.FORGOT_PASSWORD
+                                    val url = BuildURL.FORGOT_PASSWORD
                                     val intent = Intent(Intent.ACTION_VIEW, url.toUri())
                                     startActivity(intent)
                                 }

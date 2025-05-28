@@ -50,20 +50,18 @@ object ImagenesApp {
 
 
 
-// Estás son las URL que se nos mostrarán en el WebView
+// Estás son las URL que se nos mostrarán en el WebView, se usa sólo para logearse desde la APK
 object WebViewURL {
-
     const val HOST = "https://democontrolhorario.kairos24h.es"
-
     const val ENTRY_POINT = "/index.php"
     const val URL_USADA = "$HOST$ENTRY_POINT"
 
-    const val ACTION_LOGIN = "r=site/index"
-    const val ACTION_FORGOTPASS = "r=site/solicitudRestablecerClave"
-    const val ACTION_CONSULTAR = "r=explotacion/consultarExplotacion"
+    const val ACTION_LOGIN = "r=wsExterno/loginExterno"
 
-    const val LOGIN = "$URL_USADA?$ACTION_LOGIN"
-    const val FORGOT_PASSWORD = "$URL_USADA?$ACTION_FORGOTPASS"
+    const val LOGINAPK = "$URL_USADA?$ACTION_LOGIN"
+
+    /*
+    const val ACTION_CONSULTAR = "r=explotacion/consultarExplotacion"
 
     const val FICHAJE = "$URL_USADA?$ACTION_CONSULTAR" +
             "&cTipExp=FICHAJE"
@@ -73,19 +71,40 @@ object WebViewURL {
             "&cTipExp=HORARIO" + "&cModoVisual=HORMEN"
     const val SOLICITUDES = "$URL_USADA?$ACTION_CONSULTAR" +
             "&cTipExp=SOLICITUD"
+
+     */
 }
 
 // Esta será la URL que construiremos cuando desde el login de nuestra APK introduzcamos el Usuario y la Contraseña
 object BuildURL {
-
     const val HOST = "https://democontrolhorario.kairos24h.es"
-
     const val ENTRY_POINT = "/index.php"
+    const val URL_USADA = "$HOST$ENTRY_POINT?"
+
+    const val ACTION_FORGOTPASS = "r=site/solicitudRestablecerClave"
+
+    const val ACTION_LOGIN = "r=site/index"
     const val ACTION_FICHAJE = "r=explotacion/creaFichaje"
-    const val ACTION_LOGIN = "r=wsExterno/loginExterno"
+    const val ACTION_CONSULTAR = "r=explotacion/consultarExplotacion"
+
     const val ACTION_CONSULTHORARIO = "r=wsExterno/consultarHorarioExterno"
     const val ACTION_CONSULTFIC_DIA = "r=wsExterno/consultarFichajesExterno"
     const val ACTION_CONSULT_ALERTAS = "r=wsExterno/consultarAlertasExterno"
+
+    const val INDEX = "$URL_USADA?$ACTION_LOGIN"
+    const val FORGOT_PASSWORD = "$URL_USADA?$ACTION_FORGOTPASS"
+
+
+    const val FICHAJE = "$URL_USADA?$ACTION_CONSULTAR" +
+            "&cTipExp=FICHAJE"
+    const val INCIDENCIA = "$URL_USADA?$ACTION_CONSULTAR" +
+            "&cTipExp=INCIDENCIA" + "&cOpcionVisual=INCBAN"
+    const val HORARIOS = "$URL_USADA?$ACTION_CONSULTAR" +
+            "&cTipExp=HORARIO" + "&cModoVisual=HORMEN"
+    const val SOLICITUDES = "$URL_USADA?$ACTION_CONSULTAR" +
+            "&cTipExp=SOLICITUD"
+
+
 
     const val X_GRUPO = ""
     const val C_KIOSKO = ""
@@ -102,11 +121,7 @@ object BuildURL {
                 "&cKiosko=$C_KIOSKO" +
                 "&cDomFicOri=$C_FIC_ORI"
     }
-
-    const val URL_USADA = "$HOST$ENTRY_POINT?"
     /*==================================================================*/
-
-    const val LOGIN = URL_USADA + ACTION_LOGIN
 
     fun getCrearFichaje(context: Context): String = URL_USADA + ACTION_FICHAJE + getStaticParams(context)
     fun getMostrarHorarios(context: Context): String = URL_USADA + ACTION_CONSULTHORARIO + getStaticParams(context)

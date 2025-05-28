@@ -80,7 +80,6 @@ import com.miapp.iDEMO_kairos24h.enlaces_internos.CuadroParaFichar
 import com.miapp.iDEMO_kairos24h.enlaces_internos.ManejoDeSesion
 import com.miapp.iDEMO_kairos24h.enlaces_internos.MensajeAlerta
 import com.miapp.iDEMO_kairos24h.enlaces_internos.SeguridadUtils
-import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineScope
@@ -186,7 +185,7 @@ class Fichar : ComponentActivity() {
                 }
             }
 
-            loadUrl(WebViewURL.LOGIN)
+            loadUrl(BuildURL.INDEX)
         }
 
         // ComposeView superpuesto
@@ -679,22 +678,22 @@ fun BottomNavigationBar(
         // Botón de navegación que cambia de sección y oculta el cuadro para fichar
         NavigationButton("Fichajes", R.drawable.ic_fichajes32) {
             hideCuadroParaFichar()
-            onNavigate(WebViewURL.FICHAJE)
+            onNavigate(BuildURL.FICHAJE)
         }
         // Botón de navegación que cambia de sección y oculta el cuadro para fichar
         NavigationButton("Incidencias", R.drawable.ic_incidencia32) {
             hideCuadroParaFichar()
-            onNavigate(WebViewURL.INCIDENCIA)
+            onNavigate(BuildURL.INCIDENCIA)
         }
         // Botón de navegación que cambia de sección y oculta el cuadro para fichar
         NavigationButton("Horarios", R.drawable.ic_horario32) {
             hideCuadroParaFichar()
-            onNavigate(WebViewURL.HORARIOS)
+            onNavigate(BuildURL.HORARIOS)
         }
         // Botón de navegación que cambia de sección y oculta el cuadro para fichar
         NavigationButton("Solicitudes", R.drawable.solicitudes32) {
             hideCuadroParaFichar()
-            onNavigate(WebViewURL.SOLICITUDES)
+            onNavigate(BuildURL.SOLICITUDES)
         }
     }
 }

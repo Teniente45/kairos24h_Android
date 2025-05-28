@@ -104,10 +104,10 @@ object AuthManager {
     }
 
     // Método para realizar el login y obtener el xEmpleado y otros flags
-    fun authenticateUser(context: Context, usuario: String, password: String): Pair<Boolean, UserCredentials?> {
+    fun authenticateUser(usuario: String, password: String): Pair<Boolean, UserCredentials?> {
         val client = OkHttpClient()
         // Se usa cUsuario y tPassword en la URL
-        val url = BuildURL.LOGIN +
+        val url = WebViewURL.LOGINAPK +
                 "&cUsuario=$usuario" +
                 "&tPassword=$password"
 
