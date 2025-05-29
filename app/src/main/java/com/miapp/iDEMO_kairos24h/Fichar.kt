@@ -294,9 +294,11 @@ fun FicharScreen(
         R.drawable.cliente32,
     )
 
-    // Ya no se necesita webViewState; usamos webView directamente
     // Contexto actual de la aplicación (necesario para acceder a preferencias y otros recursos)
     val context = LocalContext.current
+    // Recuperar el flag de botones de fichaje móvil
+    val (_, _, _, _, _, lBotonesFichajeMovil) = AuthManager.getUserCredentials(context)
+
     // Accede a las preferencias guardadas del usuario (credenciales y flags)
     val sharedPreferences = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
     // Recupera el nombre de usuario desde las preferencias o usa valor por defecto
@@ -365,7 +367,7 @@ fun FicharScreen(
             LoadingScreen(isLoading = isLoading)
 
             // Cuadro emergente con botones de fichaje (Entrada/Salida) que solicita la ubicación GPS
-            if (showCuadroParaFicharState.value) {
+            if (showCuadroParaFicharState.value && lBotonesFichajeMovil != "N") {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -680,22 +682,30 @@ fun BottomNavigationBar(
         // Botón de navegación que cambia de sección y oculta el cuadro para fichar
         NavigationButton("Fichajes", R.drawable.ic_fichajes32) {
             hideCuadroParaFichar()
-            onNavigate(BuildURL.getFichaje(context))
+            val urlFichaje = BuildURL.getFichaje(context)
+            Log.d("BottomNav", "Navegando a: $urlFichaje")
+            onNavigate(urlFichaje)
         }
         // Botón de navegación que cambia de sección y oculta el cuadro para fichar
         NavigationButton("Incidencias", R.drawable.ic_incidencia32) {
             hideCuadroParaFichar()
-            onNavigate(BuildURL.getIncidencia(context))
+            val urlIncidencias = BuildURL.getIncidencia(context)
+            Log.d("BottomNav", "Navegando a: $urlIncidencias")
+            onNavigate(urlIncidencias)
         }
         // Botón de navegación que cambia de sección y oculta el cuadro para fichar
         NavigationButton("Horarios", R.drawable.ic_horario32) {
             hideCuadroParaFichar()
-            onNavigate(BuildURL.getHorarios(context))
+            val urlHorarios = BuildURL.getHorarios(context)
+            Log.d("BottomNav", "Navegando a: $urlHorarios")
+            onNavigate(urlHorarios)
         }
         // Botón de navegación que cambia de sección y oculta el cuadro para fichar
         NavigationButton("Solicitudes", R.drawable.solicitudes32) {
             hideCuadroParaFichar()
-            onNavigate(BuildURL.getSolicitudes(context))
+            val urlSolicitudes = BuildURL.getSolicitudes(context)
+            Log.d("BottomNav", "Navegando a: $urlSolicitudes")
+            onNavigate(urlSolicitudes)
         }
     }
 }

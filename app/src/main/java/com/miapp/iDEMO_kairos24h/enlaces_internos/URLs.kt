@@ -24,30 +24,6 @@
     import coil.compose.rememberAsyncImagePainter
     import androidx.compose.ui.res.painterResource
 
-    object URLs {
-
-        // Valor por defecto para el host si tUrlCPP está vacío o no existe
-        private const val HOST_DEFAULT = "https://controlhorario.kairos24h.es"
-
-        /**
-         * Devuelve el host personalizado desde SharedPreferences.
-         * Si no existe, devuelve el valor por defecto.
-         */
-        fun getHost(context: Context): String {
-            val tUrlCPP = AuthManager.getUserCredentials(context).tUrlCPP
-            return if (!tUrlCPP.isNullOrBlank()) tUrlCPP else HOST_DEFAULT
-        }
-
-        /**
-         * Devuelve la URL del logo desde SharedPreferences.
-         * Si no existe o es inválido, devuelve null.
-         */
-        fun getLogoClienteURL(context: Context): String? {
-            val tLogo = AuthManager.getUserCredentials(context).tLogo
-            return if (!tLogo.isNullOrBlank()) tLogo else null
-        }
-    }
-
     // Este objeto centraliza el acceso a los recursos gráficos usados en la aplicación
 object ImagenesApp {
     // Imagen del logo principal que se muestra en la pantalla de login
@@ -55,7 +31,7 @@ object ImagenesApp {
     val logoCliente = R.drawable.kairos24h
     fun getLogoClienteXPrograma(context: Context): String? {
         val tLogo = AuthManager.getUserCredentials(context).tLogo
-        return if (!tLogo.isNullOrBlank()) tLogo else null
+        return if (tLogo.isNotBlank()) tLogo else null
     }
     val lodoDesarrolladora = R.drawable.logo_i3data
 
@@ -80,7 +56,7 @@ object ImagenesApp {
             .height(75.dp)
 
     @Composable
-    fun LogoClienteRemoto(modifier: Modifier = logoModifier) {
+    fun LogoClienteRemoto(modifier: Modifier = Modifier) {
         val context = LocalContext.current
         val logoUrl = getLogoClienteXPrograma(context)
         val painter = rememberAsyncImagePainter(
@@ -118,7 +94,7 @@ object BuildURL {
     // Remove HOST constant and use function instead
     fun getHost(context: Context): String {
         val tUrlCPP = AuthManager.getUserCredentials(context).tUrlCPP
-        return if (!tUrlCPP.isNullOrBlank() && tUrlCPP != "null") tUrlCPP else WebViewURL.HOST
+        return if (tUrlCPP.isNotBlank() && tUrlCPP != "null") tUrlCPP else WebViewURL.HOST
     }
     const val ENTRY_POINT = "/index.php"
     fun getURLUsada(context: Context): String = getHost(context) + ENTRY_POINT + "?"
