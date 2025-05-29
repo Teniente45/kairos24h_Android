@@ -168,7 +168,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 onForgotPassword = {
-                                    val url = BuildURL.FORGOT_PASSWORD
+                                    val url = BuildURL.getForgotPassword(this@MainActivity)
                                     val intent = Intent(Intent.ACTION_VIEW, url.toUri())
                                     startActivity(intent)
                                 }
