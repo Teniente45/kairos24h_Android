@@ -185,7 +185,7 @@ class Fichar : ComponentActivity() {
                 }
             }
 
-            loadUrl(BuildURL.getIndex(this@Fichar))
+            loadUrl(BuildURL.INDEX)
         }
 
         // ComposeView superpuesto
@@ -675,27 +675,25 @@ fun BottomNavigationBar(
             }
             Text(text = "Fichar", textAlign = TextAlign.Center, modifier = Modifier.padding(top = 2.dp))
         }
-        val context = LocalContext.current
-
         // Botón de navegación que cambia de sección y oculta el cuadro para fichar
         NavigationButton("Fichajes", R.drawable.ic_fichajes32) {
             hideCuadroParaFichar()
-            onNavigate(BuildURL.getFichaje(context))
+            onNavigate(BuildURL.FICHAJE)
         }
         // Botón de navegación que cambia de sección y oculta el cuadro para fichar
         NavigationButton("Incidencias", R.drawable.ic_incidencia32) {
             hideCuadroParaFichar()
-            onNavigate(BuildURL.getIncidencia(context))
+            onNavigate(BuildURL.INCIDENCIA)
         }
         // Botón de navegación que cambia de sección y oculta el cuadro para fichar
         NavigationButton("Horarios", R.drawable.ic_horario32) {
             hideCuadroParaFichar()
-            onNavigate(BuildURL.getHorarios(context))
+            onNavigate(BuildURL.HORARIOS)
         }
         // Botón de navegación que cambia de sección y oculta el cuadro para fichar
         NavigationButton("Solicitudes", R.drawable.solicitudes32) {
             hideCuadroParaFichar()
-            onNavigate(BuildURL.getSolicitudes(context))
+            onNavigate(BuildURL.SOLICITUDES)
         }
     }
 }

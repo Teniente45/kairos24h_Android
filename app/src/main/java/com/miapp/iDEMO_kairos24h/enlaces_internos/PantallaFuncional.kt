@@ -172,7 +172,11 @@ fun Logo_empresa_cliente() {
         modifier = ImagenesApp.logoBoxModifier,
         contentAlignment = Alignment.Center
     ) {
-        ImagenesApp.LogoClienteRemoto()
+        Image(
+            painter = painterResource(id = ImagenesApp.logoCliente_x_programa),
+            contentDescription = "Logo de la empresa cliente y el programa de control horario",
+            modifier = ImagenesApp.logoModifier
+        )
     }
 }
 
@@ -845,8 +849,8 @@ fun AlertasDiarias(
                 val urlAlertas = BuildURL.getMostrarAlertas(context)
                 Log.d("AlertasDiarias", "URL de alertas: $urlAlertas")
                 val client = OkHttpClient()
-                // Usar siempre el dominio correcto definido en BuildURL.getHost(context)
-                val dominio = BuildURL.getHost(context)
+                // Usar siempre el dominio correcto definido en BuildURL.HOST
+                val dominio = BuildURL.HOST
                 val cookie = android.webkit.CookieManager.getInstance()
                     .getCookie(dominio) ?: ""
                 val request = Request.Builder()
@@ -958,7 +962,6 @@ fun AlertasDiarias(
                                 modifier = Modifier.weight(1f)
                             )
                             if (!aviso.url.isNullOrEmpty()) {
-                                val context = LocalContext.current
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                     contentDescription = "Redireccionar",
@@ -966,7 +969,7 @@ fun AlertasDiarias(
                                         .size(20.dp)
                                         .clickable {
                                             CoroutineScope(Dispatchers.Main).launch {
-                                                onAbrirWebView(BuildURL.getHost(context).trimEnd('/') + "/" + aviso.url.trimStart('/'))
+                                                onAbrirWebView(BuildURL.HOST.trimEnd('/') + "/" + aviso.url.trimStart('/'))
                                                 kotlinx.coroutines.delay(1000)
                                                 hideCuadroParaFichar()
                                             }
