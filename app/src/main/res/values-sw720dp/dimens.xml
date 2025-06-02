@@ -1,0 +1,11 @@
+<resources>
+    <dimen name="button_width">120dp</dimen>
+    <dimen name="button_widthSalidaEntrada">180dp</dimen>
+    <dimen name="button_heightSalidaEntrada">80dp</dimen>
+    <dimen name="buttonNumerico">42sp</dimen>
+    <dimen name="layoutWidthEntradaYSalida">90dp</dimen>
+    <dimen name="layoutMarginButtonsNumericos">20dp</dimen>
+    <dimen name="layoutMarginButtonsNumericosHorizontal">15dp</dimen>
+
+    <dimen name="layoutHeightLogo">50dp</dimen>
+</resources>

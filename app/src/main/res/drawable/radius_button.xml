@@ -1,0 +1,6 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="#7C7A7A" /> <!-- Color de fondo del botón "BORRAR" -->
+    <stroke
+        android:width="2dp"
+        android:color="#FFFFFF" /> <!-- Borde blanco opcional -->
+</shape>

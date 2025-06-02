@@ -1,0 +1,397 @@
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <LinearLayout
+        android:id="@+id/contenedor"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        app:layout_constraintWidth_percent="0.7"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:paddingBottom="10dp">
+
+        <LinearLayout
+            android:id="@+id/containerLogo1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="0dp">
+
+            <ImageView
+                android:id="@+id/logo1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_gravity="bottom|left"
+                android:contentDescription="@string/descripcion_logo"
+                android:tag="LOGO_CLIENTE"
+                android:adjustViewBounds="true"
+                android:maxHeight="100dp"
+                android:scaleType="fitCenter"
+                tools:ignore="RtlHardcoded" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/buttonEntradaYSalida"
+            style="?android:attr/buttonBarStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:baselineAligned="false">
+
+            <!-- Botón de Entrada - A la Izquierda -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                tools:ignore="ExtraText">
+
+                <Button
+                    android:id="@+id/btn_entrada"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginEnd="25dp"
+                    android:background="@drawable/round_button"
+                    android:contentDescription="@string/btn_entrada"
+                    android:gravity="center"
+                    android:text="@string/btn_entrada"
+                    android:textColor="#FAFAFA"
+                    app:autoSizeMaxTextSize="60sp"
+                    app:autoSizeMinTextSize="12sp"
+                    app:autoSizeStepGranularity="2sp"
+                    app:autoSizeTextType="uniform"
+                    tools:ignore="TextContrastCheck,VisualLintButtonSize" />
+            </LinearLayout>
+
+            <!-- Botón de Salida - A la Derecha -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+
+                <Button
+                    android:id="@+id/btn_salida"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="25dp"
+                    android:background="@drawable/round_button"
+                    android:contentDescription="@string/btn_salida"
+                    android:gravity="center"
+                    android:text="@string/btn_salida"
+                    android:textColor="#FAFAFA"
+                    app:autoSizeMaxTextSize="60sp"
+                    app:autoSizeMinTextSize="12sp"
+                    app:autoSizeStepGranularity="2sp"
+                    app:autoSizeTextType="uniform"
+                    tools:ignore="TextContrastCheck,VisualLintButtonSize" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <EditText
+                android:id="@+id/campoTexto"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:autofillHints="phone"
+                android:background="@android:drawable/editbox_background_normal"
+                android:focusable="false"
+                android:gravity="center"
+                android:hint="@string/hint_ingrese_numeros"
+                android:importantForAccessibility="yes"
+                android:inputType="none"
+                android:padding="5dp"
+                android:textColor="#000000"
+                android:textSize="27sp"
+                app:autoSizeMaxTextSize="36sp"
+                app:autoSizeMinTextSize="12sp"
+                app:autoSizeStepGranularity="2sp"
+                app:autoSizeTextType="uniform"
+                tools:ignore="TextContrastCheck,VisualLintTextFieldSize" />
+
+            <TextView
+                android:id="@+id/mensajeDinamico"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="0dp"
+                android:gravity="center"
+                android:text=""
+                android:textSize="42sp"
+                app:autoSizeTextType="uniform"
+                app:autoSizeMinTextSize="14sp"
+                app:autoSizeMaxTextSize="50sp"
+                app:autoSizeStepGranularity="2sp"
+                android:visibility="gone"
+                android:textColor="#000000" />
+
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="30dp"
+                android:alignmentMode="alignMargins"
+                android:columnCount="3"
+                android:rowCount="4"
+                tools:ignore="NestedWeights">
+
+                <!-- Botones redondos -->
+                <Button
+                    android:id="@+id/btn1"
+                    android:layout_width="@dimen/layoutWidthBttNumerico"
+                    android:layout_height="0dp"
+                    android:layout_rowWeight="1"
+                    android:layout_columnWeight="1"
+                    android:layout_marginBottom="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:layout_marginEnd="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    app:autoSizeMaxTextSize="60sp"
+                    app:autoSizeMinTextSize="12sp"
+                    app:autoSizeStepGranularity="2sp"
+                    app:autoSizeTextType="uniform"
+                    android:background="@drawable/round_button"
+                    android:contentDescription="@string/btn_1"
+                    android:text="@string/btn_1"
+                    android:textColor="@android:color/white"
+                    android:textSize="@dimen/buttonNumerico"
+                    tools:ignore="SpUsage,VisualLintButtonSize" />
+
+                <Button
+                    android:id="@+id/btn2"
+                    android:layout_width="@dimen/layoutWidthBttNumerico"
+                    android:layout_height="0dp"
+                    android:layout_rowWeight="1"
+                    android:layout_columnWeight="1"
+                    android:layout_marginBottom="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:layout_marginStart="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:layout_marginEnd="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    app:autoSizeMaxTextSize="60sp"
+                    app:autoSizeMinTextSize="12sp"
+                    app:autoSizeStepGranularity="2sp"
+                    app:autoSizeTextType="uniform"
+                    android:background="@drawable/round_button"
+                    android:contentDescription="@string/btn_2"
+                    android:text="@string/btn_2"
+                    android:textColor="@android:color/white"
+                    android:textSize="@dimen/buttonNumerico"
+                    tools:ignore="SpUsage,VisualLintButtonSize" />
+
+                <Button
+                    android:id="@+id/btn3"
+                    android:layout_width="@dimen/layoutWidthBttNumerico"
+                    android:layout_height="0dp"
+                    android:layout_rowWeight="1"
+                    android:layout_columnWeight="1"
+                    android:layout_marginBottom="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:layout_marginStart="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    app:autoSizeMaxTextSize="60sp"
+                    app:autoSizeMinTextSize="12sp"
+                    app:autoSizeStepGranularity="2sp"
+                    app:autoSizeTextType="uniform"
+                    android:background="@drawable/round_button"
+                    android:contentDescription="@string/btn_3"
+                    android:text="@string/btn_3"
+                    android:textColor="@android:color/white"
+                    android:textSize="@dimen/buttonNumerico"
+                    tools:ignore="SpUsage,VisualLintButtonSize" />
+
+                <Button
+                    android:id="@+id/btn4"
+                    android:layout_width="@dimen/layoutWidthBttNumerico"
+                    android:layout_height="0dp"
+                    android:layout_rowWeight="1"
+                    android:layout_columnWeight="1"
+                    android:layout_marginTop="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:layout_marginBottom="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:layout_marginEnd="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    app:autoSizeMaxTextSize="60sp"
+                    app:autoSizeMinTextSize="12sp"
+                    app:autoSizeStepGranularity="2sp"
+                    app:autoSizeTextType="uniform"
+                    android:background="@drawable/round_button"
+                    android:contentDescription="@string/btn_4"
+                    android:text="@string/btn_4"
+                    android:textColor="@android:color/white"
+                    android:textSize="@dimen/buttonNumerico"
+                    tools:ignore="SpUsage,VisualLintButtonSize" />
+
+                <Button
+                    android:id="@+id/btn5"
+                    android:layout_width="@dimen/layoutWidthBttNumerico"
+                    android:layout_height="0dp"
+                    android:layout_rowWeight="1"
+                    android:layout_columnWeight="1"
+                    android:layout_marginTop="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:layout_marginBottom="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:layout_marginStart="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:layout_marginEnd="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    app:autoSizeMaxTextSize="60sp"
+                    app:autoSizeMinTextSize="12sp"
+                    app:autoSizeStepGranularity="2sp"
+                    app:autoSizeTextType="uniform"
+                    android:background="@drawable/round_button"
+                    android:contentDescription="@string/btn_5"
+                    android:text="@string/btn_5"
+                    android:textColor="@android:color/white"
+                    android:textSize="@dimen/buttonNumerico"
+                    tools:ignore="SpUsage,VisualLintButtonSize" />
+
+                <Button
+                    android:id="@+id/btn6"
+                    android:layout_width="@dimen/layoutWidthBttNumerico"
+                    android:layout_height="0dp"
+                    android:layout_rowWeight="1"
+                    android:layout_columnWeight="1"
+                    android:layout_marginTop="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:layout_marginBottom="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:layout_marginStart="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    app:autoSizeMaxTextSize="60sp"
+                    app:autoSizeMinTextSize="12sp"
+                    app:autoSizeStepGranularity="2sp"
+                    app:autoSizeTextType="uniform"
+                    android:background="@drawable/round_button"
+                    android:contentDescription="@string/btn_6"
+                    android:text="@string/btn_6"
+                    android:textColor="@android:color/white"
+                    android:textSize="@dimen/buttonNumerico"
+                    tools:ignore="SpUsage,VisualLintButtonSize" />
+
+                <Button
+                    android:id="@+id/btn7"
+                    android:layout_width="@dimen/layoutWidthBttNumerico"
+                    android:layout_height="0dp"
+                    android:layout_rowWeight="1"
+                    android:layout_columnWeight="1"
+                    android:layout_marginTop="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:layout_marginBottom="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:layout_marginEnd="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    app:autoSizeMaxTextSize="60sp"
+                    app:autoSizeMinTextSize="12sp"
+                    app:autoSizeStepGranularity="2sp"
+                    app:autoSizeTextType="uniform"
+                    android:background="@drawable/round_button"
+                    android:contentDescription="@string/btn_7"
+                    android:text="@string/btn_7"
+                    android:textColor="@android:color/white"
+                    android:textSize="@dimen/buttonNumerico"
+                    tools:ignore="SpUsage,VisualLintButtonSize" />
+
+                <Button
+                    android:id="@+id/btn8"
+                    android:layout_width="@dimen/layoutWidthBttNumerico"
+                    android:layout_height="0dp"
+                    android:layout_rowWeight="1"
+                    android:layout_columnWeight="1"
+                    android:layout_marginTop="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:layout_marginBottom="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:layout_marginStart="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:layout_marginEnd="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    app:autoSizeMaxTextSize="60sp"
+                    app:autoSizeMinTextSize="12sp"
+                    app:autoSizeStepGranularity="2sp"
+                    app:autoSizeTextType="uniform"
+                    android:background="@drawable/round_button"
+                    android:contentDescription="@string/btn_8"
+                    android:text="@string/btn_8"
+                    android:textColor="@android:color/white"
+                    android:textSize="@dimen/buttonNumerico"
+                    tools:ignore="SpUsage,VisualLintButtonSize" />
+
+                <Button
+                    android:id="@+id/btn9"
+                    android:layout_width="@dimen/layoutWidthBttNumerico"
+                    android:layout_height="0dp"
+                    android:layout_rowWeight="1"
+                    android:layout_columnWeight="1"
+                    android:layout_marginTop="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:layout_marginBottom="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:layout_marginStart="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    app:autoSizeMaxTextSize="60sp"
+                    app:autoSizeMinTextSize="12sp"
+                    app:autoSizeStepGranularity="2sp"
+                    app:autoSizeTextType="uniform"
+                    android:background="@drawable/round_button"
+                    android:contentDescription="@string/btn_9"
+                    android:text="@string/btn_9"
+                    android:textColor="@android:color/white"
+                    android:textSize="@dimen/buttonNumerico"
+                    tools:ignore="SpUsage,VisualLintButtonSize" />
+
+                <Button
+                    android:id="@+id/btn0"
+                    android:layout_width="@dimen/layoutWidthBttNumerico"
+                    android:layout_height="0dp"
+                    android:layout_rowWeight="1"
+                    android:layout_columnWeight="1"
+                    android:layout_marginTop="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:layout_marginEnd="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    app:autoSizeMaxTextSize="60sp"
+                    app:autoSizeMinTextSize="12sp"
+                    app:autoSizeStepGranularity="2sp"
+                    app:autoSizeTextType="uniform"
+                    android:background="@drawable/round_button"
+                    android:contentDescription="@string/btn_0"
+                    android:text="@string/btn_0"
+                    android:textColor="@android:color/white"
+                    android:textSize="@dimen/buttonNumerico"
+                    tools:ignore="SpUsage,VisualLintButtonSize" />
+
+                <!-- Botón "Borrar" (no redondo) -->
+                <!-- Cambiado a sp para texto -->
+                <Button
+                    android:id="@+id/btnBorrarTeclado"
+                    android:layout_width="@dimen/layoutWidthBttNumerico"
+                    android:layout_height="0dp"
+                    android:layout_rowWeight="1"
+                    android:layout_columnSpan="2"
+                    android:layout_columnWeight="2"
+                    android:layout_marginTop="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:layout_marginStart="@dimen/layoutMarginButtonsNumericosHorizontal"
+                    android:background="@drawable/radius_button"
+                    android:contentDescription="@string/btn_borrar"
+                    android:text="@string/btn_borrar"
+                    android:textColor="@android:color/white"
+                    android:textSize="30sp"
+                    app:autoSizeTextType="uniform"
+                    app:autoSizeMinTextSize="12sp"
+                    app:autoSizeMaxTextSize="60sp"
+                    app:autoSizeStepGranularity="2sp"
+                    tools:ignore="SpUsage,VisualLintButtonSize" />
+            </GridLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/containerLogo2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="0dp">
+
+            <ImageView
+                android:id="@+id/logo2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:contentDescription="@string/descripcion_empColaboradora"
+                android:tag="LOGO_DESARROLLADORA"
+                android:adjustViewBounds="true"
+                android:maxHeight="100dp"
+                android:scaleType="fitCenter" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,13 +1,13 @@
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose") version "2.0.0"
-    id ("kotlin-kapt") // Esto habilita KAPT
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+    id("kotlin-kapt") // Esto habilita KAPT
 }
 
 android {
     namespace = "com.miapp.kairos24h"
-    compileSdk = 35
+    compileSdk = 28
 
     defaultConfig {
         applicationId = "com.miapp.kairos24h"
@@ -19,6 +19,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            isDebuggable = true
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -30,91 +33,66 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
 
     buildFeatures {
-        compose = true  // Habilitar soporte de Compose
+        compose = true
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"  // Versión del compilador de Compose
+        kotlinCompilerExtensionVersion = "1.5.1"
     }
 }
 
 dependencies {
-    // Dependencias principales de Compose UI
-    implementation(libs.androidx.ui.v178)
-    implementation(libs.material3)
-    implementation(libs.androidx.foundation.v178)
-    implementation(libs.androidx.navigation.compose.v287)
-
-    implementation (libs.play.services.location.v2101)
-    implementation (libs.androidx.lifecycle.runtime.compose)
-
-    // Dependencias de Jetpack Compose
-    implementation (libs.androidx.ui.v178)
-    implementation (libs.material3)  // Para Material3
-    implementation (libs.androidx.material)  // Para Material Design 2
-    implementation (libs.androidx.ui.tooling.preview.v178)
-    implementation (libs.androidx.lifecycle.runtime.ktx)
-
-
-    // Material Components (Material Design 2)
-    implementation (libs.material) // Verifica que tengas esta versión o superior
-
-    // Material3 (si usas Material Design 3)
-    implementation (libs.material3) // Solo si usas Material3
-
+    // Compose y UI
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.foundation)
     implementation(libs.androidx.material)
-    implementation(libs.androidx.material.icons.extended.v178)
-    implementation(libs.androidx.animation)
-
-
-
-    implementation(libs.androidx.material.v143)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.material.icons.extended)
-
-    // Dependencias adicionales
-    implementation(libs.okhttp)
-    implementation(libs.play.services.location)
+    implementation("androidx.compose.animation:animation:1.7.8")
+    implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.activity.compose.v1100)
+    implementation(libs.androidx.lifecycle.runtime.compose)
 
-    // Dependencia del compilador de Compose (requerido en Kotlin 2.0)
-    implementation(libs.androidx.compiler)
-    implementation(libs.androidx.ui.tooling.preview.android)
+    // Networking
+    implementation(libs.okhttp)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation(libs.volley)
-    implementation(libs.androidx.espresso.core)
+    implementation("com.google.code.gson:gson:2.8.8")
 
-    // Dependencias de pruebas
+    // Base de datos y almacenamiento
+    implementation("androidx.sqlite:sqlite:2.1.0")
+
+    // Imagen y multimedia
+    implementation(libs.coil.compose.v222)
+    implementation(libs.coil.gif)
+    implementation(libs.coil.compose)
+    implementation(libs.glide)
+    kapt(libs.compiler)
+
+    // Responsive layouts
+    implementation("androidx.constraintlayout:constraintlayout:2.2.1")
+
+    // Tests
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    debugImplementation(libs.androidx.ui.tooling.v178)
-    debugImplementation(libs.androidx.ui.tooling.preview.v178)
-    androidTestImplementation(libs.ui.test.junit4)
-
-    implementation(libs.okhttp)
-
-    // Dependencias para añadir gif animados
-    implementation(libs.coil.compose.v222)
-    implementation(libs.coil.gif)
-
-    implementation(libs.coil.compose)
-
-    // Dependencia principal de Glide
-    implementation (libs.glide)
-
-    // Glide library
-    implementation (libs.glide)
-    //noinspection KaptUsageInsteadOfKsp
-    kapt (libs.compiler)
-    implementation(libs.kotlinx.coroutines.play.services)
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.tooling.preview)
+    debugImplementation(libs.androidx.ui.test.manifest)
 }
-

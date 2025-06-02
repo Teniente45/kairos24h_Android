@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="button_width">140dp</dimen>
+    <dimen name="button_widthSalidaEntrada">200dp</dimen>
+    <dimen name="button_heightSalidaEntrada">90dp</dimen>
+    <dimen name="buttonNumerico">46sp</dimen>
+    <dimen name="layoutWidthEntradaYSalida">110dp</dimen>
+    <dimen name="layoutMarginButtonsNumericos">20dp</dimen>
+    <dimen name="layoutMarginButtonsNumericosHorizontal">15dp</dimen>
+
+    <dimen name="layoutHeightLogo">80dp</dimen>
+</resources>
