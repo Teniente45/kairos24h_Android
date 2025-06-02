@@ -1,4 +1,4 @@
-package com.miapp.kairos24h
+/*package com.miapp.kairos24h.tabletAPK
 
 import android.content.res.Configuration
 import android.text.InputType
@@ -34,6 +34,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.graphics.toColorInt
 import com.google.gson.Gson
+import com.miapp.kairos24h.R
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -660,3 +661,5 @@ data class RespuestaFichaje(
     val fFichaje: String?,
     val hFichaje: String?
 )
+
+ */

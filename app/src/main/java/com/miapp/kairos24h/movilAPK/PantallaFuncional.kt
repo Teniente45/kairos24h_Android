@@ -6,11 +6,12 @@
  * Proyecto académico de desarrollo Android.
  */
 
-package com.miapp.kairos24h.enlaces_internos
+package com.miapp.kairos24h.movilAPK
 
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.util.Log
+import android.webkit.CookieManager
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import android.webkit.WebView
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -53,8 +54,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -80,14 +83,18 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURLmovil
+import com.miapp.iDEMO_kairos24h.enlaces_internos.ImagenesApp
+import com.miapp.kairos24h.R
 import com.miapp.kairos24h.sesionesYSeguridad.AuthManager
 import com.miapp.kairos24h.sesionesYSeguridad.ManejoDeSesion
 import com.miapp.kairos24h.sesionesYSeguridad.SeguridadUtils
-import com.miapp.kairos24h.R
 import com.miapp.kairos24h.sesionesYSeguridad.SeguridadUtils.ResultadoUbicacion
-import com.miapp.kairos24h.fichar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -113,9 +120,9 @@ fun CuadroParaFichar(
     val refreshTrigger = remember { mutableLongStateOf(System.currentTimeMillis()) }
     // Añadir observer de ON_RESUME para refrescar el trigger
     val lifecycleOwner = LocalLifecycleOwner.current
-    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
-        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
                 refreshTrigger.longValue = System.currentTimeMillis()
             }
         }
@@ -175,11 +182,7 @@ fun Logo_empresa_cliente() {
         modifier = ImagenesApp.logoBoxModifier,
         contentAlignment = Alignment.Center
     ) {
-        Image(
-            painter = painterResource(id = ImagenesApp.logoCliente_x_programa),
-            contentDescription = "Logo de la empresa cliente y el programa de control horario",
-            modifier = ImagenesApp.logoModifier
-        )
+        ImagenesApp.LogoClienteRemoto()
     }
 }
 
@@ -210,7 +213,7 @@ fun MiHorario() {
         val fechaServidor = ManejoDeSesion.obtenerFechaHoraInternet()
         if (fechaServidor != null) {
             val fecha = dateFormatter.format(fechaServidor)
-            urlHorario = BuildURL.getMostrarHorarios(context) + "&fecha=$fecha"
+            urlHorario = BuildURLmovil.getMostrarHorarios(context) + "&fecha=$fecha"
             val dateFormatterTexto = SimpleDateFormat("EEEE, d 'de' MMMM 'de' yyyy", Locale("es", "ES"))
             fechaFormateada = dateFormatterTexto.format(fechaServidor)
                 .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale("es", "ES")) else it.toString() }
@@ -412,7 +415,7 @@ fun BotonesFichajeConPermisos(
                     refreshTrigger.value = System.currentTimeMillis() // 6. Actualizar refreshTrigger tras fichaje
                     // Retardo y actualización adicional tras 1 segundo
                     CoroutineScope(Dispatchers.Main).launch {
-                        kotlinx.coroutines.delay(1000)
+                        delay(1000)
                         refreshTrigger.value = System.currentTimeMillis()
                     }
                 }
@@ -514,7 +517,7 @@ fun BotonesFichajeConPermisos(
                     refreshTrigger.value = System.currentTimeMillis() // 6. Actualizar refreshTrigger tras fichaje
                     // Retardo y actualización adicional tras 1 segundo
                     CoroutineScope(Dispatchers.Main).launch {
-                        kotlinx.coroutines.delay(1000)
+                        delay(1000)
                         refreshTrigger.value = System.currentTimeMillis()
                     }
                 }
@@ -555,7 +558,7 @@ fun BotonesFichajeConPermisos(
 data class FichajeVisual(val entrada: String, val salida: String, val lcumEnt: String, val lcumSal: String)
 
 @Composable
-fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
+fun RecuadroFichajesDia(refreshTrigger: State<Long>) {
     val context = LocalContext.current
     val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
 
@@ -566,7 +569,7 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
     LaunchedEffect(Unit) {
         val fechaServidor = ManejoDeSesion.obtenerFechaHoraInternet()
         if (fechaServidor != null) {
-            val urlHorario = BuildURL.getMostrarHorarios(context) + "&fecha=${dateFormatter.format(fechaServidor)}"
+            val urlHorario = BuildURLmovil.getMostrarHorarios(context) + "&fecha=${dateFormatter.format(fechaServidor)}"
             withContext(Dispatchers.IO) {
                 try {
                     val client = OkHttpClient()
@@ -612,7 +615,7 @@ fun RecuadroFichajesDia(refreshTrigger: androidx.compose.runtime.State<Long>) {
         value = try {
             withContext(Dispatchers.IO) {
                 val client = OkHttpClient()
-                val urlFichajes = BuildURL.getMostrarFichajes(context) + "&fecha=${fechaSeleccionada.value}"
+                val urlFichajes = BuildURLmovil.getMostrarFichajes(context) + "&fecha=${fechaSeleccionada.value}"
                 // Muestra la URL completa que se usa para obtener los fichajes
                 Log.d("RecuadroFichajesDia", "URL completa invocada: $urlFichajes")
                 val request = Request.Builder().url(urlFichajes).build()
@@ -849,12 +852,12 @@ fun AlertasDiarias(
     LaunchedEffect(refreshTrigger.value) {
         coroutineScope.launch(Dispatchers.IO) {
             try {
-                val urlAlertas = BuildURL.getMostrarAlertas(context)
+                val urlAlertas = BuildURLmovil.getMostrarAlertas(context)
                 Log.d("AlertasDiarias", "URL de alertas: $urlAlertas")
                 val client = OkHttpClient()
-                // Usar siempre el dominio correcto definido en BuildURL.HOST
-                val dominio = BuildURL.HOST
-                val cookie = android.webkit.CookieManager.getInstance()
+                // Usar siempre el dominio correcto definido en BuildURL.getHost(context)
+                val dominio = BuildURLmovil.getHost(context)
+                val cookie = CookieManager.getInstance()
                     .getCookie(dominio) ?: ""
                 val request = Request.Builder()
                     .url(urlAlertas)
@@ -898,7 +901,7 @@ fun AlertasDiarias(
     // Refresco automático cada 10 minutos
     LaunchedEffect(true) {
         while (true) {
-            kotlinx.coroutines.delay(10 * 60 * 1000)
+            delay(10 * 60 * 1000)
             refreshTrigger.value = System.currentTimeMillis()
         }
     }
@@ -965,6 +968,7 @@ fun AlertasDiarias(
                                 modifier = Modifier.weight(1f)
                             )
                             if (!aviso.url.isNullOrEmpty()) {
+                                val context = LocalContext.current
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                     contentDescription = "Redireccionar",
@@ -972,8 +976,8 @@ fun AlertasDiarias(
                                         .size(20.dp)
                                         .clickable {
                                             CoroutineScope(Dispatchers.Main).launch {
-                                                onAbrirWebView(BuildURL.HOST.trimEnd('/') + "/" + aviso.url.trimStart('/'))
-                                                kotlinx.coroutines.delay(1000)
+                                                onAbrirWebView(BuildURLmovil.getHost(context).trimEnd('/') + "/" + aviso.url.trimStart('/'))
+                                                delay(1000)
                                                 hideCuadroParaFichar()
                                             }
                                         },

@@ -6,7 +6,7 @@
  * Proyecto académico de desarrollo Android.
  */
 
-package com.miapp.kairos24h.enlaces_internos
+package com.miapp.iDEMO_kairos24h.enlaces_internos
 
 import android.content.Context
 import androidx.annotation.DrawableRes
@@ -17,6 +17,12 @@ import androidx.compose.foundation.layout.width
 import com.miapp.kairos24h.R
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.Image
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.rememberAsyncImagePainter
+import androidx.compose.ui.res.painterResource
 import com.miapp.kairos24h.sesionesYSeguridad.AuthManager
 
 // Este objeto centraliza el acceso a los recursos gráficos usados en la aplicación
@@ -24,7 +30,10 @@ object ImagenesApp {
     // Imagen del logo principal que se muestra en la pantalla de login
     @DrawableRes
     val logoCliente = R.drawable.kairos24h
-    val logoCliente_x_programa = R.drawable.compliance
+    fun getLogoClienteXPrograma(context: Context): String? {
+        val tLogo = AuthManager.getUserCredentials(context).tLogo
+        return if (tLogo.isNotBlank()) tLogo else null
+    }
     val lodoDesarrolladora = R.drawable.logo_i3data
 
 
@@ -35,8 +44,8 @@ object ImagenesApp {
         .padding(vertical = 5.dp)
     // Estilo aplicado al logo (tamaño y proporción)
     val logoModifier = Modifier
-        .width(188.dp)
-        .height(75.dp)
+        .width(356.dp)
+        .height(100.dp)
 
 
     // Centraliza las características del contenedor del logo de desarrolladora
@@ -47,13 +56,30 @@ object ImagenesApp {
         .width(200.dp)
         .height(75.dp)
 
+    @Composable
+    fun LogoClienteRemoto(modifier: Modifier = Modifier) {
+        val context = LocalContext.current
+        val logoUrl = getLogoClienteXPrograma(context)
+        val painter = rememberAsyncImagePainter(
+            model = logoUrl,
+            contentScale = ContentScale.Fit,
+            placeholder = painterResource(id = R.drawable.kairos24h),
+            error = painterResource(id = R.drawable.kairos24h)
+        )
+
+        Image(
+            painter = painter,
+            contentDescription = "Logo del cliente",
+            modifier = modifier
+        )
+    }
 }
 
 
 
 // Estás son las URL que se nos mostrarán en el WebView, se usa sólo para logearse desde la APK
 object WebViewURL {
-    const val HOST = "https://rincontragabuche.kairos24h.es"
+    const val HOST = "https://controlhorario.kairos24h.es"
     const val ENTRY_POINT = "/index.php"
     const val URL_USADA = "$HOST$ENTRY_POINT"
 
@@ -62,11 +88,17 @@ object WebViewURL {
     const val LOGINAPK = "$URL_USADA?$ACTION_LOGIN"
 }
 
+
+
 // Esta será la URL que construiremos cuando desde el login de nuestra APK introduzcamos el Usuario y la Contraseña
-object BuildURL {
-    const val HOST = "https://rincontragabuche.kairos24h.es"
+object BuildURLmovil {
+    // Remove HOST constant and use function instead
+    fun getHost(context: Context): String {
+        val tUrlCPP = AuthManager.getUserCredentials(context).tUrlCPP
+        return if (!tUrlCPP.isNullOrBlank() && tUrlCPP != "null") tUrlCPP else WebViewURL.HOST
+    }
     const val ENTRY_POINT = "/index.php"
-    const val URL_USADA = "$HOST$ENTRY_POINT?"
+    fun getURLUsada(context: Context): String = getHost(context) + ENTRY_POINT + "?"
 
     const val ACTION_FORGOTPASS = "r=site/solicitudRestablecerClave"
 
@@ -78,25 +110,17 @@ object BuildURL {
     const val ACTION_CONSULTFIC_DIA = "r=wsExterno/consultarFichajesExterno"
     const val ACTION_CONSULT_ALERTAS = "r=wsExterno/consultarAlertasExterno"
 
-    const val INDEX = "$URL_USADA$ACTION_LOGIN"
-    const val FORGOT_PASSWORD = "$URL_USADA?$ACTION_FORGOTPASS"
+    fun getIndex(context: Context): String = getURLUsada(context) + ACTION_LOGIN
+    fun getForgotPassword(context: Context): String = getURLUsada(context) + "?" + ACTION_FORGOTPASS
 
-
-    const val FICHAJE = "$URL_USADA$ACTION_CONSULTAR" +
-            "&cTipExp=FICHAJE"
-    const val INCIDENCIA = "$URL_USADA$ACTION_CONSULTAR" +
-            "&cTipExp=INCIDENCIA" + "&cOpcionVisual=INCBAN"
-    const val HORARIOS = "$URL_USADA$ACTION_CONSULTAR" +
-            "&cTipExp=HORARIO" + "&cModoVisual=HORMEN"
-    const val SOLICITUDES = "$URL_USADA$ACTION_CONSULTAR" +
-            "&cTipExp=SOLICITUD"
-
-
+    fun getFichaje(context: Context): String = getURLUsada(context) + ACTION_CONSULTAR + "&cTipExp=FICHAJE"
+    fun getIncidencia(context: Context): String = getURLUsada(context) + ACTION_CONSULTAR + "&cTipExp=INCIDENCIA&cOpcionVisual=INCBAN"
+    fun getHorarios(context: Context): String = getURLUsada(context) + ACTION_CONSULTAR + "&cTipExp=HORARIO&cModoVisual=HORMEN"
+    fun getSolicitudes(context: Context): String = getURLUsada(context) + ACTION_CONSULTAR + "&cTipExp=SOLICITUD"
 
     const val X_GRUPO = ""
     const val C_KIOSKO = ""
     const val C_FIC_ORI = "APP"
-
 
     fun getStaticParams(context: Context): String {
         val creds = AuthManager.getUserCredentials(context)
@@ -110,8 +134,8 @@ object BuildURL {
     }
     /*==================================================================*/
 
-    fun getCrearFichaje(context: Context): String = URL_USADA + ACTION_FICHAJE + getStaticParams(context)
-    fun getMostrarHorarios(context: Context): String = URL_USADA + ACTION_CONSULTHORARIO + getStaticParams(context)
-    fun getMostrarFichajes(context: Context): String = URL_USADA + ACTION_CONSULTFIC_DIA + getStaticParams(context)
-    fun getMostrarAlertas(context: Context): String = URL_USADA + ACTION_CONSULT_ALERTAS + getStaticParams(context)
+    fun getCrearFichaje(context: Context): String = getURLUsada(context) + ACTION_FICHAJE + getStaticParams(context)
+    fun getMostrarHorarios(context: Context): String = getURLUsada(context) + ACTION_CONSULTHORARIO + getStaticParams(context)
+    fun getMostrarFichajes(context: Context): String = getURLUsada(context) + ACTION_CONSULTFIC_DIA + getStaticParams(context)
+    fun getMostrarAlertas(context: Context): String = getURLUsada(context) + ACTION_CONSULT_ALERTAS + getStaticParams(context)
 }

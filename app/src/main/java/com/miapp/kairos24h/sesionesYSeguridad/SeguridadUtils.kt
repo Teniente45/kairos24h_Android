@@ -10,6 +10,11 @@
 
 package com.miapp.kairos24h.sesionesYSeguridad
 
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationAvailability
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -18,14 +23,9 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
 import androidx.core.content.ContextCompat
-import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import android.location.Location
-import com.google.android.gms.location.LocationAvailability
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
 import kotlinx.coroutines.withTimeoutOrNull
 
 object SeguridadUtils {
@@ -85,7 +85,7 @@ object SeguridadUtils {
             }
 
             val fusedClient = LocationServices.getFusedLocationProviderClient(context)
-            val locationRequest = LocationRequest().apply {
+            val locationRequest = LocationRequest.create().apply {
                 priority = LocationRequest.PRIORITY_HIGH_ACCURACY
                 interval = 0
                 fastestInterval = 0

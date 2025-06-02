@@ -66,9 +66,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURLmovil
+import com.miapp.iDEMO_kairos24h.enlaces_internos.ImagenesApp
 import com.miapp.kairos24h.sesionesYSeguridad.AuthManager
-import com.miapp.kairos24h.enlaces_internos.BuildURL
-import com.miapp.kairos24h.enlaces_internos.ImagenesApp
+import com.miapp.kairos24h.movilAPK.Fichar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.net.URLEncoder
@@ -168,7 +169,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 onForgotPassword = {
-                                    val url = BuildURL.FORGOT_PASSWORD
+                                    val url = BuildURLmovil.getForgotPassword(this@MainActivity)
                                     val intent = Intent(Intent.ACTION_VIEW, url.toUri())
                                     startActivity(intent)
                                 }

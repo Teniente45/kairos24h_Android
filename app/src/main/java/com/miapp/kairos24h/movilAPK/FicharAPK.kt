@@ -8,7 +8,7 @@
 
 @file:Suppress("DEPRECATION")
 
-package com.miapp.kairos24h
+package com.miapp.kairos24h.movilAPK
 
 
 import android.Manifest
@@ -20,10 +20,15 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.Message
 import android.util.Log
+import android.view.View
+import android.view.ViewGroup
 import android.webkit.CookieManager
+import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
@@ -60,9 +65,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -73,11 +80,14 @@ import coil.compose.AsyncImage
 import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 import com.google.android.gms.location.LocationServices
+import com.miapp.kairos24h.R
+import com.miapp.iDEMO_kairos24h.enlaces_internos.AuthManager
+import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURLmovil
+import com.miapp.iDEMO_kairos24h.enlaces_internos.ManejoDeSesion
+import com.miapp.iDEMO_kairos24h.enlaces_internos.SeguridadUtils
+import com.miapp.kairos24h.MainActivity
 import com.miapp.kairos24h.sesionesYSeguridad.AuthManager
-import com.miapp.kairos24h.enlaces_internos.BuildURL
-import com.miapp.kairos24h.enlaces_internos.CuadroParaFichar
 import com.miapp.kairos24h.sesionesYSeguridad.ManejoDeSesion
-import com.miapp.kairos24h.enlaces_internos.MensajeAlerta
 import com.miapp.kairos24h.sesionesYSeguridad.SeguridadUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -106,7 +116,7 @@ class Fichar : ComponentActivity() {
         val password = intent.getStringExtra("password") ?: storedPassword
 
         // Creamos el FrameLayout raíz
-        val root = android.widget.FrameLayout(this).apply { id = android.view.View.generateViewId() }
+        val root = FrameLayout(this).apply { id = View.generateViewId() }
 
         // Creamos y configuramos el WebView
         webView = WebView(this).apply {
@@ -131,12 +141,12 @@ class Fichar : ComponentActivity() {
             isHorizontalScrollBarEnabled = true
             scrollBarStyle = WebView.SCROLLBARS_INSIDE_OVERLAY
 
-            webChromeClient = object : android.webkit.WebChromeClient() {
+            webChromeClient = object : WebChromeClient() {
                 override fun onCreateWindow(
                     view: WebView?,
                     isDialog: Boolean,
                     isUserGesture: Boolean,
-                    resultMsg: android.os.Message?
+                    resultMsg: Message?
                 ): Boolean {
                     val newWebView = WebView(view!!.context)
                     newWebView.settings.javaScriptEnabled = true
@@ -184,11 +194,11 @@ class Fichar : ComponentActivity() {
                 }
             }
 
-            loadUrl(BuildURL.INDEX)
+            loadUrl(BuildURLmovil.getIndex(this@Fichar))
         }
 
         // ComposeView superpuesto
-        val composeView = androidx.compose.ui.platform.ComposeView(this).apply {
+        val composeView = ComposeView(this).apply {
             setContent {
                 FicharScreen(
                     webView = webView,
@@ -202,9 +212,9 @@ class Fichar : ComponentActivity() {
         val topMarginPx = (30 * displayMetrics.density).toInt()
         val bottomMarginPx = (56 * displayMetrics.density).toInt()
 
-        val webViewLayoutParams = android.widget.FrameLayout.LayoutParams(
-            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-            android.view.ViewGroup.LayoutParams.MATCH_PARENT
+        val webViewLayoutParams = FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
         ).apply {
             topMargin = topMarginPx
             bottomMargin = bottomMarginPx
@@ -216,9 +226,9 @@ class Fichar : ComponentActivity() {
         )
         root.addView(
             composeView,
-            android.widget.FrameLayout.LayoutParams(
-                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
             )
         )
 
@@ -503,7 +513,7 @@ fun FicharScreen(
 
 // ================================== Preview de la pantalla ==================================
 @Composable
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Preview(showBackground = true)
 fun PreviewFicharScreen() {
     // No se puede previsualizar el WebView real en preview, así que pasamos un dummy
     FicharScreen(
@@ -539,7 +549,7 @@ internal fun fichar(context: Context, tipo: String, webView: WebView) {
                 }
 
                 // Construye la URL de fichaje con el tipo y las coordenadas
-                val urlFichaje = BuildURL.getCrearFichaje(context) +
+                val urlFichaje = BuildURLmovil.getCrearFichaje(context) +
                         "&cTipFic=$tipo" +
                         "&tGpsLat=$lat" +
                         "&tGpsLon=$lon"
@@ -674,25 +684,27 @@ fun BottomNavigationBar(
             }
             Text(text = "Fichar", textAlign = TextAlign.Center, modifier = Modifier.padding(top = 2.dp))
         }
+        val context = LocalContext.current
+
         // Botón de navegación que cambia de sección y oculta el cuadro para fichar
         NavigationButton("Fichajes", R.drawable.ic_fichajes32) {
             hideCuadroParaFichar()
-            onNavigate(BuildURL.FICHAJE)
+            onNavigate(BuildURLmovil.getFichaje(context))
         }
         // Botón de navegación que cambia de sección y oculta el cuadro para fichar
         NavigationButton("Incidencias", R.drawable.ic_incidencia32) {
             hideCuadroParaFichar()
-            onNavigate(BuildURL.INCIDENCIA)
+            onNavigate(BuildURLmovil.getIncidencia(context))
         }
         // Botón de navegación que cambia de sección y oculta el cuadro para fichar
         NavigationButton("Horarios", R.drawable.ic_horario32) {
             hideCuadroParaFichar()
-            onNavigate(BuildURL.HORARIOS)
+            onNavigate(BuildURLmovil.getHorarios(context))
         }
         // Botón de navegación que cambia de sección y oculta el cuadro para fichar
         NavigationButton("Solicitudes", R.drawable.solicitudes32) {
             hideCuadroParaFichar()
-            onNavigate(BuildURL.SOLICITUDES)
+            onNavigate(BuildURLmovil.getSolicitudes(context))
         }
     }
 }
