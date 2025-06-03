@@ -38,6 +38,8 @@ import com.example.relojfichajeskairos24h.iniciarReintentosAutomaticos
 import com.google.gson.Gson
 import com.miapp.kairos24h.enlaces_internos.BuildURLtablet
 import com.miapp.kairos24h.enlaces_internos.ImagenesTablet
+import com.miapp.kairos24h.enlaces_internos.ImagenesMovil
+import com.bumptech.glide.Glide
 import com.miapp.kairos24h.R
 import com.miapp.kairos24h.deviceOwner.MyDeviceAdminReceiver
 import com.miapp.kairos24h.sesionesYSeguridad.GPSUtils
@@ -132,10 +134,16 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Cargar ImagenesTablet dinámicamente usando los nombres definidos en ImagenesTablet
+        // Cargar logos dinámicamente
         val logo1 = findViewById<ImageView>(R.id.logo1)
-        val logo1ResId = resources.getIdentifier(ImagenesTablet.LOGO_CLIENTE.toString(), "drawable", packageName)
-        logo1.setImageResource(logo1ResId)
+        val tLogoUrl = ImagenesMovil.getLogoClienteXPrograma(this)
+        if (!tLogoUrl.isNullOrBlank()) {
+            Glide.with(this)
+                .load(tLogoUrl)
+                .placeholder(R.drawable.kairos24h)
+                .error(R.drawable.kairos24h)
+                .into(logo1)
+        }
 
         val logo2 = findViewById<ImageView>(R.id.logo2)
         val logo2ResId = resources.getIdentifier(ImagenesTablet.LOGO_DESARROLLADORA, "drawable", packageName)

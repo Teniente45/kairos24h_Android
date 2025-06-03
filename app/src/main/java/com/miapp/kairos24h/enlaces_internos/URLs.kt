@@ -23,6 +23,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import coil.compose.rememberAsyncImagePainter
 import androidx.compose.ui.res.painterResource
+import com.miapp.kairos24h.enlaces_internos.ImagenesMovil.getLogoClienteXPrograma
 import com.miapp.kairos24h.sesionesYSeguridad.AuthManager
 
 // Este objeto centraliza el acceso a los recursos gráficos usados en la aplicación
@@ -88,8 +89,6 @@ object WebViewURL {
     const val LOGINAPK = "$URL_USADA?$ACTION_LOGIN"
 }
 
-
-
 // Esta será la URL que construiremos cuando desde el login de nuestra APK introduzcamos el Usuario y la Contraseña
 object BuildURLmovil {
     // Remove HOST constant and use function instead
@@ -132,13 +131,14 @@ object BuildURLmovil {
                 "&cKiosko=$C_KIOSKO" +
                 "&cFicOri=$C_FIC_ORI"
     }
-    /*==================================================================*/
 
     fun getCrearFichaje(context: Context): String = getURLUsada(context) + ACTION_FICHAJE + getStaticParams(context)
     fun getMostrarHorarios(context: Context): String = getURLUsada(context) + ACTION_CONSULTHORARIO + getStaticParams(context)
     fun getMostrarFichajes(context: Context): String = getURLUsada(context) + ACTION_CONSULTFIC_DIA + getStaticParams(context)
     fun getMostrarAlertas(context: Context): String = getURLUsada(context) + ACTION_CONSULT_ALERTAS + getStaticParams(context)
 }
+
+
 
 
 object BuildURLtablet {
@@ -158,25 +158,8 @@ object BuildURLtablet {
     fun getSetFichaje(context: Context): String = getHost(context) + "/" + ACTION + PARAMS
 }
 
-/*
- * El objeto Imagenes centraliza toda la configuración visual de los logos que se muestran en la app.
- *
- * LOGO_CLIENTE y LOGO_DESARROLLADORA: indican los nombres de las imágenes que deben estar en res/drawable.
- * PropiedadesImagen: define cómo se deben mostrar esas imágenes (ancho, alto, gravedad).
- * Vertical y Horizontal: especifican cómo deben comportarse visualmente según la orientación de la pantalla.
- *
- * Esto permite cambiar el comportamiento visual de los logos sin modificar el código de MainActivity.kt.
- *
- * Ejemplo:
- *   - Para cambiar la imagen del cliente: cambiar LOGO_CLIENTE = "nuevo_logo"
- *   - Para modificar su altura en horizontal: cambiar Horizontal.LOGO_CLIENTE.height = "100dp"
- *
- * Si se desea controlar más propiedades visuales (margins, padding, visibility, scaleType...),
- * este modelo puede extenderse fácilmente desde aquí.
- */
 object ImagenesTablet {
     // Nombres de recursos en drawable
-    val LOGO_CLIENTE = ImagenesMovil.logoCliente
     const val LOGO_DESARROLLADORA = "logo_desarrolladora"
 
     data class PropiedadesImagen(
@@ -186,6 +169,24 @@ object ImagenesTablet {
         val marginTop: String = "0sp",
         val marginBottom: String = "0sp"
     )
+
+    @Composable
+    fun LogoClienteRemoto(modifier: Modifier = Modifier) {
+        val context = LocalContext.current
+        val logoUrl = ImagenesMovil.getLogoClienteXPrograma(context)
+        val painter = rememberAsyncImagePainter(
+            model = logoUrl,
+            contentScale = ContentScale.Fit,
+            placeholder = painterResource(id = R.drawable.kairos24h),
+            error = painterResource(id = R.drawable.kairos24h)
+        )
+
+        Image(
+            painter = painter,
+            contentDescription = "Logo del cliente",
+            modifier = modifier
+        )
+    }
 
     object Vertical {
         val LOGO_CLIENTE = PropiedadesImagen(
