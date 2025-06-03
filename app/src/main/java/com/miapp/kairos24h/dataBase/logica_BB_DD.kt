@@ -1,4 +1,4 @@
-package com.miapp.kairos24h.dataBase
+package com.example.relojfichajeskairos24h
 
 import android.content.ContentValues
 import android.content.Context
@@ -16,9 +16,6 @@ import okhttp3.Response
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 // Clase SQLiteHelper para gestionar la base de datos local fichajes_pendientes
 class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(context, "fichajes_pendientes", null, 2) {
@@ -84,9 +81,7 @@ private val client = OkHttpClient()
 private val handler = Handler(Looper.getMainLooper())
 private const val INTERVALO_REINTENTO = 10_000L // Intervalo de reintento: 10 segundos
 
-// Inicia un bucle que cada 10 segundos reintenta enviar los fichajes no informados al servidor.
-// IMPORTANTE: No dupliques esta función en otros archivos del proyecto.
-// Mantener solo una definición de `iniciarReintentosAutomaticos` (preferentemente aquí) para evitar errores de sobrecarga ambigua.
+// Inicia un bucle que cada 10 segundos reintenta enviar los fichajes no informados al servidor
 fun iniciarReintentosAutomaticos(context: Context) {
     val dbHelper = FichajesSQLiteHelper(context)
 
@@ -108,7 +103,7 @@ fun iniciarReintentosAutomaticos(context: Context) {
 
                 // Construye la URL de fichaje usando la plantilla y los datos del registro
                 val url = BuildURLtablet.getSetFichaje(context) +
-                    "&cEmpCppExt=$cEmpCppExt&xFichaje=$xFichaje&cTipFic=$cTipFic&fFichaje=$fFichaje&hFichaje=$hFichaje"
+                        "&cEmpCppExt=$cEmpCppExt&xFichaje=$xFichaje&cTipFic=$cTipFic&fFichaje=$fFichaje&hFichaje=$hFichaje"
 
                 Log.d("ReintentoFichaje", "Invocando URL: $url")
 
@@ -153,9 +148,7 @@ fun iniciarReintentosAutomaticos(context: Context) {
     handler.postDelayed(tarea, INTERVALO_REINTENTO)
 }
 
-// Exporta toda la tabla l_informados a un archivo .csv accesible desde almacenamiento externo privado.
-// IMPORTANTE: No dupliques esta función en otros archivos del proyecto.
-// Mantener solo una definición de `exportarInformados` (preferentemente aquí) para evitar errores de sobrecarga ambigua.
+// Exporta toda la tabla l_informados a un archivo .csv accesible desde almacenamiento externo privado
 // Ruta aproximada en el dispositivo: /storage/emulated/0/Android/data/com.example.relojfichajeskairos24h/files/l_informados.csv
 // El archivo puede abrirse con Excel
 fun exportarInformados(context: Context): File? {
@@ -188,7 +181,7 @@ private fun exportarTablaAArchivoExterno(context: Context): File? {
         cursor.close()
 
         val exportDir = context.getExternalFilesDir(null)
-        val fecha = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        val fecha = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
         val archivo = File(exportDir, "${tabla}_$fecha.csv")
         archivo.writeText(registros.toString())
 

@@ -33,12 +33,12 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.graphics.toColorInt
+import com.example.relojfichajeskairos24h.FichajesSQLiteHelper
+import com.example.relojfichajeskairos24h.iniciarReintentosAutomaticos
 import com.google.gson.Gson
 import com.miapp.kairos24h.enlaces_internos.BuildURLtablet
 import com.miapp.kairos24h.enlaces_internos.ImagenesTablet
 import com.miapp.kairos24h.R
-import com.miapp.kairos24h.dataBase.FichajesSQLiteHelper
-import com.miapp.kairos24h.dataBase.iniciarReintentosAutomaticos
 import com.miapp.kairos24h.deviceOwner.MyDeviceAdminReceiver
 import com.miapp.kairos24h.sesionesYSeguridad.GPSUtils
 import org.json.JSONObject

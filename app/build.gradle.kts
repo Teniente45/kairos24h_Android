@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     id("kotlin-kapt") // Esto habilita KAPT
-    id("org.jetbrains.kotlin.plugin.compose") version "2.0.0"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.1.10"
 }
 
 android {
@@ -53,30 +53,31 @@ android {
 
 dependencies {
     // Compose y UI
-    implementation(platform(libs.androidx.compose.bom))
+    implementation(platform(libs.androidx.compose.bom.v20240500))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
+    implementation("androidx.compose.ui:ui-tooling-preview:1.6.1")
     implementation(libs.androidx.foundation)
-    implementation(libs.androidx.material)
+    implementation("androidx.compose.material:material:1.6.1")
     implementation(libs.androidx.material3)
     implementation(libs.androidx.appcompat)
+    implementation("com.google.android.material:material:1.11.0")
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.material.icons.extended)
-    implementation("androidx.compose.animation:animation:1.7.8")
+    implementation(libs.androidx.animation)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
     // Networking
     implementation(libs.okhttp)
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation(libs.okhttp.v4120)
     implementation(libs.volley)
-    implementation("com.google.code.gson:gson:2.8.8")
+    implementation(libs.gson)
 
     // Base de datos y almacenamiento
-    implementation("androidx.sqlite:sqlite:2.1.0")
+    implementation(libs.androidx.sqlite.ktx)
 
     // Imagen y multimedia
     implementation(libs.coil.compose.v222)
@@ -86,17 +87,16 @@ dependencies {
     kapt(libs.compiler)
 
     // Responsive layouts
-    implementation("androidx.constraintlayout:constraintlayout:2.2.1")
+    implementation(libs.androidx.constraintlayout)
 
     // Servicios de localización
-    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation(libs.play.services.location)
 
     // Tests
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.ui.test.junit4)
-    debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.tooling.preview)
+    debugImplementation("androidx.compose.ui:ui-tooling:1.6.1")
     debugImplementation(libs.androidx.ui.test.manifest)
 }

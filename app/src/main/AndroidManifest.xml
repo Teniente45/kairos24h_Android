@@ -24,7 +24,7 @@
 
         <!-- MainActivity con opciones combinadas -->
         <activity
-            android:name="com.miapp.kairos24h.tabletAPK.MainActivity"
+            android:name="com.miapp.kairos24h.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.Kairos24h"
             android:screenOrientation="fullSensor"
@@ -48,6 +48,13 @@
             android:theme="@style/Theme.Kairos24h"
             android:screenOrientation="portrait"
             tools:ignore="DiscouragedApi,LockedOrientation,LockedOrientationActivity" />
+
+        <activity
+            android:name="com.miapp.kairos24h.tabletAPK.MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Kairos24h"
+            android:screenOrientation="fullSensor"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity" />
 
 
         <receiver
