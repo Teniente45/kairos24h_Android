@@ -52,7 +52,7 @@
         <activity
             android:name="com.miapp.kairos24h.tabletAPK.MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.Kairos24h"
+            android:theme="@style/Theme.RelojFichajesKairos24h"
             android:screenOrientation="fullSensor"
             tools:ignore="DiscouragedApi,LockedOrientationActivity" />
 
