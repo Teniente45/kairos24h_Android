@@ -66,8 +66,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURLmovil
-import com.miapp.iDEMO_kairos24h.enlaces_internos.ImagenesApp
+import com.miapp.kairos24h.enlaces_internos.BuildURLmovil
+import com.miapp.kairos24h.enlaces_internos.ImagenesMovil
 import com.miapp.kairos24h.sesionesYSeguridad.AuthManager
 import com.miapp.kairos24h.movilAPK.Fichar
 import kotlinx.coroutines.Dispatchers
@@ -273,9 +273,9 @@ fun DisplayLogo(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 // Imagen del logo de la empresa o aplicación
                 Image(
-                    painter = painterResource(id = ImagenesApp.logoCliente),
+                    painter = painterResource(id = ImagenesMovil.logoCliente),
                     contentDescription = "logo del cliente",
-                    modifier = ImagenesApp.logoModifier
+                    modifier = ImagenesMovil.logoModifier
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 

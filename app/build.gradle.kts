@@ -1,13 +1,13 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
     id("kotlin-kapt") // Esto habilita KAPT
+    id("org.jetbrains.kotlin.plugin.compose") version "2.0.0"
 }
 
 android {
     namespace = "com.miapp.kairos24h"
-    compileSdk = 28
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.miapp.kairos24h"
@@ -21,6 +21,7 @@ android {
     buildTypes {
         debug {
             isDebuggable = true
+            signingConfig = signingConfigs.getByName("debug")
         }
         release {
             isMinifyEnabled = false
@@ -46,7 +47,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        kotlinCompilerExtensionVersion = "1.5.11"
     }
 }
 
@@ -86,6 +87,9 @@ dependencies {
 
     // Responsive layouts
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
+
+    // Servicios de localización
+    implementation("com.google.android.gms:play-services-location:21.0.1")
 
     // Tests
     testImplementation(libs.junit)

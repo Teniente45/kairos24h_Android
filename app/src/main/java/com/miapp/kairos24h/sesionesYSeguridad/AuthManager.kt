@@ -12,7 +12,7 @@ package com.miapp.kairos24h.sesionesYSeguridad
 
 import android.content.Context
 import android.util.Log
-import com.miapp.iDEMO_kairos24h.enlaces_internos.WebViewURL
+import com.miapp.kairos24h.enlaces_internos.WebViewURL
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject

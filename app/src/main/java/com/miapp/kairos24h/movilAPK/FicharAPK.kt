@@ -81,10 +81,7 @@ import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 import com.google.android.gms.location.LocationServices
 import com.miapp.kairos24h.R
-import com.miapp.iDEMO_kairos24h.enlaces_internos.AuthManager
-import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURLmovil
-import com.miapp.iDEMO_kairos24h.enlaces_internos.ManejoDeSesion
-import com.miapp.iDEMO_kairos24h.enlaces_internos.SeguridadUtils
+import com.miapp.kairos24h.enlaces_internos.BuildURLmovil
 import com.miapp.kairos24h.MainActivity
 import com.miapp.kairos24h.sesionesYSeguridad.AuthManager
 import com.miapp.kairos24h.sesionesYSeguridad.ManejoDeSesion

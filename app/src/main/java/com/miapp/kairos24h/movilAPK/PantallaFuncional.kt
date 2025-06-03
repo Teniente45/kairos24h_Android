@@ -85,8 +85,8 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import com.miapp.iDEMO_kairos24h.enlaces_internos.BuildURLmovil
-import com.miapp.iDEMO_kairos24h.enlaces_internos.ImagenesApp
+import com.miapp.kairos24h.enlaces_internos.BuildURLmovil
+import com.miapp.kairos24h.enlaces_internos.ImagenesMovil
 import com.miapp.kairos24h.R
 import com.miapp.kairos24h.sesionesYSeguridad.AuthManager
 import com.miapp.kairos24h.sesionesYSeguridad.ManejoDeSesion
@@ -179,23 +179,23 @@ fun CuadroParaFichar(
 @Composable
 fun Logo_empresa_cliente() {
     Box(
-        modifier = ImagenesApp.logoBoxModifier,
+        modifier = ImagenesMovil.logoBoxModifier,
         contentAlignment = Alignment.Center
     ) {
-        ImagenesApp.LogoClienteRemoto()
+        ImagenesMovil.LogoClienteRemoto()
     }
 }
 
 @Composable
 fun Logo_empresa_desarrolladora() {
     Box(
-        modifier = ImagenesApp.logoBoxModifierDev,
+        modifier = ImagenesMovil.logoBoxModifierDev,
         contentAlignment = Alignment.Center
     ) {
         Image(
-            painter = painterResource(id = ImagenesApp.lodoDesarrolladora),
+            painter = painterResource(id = ImagenesMovil.lodoDesarrolladora),
             contentDescription = "logo de la desarrolladora",
-            modifier = ImagenesApp.logoModifierDev
+            modifier = ImagenesMovil.logoModifierDev
         )
     }
 }

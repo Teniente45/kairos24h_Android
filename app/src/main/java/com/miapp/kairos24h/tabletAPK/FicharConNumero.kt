@@ -1,4 +1,4 @@
-/*package com.miapp.kairos24h.tabletAPK
+package com.miapp.kairos24h.tabletAPK
 
 import android.content.res.Configuration
 import android.text.InputType
@@ -34,7 +34,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.graphics.toColorInt
 import com.google.gson.Gson
+import com.miapp.kairos24h.enlaces_internos.BuildURLtablet
+import com.miapp.kairos24h.enlaces_internos.ImagenesTablet
 import com.miapp.kairos24h.R
+import com.miapp.kairos24h.dataBase.FichajesSQLiteHelper
+import com.miapp.kairos24h.dataBase.iniciarReintentosAutomaticos
+import com.miapp.kairos24h.deviceOwner.MyDeviceAdminReceiver
+import com.miapp.kairos24h.sesionesYSeguridad.GPSUtils
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -67,7 +73,7 @@ class MainActivity : AppCompatActivity() {
         val COLOR_CORRECTO = "#4F8ABA".toColorInt()
     }
 
-    @SuppressLint("ClickableViewAccessibility", "DiscouragedApi")
+    @SuppressLint("ClickableViewAccessibility", "DiscouragedApi", "UseKtx")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.portada)
@@ -126,13 +132,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Cargar imagenes dinámicamente usando los nombres definidos en Imagenes
+        // Cargar ImagenesTablet dinámicamente usando los nombres definidos en ImagenesTablet
         val logo1 = findViewById<ImageView>(R.id.logo1)
-        val logo1ResId = resources.getIdentifier(Imagenes.LOGO_CLIENTE, "drawable", packageName)
+        val logo1ResId = resources.getIdentifier(ImagenesTablet.LOGO_CLIENTE.toString(), "drawable", packageName)
         logo1.setImageResource(logo1ResId)
 
         val logo2 = findViewById<ImageView>(R.id.logo2)
-        val logo2ResId = resources.getIdentifier(Imagenes.LOGO_DESARROLLADORA, "drawable", packageName)
+        val logo2ResId = resources.getIdentifier(ImagenesTablet.LOGO_DESARROLLADORA, "drawable", packageName)
         logo2.setImageResource(logo2ResId)
 
 
@@ -150,28 +156,28 @@ class MainActivity : AppCompatActivity() {
 
         if (usarVertical) {
             logo1.layoutParams = logo1.layoutParams.apply {
-                width = Imagenes.Vertical.LOGO_CLIENTE.width.toLayoutSize()
-                height = Imagenes.Vertical.LOGO_CLIENTE.height.toLayoutSize()
+                width = ImagenesTablet.Vertical.LOGO_CLIENTE.width.toLayoutSize()
+                height = ImagenesTablet.Vertical.LOGO_CLIENTE.height.toLayoutSize()
             }
             (logo1.layoutParams as? LinearLayout.LayoutParams)?.apply {
-                gravity = when (Imagenes.Vertical.LOGO_CLIENTE.gravity) {
+                gravity = when (ImagenesTablet.Vertical.LOGO_CLIENTE.gravity) {
                     "center_horizontal" -> Gravity.CENTER_HORIZONTAL
                     "center" -> Gravity.CENTER
                     "start" -> Gravity.START
                     "end" -> Gravity.END
                     else -> Gravity.NO_GRAVITY
                 }
-                val marginTopPx = Imagenes.Vertical.LOGO_CLIENTE.marginTop.toPixelSize()
-                val marginBottomPx = Imagenes.Vertical.LOGO_CLIENTE.marginBottom.toPixelSize()
+                val marginTopPx = ImagenesTablet.Vertical.LOGO_CLIENTE.marginTop.toPixelSize()
+                val marginBottomPx = ImagenesTablet.Vertical.LOGO_CLIENTE.marginBottom.toPixelSize()
                 setMargins(0, marginTopPx, 0, marginBottomPx)
             }
 
             logo2.layoutParams = logo2.layoutParams.apply {
-                width = Imagenes.Vertical.LOGO_DESARROLLADORA.width.toLayoutSize()
-                height = Imagenes.Vertical.LOGO_DESARROLLADORA.height.toLayoutSize()
+                width = ImagenesTablet.Vertical.LOGO_DESARROLLADORA.width.toLayoutSize()
+                height = ImagenesTablet.Vertical.LOGO_DESARROLLADORA.height.toLayoutSize()
             }
             (logo2.layoutParams as? LinearLayout.LayoutParams)?.gravity =
-                when (Imagenes.Vertical.LOGO_DESARROLLADORA.gravity) {
+                when (ImagenesTablet.Vertical.LOGO_DESARROLLADORA.gravity) {
                     "center_horizontal" -> Gravity.CENTER_HORIZONTAL
                     "center" -> Gravity.CENTER
                     "start" -> Gravity.START
@@ -180,28 +186,28 @@ class MainActivity : AppCompatActivity() {
                 }
         } else {
             logo1.layoutParams = logo1.layoutParams.apply {
-                width = Imagenes.Horizontal.LOGO_CLIENTE.width.toLayoutSize()
-                height = Imagenes.Horizontal.LOGO_CLIENTE.height.toLayoutSize()
+                width = ImagenesTablet.Horizontal.LOGO_CLIENTE.width.toLayoutSize()
+                height = ImagenesTablet.Horizontal.LOGO_CLIENTE.height.toLayoutSize()
             }
             (logo1.layoutParams as? LinearLayout.LayoutParams)?.apply {
-                gravity = when (Imagenes.Horizontal.LOGO_CLIENTE.gravity) {
+                gravity = when (ImagenesTablet.Horizontal.LOGO_CLIENTE.gravity) {
                     "center_horizontal" -> Gravity.CENTER_HORIZONTAL
                     "center" -> Gravity.CENTER
                     "start" -> Gravity.START
                     "end" -> Gravity.END
                     else -> Gravity.NO_GRAVITY
                 }
-                val marginTopPx = Imagenes.Horizontal.LOGO_CLIENTE.marginTop.toPixelSize()
-                val marginBottomPx = Imagenes.Horizontal.LOGO_CLIENTE.marginBottom.toPixelSize()
+                val marginTopPx = ImagenesTablet.Horizontal.LOGO_CLIENTE.marginTop.toPixelSize()
+                val marginBottomPx = ImagenesTablet.Horizontal.LOGO_CLIENTE.marginBottom.toPixelSize()
                 setMargins(0, marginTopPx, 0, marginBottomPx)
             }
 
             logo2.layoutParams = logo2.layoutParams.apply {
-                width = Imagenes.Horizontal.LOGO_DESARROLLADORA.width.toLayoutSize()
-                height = Imagenes.Horizontal.LOGO_DESARROLLADORA.height.toLayoutSize()
+                width = ImagenesTablet.Horizontal.LOGO_DESARROLLADORA.width.toLayoutSize()
+                height = ImagenesTablet.Horizontal.LOGO_DESARROLLADORA.height.toLayoutSize()
             }
             (logo2.layoutParams as? LinearLayout.LayoutParams)?.gravity =
-                when (Imagenes.Horizontal.LOGO_DESARROLLADORA.gravity) {
+                when (ImagenesTablet.Horizontal.LOGO_DESARROLLADORA.gravity) {
                     "center_horizontal" -> Gravity.CENTER_HORIZONTAL
                     "center" -> Gravity.CENTER
                     "start" -> Gravity.START
@@ -379,7 +385,7 @@ class MainActivity : AppCompatActivity() {
                 val latitud = GPSUtils.obtenerLatitud(this)
                 val longitud = GPSUtils.obtenerLongitud(this)
                 // Añadir coordenadas GPS a la URL del fichaje
-                val url = BuildURL.SETFICHAJE
+                val url = BuildURLtablet.getSetFichaje(this)
                     .replace("cEmpCppExt=", "cEmpCppExt=${URLEncoder.encode(it.toString(), "UTF-8")}")
                     .replace("cTipFic=", "cTipFic=${URLEncoder.encode(tipo, "UTF-8")}")
                     .plus("&tGpsLat=${URLEncoder.encode(latitud.toString(), "UTF-8")}")
@@ -448,7 +454,7 @@ class MainActivity : AppCompatActivity() {
                     // Guardar respuesta en base de datos si corresponde
                     val dbHelper = FichajesSQLiteHelper(this@MainActivity)
                     val jsonResponse = JSONObject(responseText)
-                    val codigoEmpleado = url.substringAfter("cEmpCppExt=").substringBefore("&")
+                    val codigoEmpleado = url.substringAfter("cEmpCppExt=").substringBefore("&").toString()
                     dbHelper.insertarFichajeDesdeJson(jsonResponse, codigoEmpleado)
                     Log.d("SQLite", "Registro insertado: xFichaje=${jsonResponse.optString("xFichaje")}, cTipFic=${jsonResponse.optString("cTipFic")}")
 
@@ -563,28 +569,28 @@ class MainActivity : AppCompatActivity() {
 
         if (usarVertical) {
             logo1.layoutParams = logo1.layoutParams.apply {
-                width = Imagenes.Vertical.LOGO_CLIENTE.width.toLayoutSize()
-                height = Imagenes.Vertical.LOGO_CLIENTE.height.toLayoutSize()
+                width = ImagenesTablet.Vertical.LOGO_CLIENTE.width.toLayoutSize()
+                height = ImagenesTablet.Vertical.LOGO_CLIENTE.height.toLayoutSize()
             }
             (logo1.layoutParams as? LinearLayout.LayoutParams)?.apply {
-                gravity = when (Imagenes.Vertical.LOGO_CLIENTE.gravity) {
+                gravity = when (ImagenesTablet.Vertical.LOGO_CLIENTE.gravity) {
                     "center_horizontal" -> Gravity.CENTER_HORIZONTAL
                     "center" -> Gravity.CENTER
                     "start" -> Gravity.START
                     "end" -> Gravity.END
                     else -> Gravity.NO_GRAVITY
                 }
-                val marginTopPx = Imagenes.Vertical.LOGO_CLIENTE.marginTop.toPixelSize()
-                val marginBottomPx = Imagenes.Vertical.LOGO_CLIENTE.marginBottom.toPixelSize()
+                val marginTopPx = ImagenesTablet.Vertical.LOGO_CLIENTE.marginTop.toPixelSize()
+                val marginBottomPx = ImagenesTablet.Vertical.LOGO_CLIENTE.marginBottom.toPixelSize()
                 setMargins(0, marginTopPx, 0, marginBottomPx)
             }
 
             logo2.layoutParams = logo2.layoutParams.apply {
-                width = Imagenes.Vertical.LOGO_DESARROLLADORA.width.toLayoutSize()
-                height = Imagenes.Vertical.LOGO_DESARROLLADORA.height.toLayoutSize()
+                width = ImagenesTablet.Vertical.LOGO_DESARROLLADORA.width.toLayoutSize()
+                height = ImagenesTablet.Vertical.LOGO_DESARROLLADORA.height.toLayoutSize()
             }
             (logo2.layoutParams as? LinearLayout.LayoutParams)?.gravity =
-                when (Imagenes.Vertical.LOGO_DESARROLLADORA.gravity) {
+                when (ImagenesTablet.Vertical.LOGO_DESARROLLADORA.gravity) {
                     "center_horizontal" -> Gravity.CENTER_HORIZONTAL
                     "center" -> Gravity.CENTER
                     "start" -> Gravity.START
@@ -593,28 +599,28 @@ class MainActivity : AppCompatActivity() {
                 }
         } else {
             logo1.layoutParams = logo1.layoutParams.apply {
-                width = Imagenes.Horizontal.LOGO_CLIENTE.width.toLayoutSize()
-                height = Imagenes.Horizontal.LOGO_CLIENTE.height.toLayoutSize()
+                width = ImagenesTablet.Horizontal.LOGO_CLIENTE.width.toLayoutSize()
+                height = ImagenesTablet.Horizontal.LOGO_CLIENTE.height.toLayoutSize()
             }
             (logo1.layoutParams as? LinearLayout.LayoutParams)?.apply {
-                gravity = when (Imagenes.Horizontal.LOGO_CLIENTE.gravity) {
+                gravity = when (ImagenesTablet.Horizontal.LOGO_CLIENTE.gravity) {
                     "center_horizontal" -> Gravity.CENTER_HORIZONTAL
                     "center" -> Gravity.CENTER
                     "start" -> Gravity.START
                     "end" -> Gravity.END
                     else -> Gravity.NO_GRAVITY
                 }
-                val marginTopPx = Imagenes.Horizontal.LOGO_CLIENTE.marginTop.toPixelSize()
-                val marginBottomPx = Imagenes.Horizontal.LOGO_CLIENTE.marginBottom.toPixelSize()
+                val marginTopPx = ImagenesTablet.Horizontal.LOGO_CLIENTE.marginTop.toPixelSize()
+                val marginBottomPx = ImagenesTablet.Horizontal.LOGO_CLIENTE.marginBottom.toPixelSize()
                 setMargins(0, marginTopPx, 0, marginBottomPx)
             }
 
             logo2.layoutParams = logo2.layoutParams.apply {
-                width = Imagenes.Horizontal.LOGO_DESARROLLADORA.width.toLayoutSize()
-                height = Imagenes.Horizontal.LOGO_DESARROLLADORA.height.toLayoutSize()
+                width = ImagenesTablet.Horizontal.LOGO_DESARROLLADORA.width.toLayoutSize()
+                height = ImagenesTablet.Horizontal.LOGO_DESARROLLADORA.height.toLayoutSize()
             }
             (logo2.layoutParams as? LinearLayout.LayoutParams)?.gravity =
-                when (Imagenes.Horizontal.LOGO_DESARROLLADORA.gravity) {
+                when (ImagenesTablet.Horizontal.LOGO_DESARROLLADORA.gravity) {
                     "center_horizontal" -> Gravity.CENTER_HORIZONTAL
                     "center" -> Gravity.CENTER
                     "start" -> Gravity.START
@@ -652,6 +658,7 @@ fun mostrarContenidoDeBaseDeDatos(context: Context) {
 }
 
 
+
 // Modelo de datos para interpretar la respuesta del servidor al fichar
 data class RespuestaFichaje(
     val code: Int,
@@ -662,4 +669,3 @@ data class RespuestaFichaje(
     val hFichaje: String?
 )
 
- */

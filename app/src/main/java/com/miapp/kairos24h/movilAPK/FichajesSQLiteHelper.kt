@@ -1,4 +1,4 @@
-package com.example.relojfichajeskairos24h
+package com.miapp.kairos24h.dataBase
 
 import android.content.ContentValues
 import android.content.Context
@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteOpenHelper
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import com.miapp.kairos24h.enlaces_internos.BuildURLtablet
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
@@ -15,6 +16,9 @@ import okhttp3.Response
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 // Clase SQLiteHelper para gestionar la base de datos local fichajes_pendientes
 class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(context, "fichajes_pendientes", null, 2) {
@@ -101,7 +105,7 @@ fun iniciarReintentosAutomaticos(context: Context) {
                 Log.d("ReintentoFichaje", "Preparando reenvío de fichaje con ID=$id")
 
                 // Construye la URL de fichaje usando la plantilla y los datos del registro
-                val url = BuildURL.HOST + BuildURL.ACTION +
+                val url = BuildURLtablet.getSetFichaje(context) +
                         "&cEmpCppExt=$cEmpCppExt&xFichaje=$xFichaje&cTipFic=$cTipFic&fFichaje=$fFichaje&hFichaje=$hFichaje"
 
                 Log.d("ReintentoFichaje", "Invocando URL: $url")
@@ -180,7 +184,7 @@ private fun exportarTablaAArchivoExterno(context: Context): File? {
         cursor.close()
 
         val exportDir = context.getExternalFilesDir(null)
-        val fecha = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+        val fecha = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
         val archivo = File(exportDir, "${tabla}_$fecha.csv")
         archivo.writeText(registros.toString())
 

@@ -49,5 +49,27 @@
             android:screenOrientation="portrait"
             tools:ignore="DiscouragedApi,LockedOrientation,LockedOrientationActivity" />
 
+
+        <receiver
+            android:name="com.miapp.kairos24h.deviceOwner.BootBroadcastReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name="com.miapp.kairos24h.deviceOwner.MyDeviceAdminReceiver"
+            android:permission="android.permission.BIND_DEVICE_ADMIN"
+            android:exported="true">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin_receiver" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+            </intent-filter>
+        </receiver>
+
     </application>
 </manifest>
