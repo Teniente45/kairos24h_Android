@@ -140,7 +140,16 @@ class MainActivity : ComponentActivity() {
                                                             xEmpleado.tLogo,
                                                             xEmpleado.lTipo
                                                         )
-                                                        navigateToFichar(xEmpleado.usuario, xEmpleado.password)
+                                                        val lTipo = xEmpleado.lTipo.uppercase()
+                                                        android.util.Log.d("Redireccion", "Valor de lTipo: $lTipo")
+                                                        if (lTipo == "TABLET") {
+                                                            android.util.Log.d("Redireccion", "Iniciando MainActivity (modo TABLET)")
+                                                            val intent = Intent(this@MainActivity, com.miapp.kairos24h.tabletAPK.MainActivity::class.java)
+                                                            startActivity(intent)
+                                                        } else {
+                                                            android.util.Log.d("Redireccion", "Iniciando Fichar (modo APK)")
+                                                            navigateToFichar(xEmpleado.usuario, xEmpleado.password)
+                                                        }
                                                     } else {
                                                         // Si no se autentica correctamente, se muestra un mensaje de error al usuario
                                                         Toast.makeText(

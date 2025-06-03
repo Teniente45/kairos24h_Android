@@ -201,8 +201,12 @@
  * Log.e("DB_DUMP")
  *
  *
+ * *******************************************
+ * *********** paginaLogin.kt ***************
+ * *******************************************
  *
- *
+ *// Log que informa que de la redireccion que toma la app una vez el usuario ha introducido las credenciales
+ * Log.d("Redireccion")
  *
  *
 */
@@ -211,4 +215,3 @@
  
  
  
- */
