@@ -149,7 +149,7 @@ class MainActivity : ComponentActivity() {
                                                             xEmpleado.tLogo,
                                                             xEmpleado.lTipo
                                                         )
-                                                        val lTipo = "TABLET" // Valor fijo para forzar modo TABLET
+                                                        val lTipo = xEmpleado.lTipo.uppercase()
                                                         android.util.Log.d("Redireccion", "Valor de lTipo: $lTipo")
                                                         if (lTipo == "TABLET") {
                                                             android.util.Log.d("Redireccion", "Iniciando MainActivity (modo TABLET)")
