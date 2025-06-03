@@ -93,8 +93,17 @@ class MainActivity : ComponentActivity() {
         val (storedUser, storedPassword, _) = AuthManager.getUserCredentials(this)
 
         if (storedUser.isNotEmpty() && storedPassword.isNotEmpty()) {
-            // Si existen credenciales, redirigimos a Fichar directamente
-            navigateToFichar(storedUser, storedPassword)
+            // Si existen credenciales, redirigimos según lTipo (forzado a TABLET)
+            val lTipo = "TABLET" // Valor fijo para forzar modo TABLET
+            android.util.Log.d("Redireccion", "Valor de lTipo: $lTipo")
+            if (lTipo == "TABLET") {
+                android.util.Log.d("Redireccion", "Iniciando MainActivity (modo TABLET)")
+                val intent = Intent(this@MainActivity, com.miapp.kairos24h.tabletAPK.MainActivity::class.java)
+                startActivity(intent)
+            } else {
+                android.util.Log.d("Redireccion", "Iniciando Fichar (modo APK)")
+                navigateToFichar(storedUser, storedPassword)
+            }
         } else {
             // Si no existen credenciales, mostramos la pantalla de inicio de sesión
             setContent {
@@ -140,7 +149,7 @@ class MainActivity : ComponentActivity() {
                                                             xEmpleado.tLogo,
                                                             xEmpleado.lTipo
                                                         )
-                                                        val lTipo = "TABLET"
+                                                        val lTipo = "TABLET" // Valor fijo para forzar modo TABLET
                                                         android.util.Log.d("Redireccion", "Valor de lTipo: $lTipo")
                                                         if (lTipo == "TABLET") {
                                                             android.util.Log.d("Redireccion", "Iniciando MainActivity (modo TABLET)")
