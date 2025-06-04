@@ -206,6 +206,24 @@ object ImagenesTablet {
         val marginBottom: String = "0sp"
     )
 
+    @Composable
+    fun LogoClienteRemoto(modifier: Modifier = Modifier) {
+        val context = LocalContext.current
+        val logoUrl = ImagenesMovil.getLogoClienteXPrograma(context)
+        val painter = rememberAsyncImagePainter(
+            model = logoUrl,
+            contentScale = ContentScale.Fit,
+            placeholder = painterResource(id = R.drawable.kairos24h),
+            error = painterResource(id = R.drawable.kairos24h)
+        )
+
+        Image(
+            painter = painter,
+            contentDescription = "Logo del cliente",
+            modifier = modifier
+        )
+    }
+
     object Vertical {
         val LOGO_CLIENTE = PropiedadesImagen(
             width = "match_parent",
