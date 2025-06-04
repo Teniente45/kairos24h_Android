@@ -34,8 +34,8 @@ object ImagenesMovil {
     @DrawableRes
     val logoCliente = R.drawable.kairos24h
     fun getLogoClienteXPrograma(context: Context): String? {
-        val tLogo = AuthManager.getUserCredentials(context).tLogo
-        return if (tLogo.isNotBlank()) tLogo else null
+        val cTipEmp = AuthManager.getUserCredentials(context).cTipEmp
+        return if (cTipEmp.isNotBlank()) cTipEmp else null
     }
     val lodoDesarrolladora = R.drawable.logo_i3data
 
@@ -161,10 +161,10 @@ object BuildURLtablet {
 }
 
 object ImagenesTablet {
-    // Permite reutilizar el valor de tLogo desde cualquier otro archivo
+    // Permite reutilizar el valor de cTipEmp desde cualquier otro archivo
     fun getLogoCliente(context: Context): String? {
-        val tLogo = AuthManager.getUserCredentials(context).tLogo
-        return if (tLogo.isNotBlank()) tLogo else null
+        val cTipEmp = AuthManager.getUserCredentials(context).cTipEmp
+        return if (cTipEmp.isNotBlank()) cTipEmp else null
     }
     // Nombres de recursos en drawable
     const val LOGO_DESARROLLADORA = "logo_desarrolladora"
@@ -206,9 +206,9 @@ object ImagenesTablet {
     }
 
     fun cargarLogoClienteEnImageView(context: Context, imageView: ImageView) {
-        val tLogo = getLogoCliente(context)
-        if (!tLogo.isNullOrBlank()) {
-            imageView.load(tLogo) {
+        val cTipEmp = getLogoCliente(context)
+        if (!cTipEmp.isNullOrBlank()) {
+            imageView.load(cTipEmp) {
                 placeholder(R.drawable.kairos24h)
                 error(R.drawable.kairos24h)
             }

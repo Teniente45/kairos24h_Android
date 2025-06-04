@@ -93,10 +93,10 @@ class MainActivity : ComponentActivity() {
         val (storedUser, storedPassword, _) = AuthManager.getUserCredentials(this)
 
         if (storedUser.isNotEmpty() && storedPassword.isNotEmpty()) {
-            // Si existen credenciales, redirigimos según lTipo (forzado a TABLET)
-            val lTipo = "TABLET" // Valor fijo para forzar modo TABLET
-            android.util.Log.d("Redireccion", "Valor de lTipo: $lTipo")
-            if (lTipo == "TABLET") {
+            // Si existen credenciales, redirigimos según cTipEmp (forzado a TABLET)
+            val cTipEmp = "TABLET" // Valor fijo para forzar modo TABLET
+            android.util.Log.d("Redireccion", "Valor de cTipEmp: $cTipEmp")
+            if (cTipEmp == "TABLET") {
                 android.util.Log.d("Redireccion", "Iniciando MainActivity (modo TABLET)")
                 val intent = Intent(this@MainActivity, com.miapp.kairos24h.tabletAPK.MainActivity::class.java)
                 startActivity(intent)
@@ -134,7 +134,7 @@ class MainActivity : ComponentActivity() {
                                                 runOnUiThread {
                                                     // Si la autenticación es exitosa y se obtiene xEmpleado, se guardan las credenciales y se navega a la pantalla de fichaje
                                                     if (success && xEmpleado != null) {
-                                                        // Añadimos lTipo a la llamada a saveUserCredentials
+                                                        // Añadimos cTipEmp a la llamada a saveUserCredentials
                                                         AuthManager.saveUserCredentials(
                                                             this@MainActivity,
                                                             xEmpleado.usuario,
@@ -147,11 +147,11 @@ class MainActivity : ComponentActivity() {
                                                             xEmpleado.sEmpleado,
                                                             xEmpleado.tUrlCPP,
                                                             xEmpleado.tLogo,
-                                                            xEmpleado.lTipo
+                                                            xEmpleado.cTipEmp
                                                         )
-                                                        val lTipo = xEmpleado.lTipo.uppercase()
-                                                        android.util.Log.d("Redireccion", "Valor de lTipo: $lTipo")
-                                                        if (lTipo == "TABLET") {
+                                                        val cTipEmp = xEmpleado.cTipEmp.uppercase()
+                                                        android.util.Log.d("Redireccion", "Valor de cTipEmp: $cTipEmp")
+                                                        if (cTipEmp == "TABLET") {
                                                             android.util.Log.d("Redireccion", "Iniciando MainActivity (modo TABLET)")
                                                             val intent = Intent(this@MainActivity, com.miapp.kairos24h.tabletAPK.MainActivity::class.java)
                                                             startActivity(intent)
@@ -304,7 +304,8 @@ fun DisplayLogo(
                         usuario.value = newValue.filter { it != ' ' } // Elimina espacios en blanco
                     },
                     label = { Text("Usuario") },
-                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+                    textStyle = MaterialTheme.typography.bodyLarge
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -316,7 +317,8 @@ fun DisplayLogo(
                     },
                     label = { Text("Contraseña") },
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done)
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                    textStyle = MaterialTheme.typography.bodyLarge
                 )
 
                 // Contenedor centralizado para las opciones
@@ -340,7 +342,7 @@ fun DisplayLogo(
                         )
                         Text(
                             text = "Mostrar contraseña",
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.bodyLarge
                         )
                     }
 
@@ -364,7 +366,7 @@ fun DisplayLogo(
                         )
                         Text(
                             text = "Acepto que la app acceda a la ubicación donde ficho",
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.bodyLarge
                         )
                     }
                 }
@@ -374,7 +376,7 @@ fun DisplayLogo(
                     Text(
                         text = errorMessage,
                         color = Color.Red,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
@@ -396,7 +398,7 @@ fun DisplayLogo(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = usuario.value.isNotEmpty() && password.value.isNotEmpty() && isLocationChecked
                 ) {
-                    Text("Acceso", color = Color.White)
+                    Text("Acceso", color = Color.White, style = MaterialTheme.typography.bodyLarge)
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -406,7 +408,8 @@ fun DisplayLogo(
                     text = "¿Olvidaste la contraseña?",
                     color = Color(0xFF7599B6),
                     textDecoration = TextDecoration.Underline,
-                    modifier = Modifier.clickable { onForgotPassword() }
+                    modifier = Modifier.clickable { onForgotPassword() },
+                    style = MaterialTheme.typography.bodyLarge
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -418,7 +421,7 @@ fun DisplayLogo(
                         Les recordamos que la Empresa podrá auditar los medios técnicos que pone a disposición del Trabajador para el desempeño de sus funciones.
                     """.trimIndent(),
                     color = Color(0xFF447094),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 25.dp)
