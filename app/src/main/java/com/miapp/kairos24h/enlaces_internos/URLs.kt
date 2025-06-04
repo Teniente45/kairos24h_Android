@@ -34,8 +34,8 @@ object ImagenesMovil {
     @DrawableRes
     val logoCliente = R.drawable.kairos24h
     fun getLogoClienteXPrograma(context: Context): String? {
-        val cTipEmp = AuthManager.getUserCredentials(context).cTipEmp
-        return if (cTipEmp.isNotBlank()) cTipEmp else null
+        val tLogo = AuthManager.getUserCredentials(context).tLogo
+        return if (!tLogo.isNullOrBlank() && tLogo != "null") tLogo else null
     }
     val lodoDesarrolladora = R.drawable.logo_i3data
 
@@ -64,7 +64,7 @@ object ImagenesMovil {
         val context = LocalContext.current
         val logoUrl = getLogoClienteXPrograma(context)
         val painter = rememberAsyncImagePainter(
-            model = logoUrl,
+            model = logoUrl ?: R.drawable.kairos24h,
             contentScale = ContentScale.Fit,
             placeholder = painterResource(id = R.drawable.kairos24h),
             error = painterResource(id = R.drawable.kairos24h)
@@ -96,7 +96,9 @@ object BuildURLmovil {
     // Remove HOST constant and use function instead
     fun getHost(context: Context): String {
         val tUrlCPP = AuthManager.getUserCredentials(context).tUrlCPP
-        return if (tUrlCPP.isNotBlank() && tUrlCPP != "null") tUrlCPP else WebViewURL.HOST
+        val hostFinal = if (!tUrlCPP.isNullOrBlank() && tUrlCPP != "null") tUrlCPP else WebViewURL.HOST
+        android.util.Log.d("BuildURLmovil", "Host seleccionado: $hostFinal")
+        return hostFinal
     }
     const val ENTRY_POINT = "/index.php"
     fun getURLUsada(context: Context): String = getHost(context) + ENTRY_POINT + "?"
@@ -146,7 +148,9 @@ object BuildURLmovil {
 object BuildURLtablet {
     fun getHost(context: Context): String {
         val tUrlCPP = AuthManager.getUserCredentials(context).tUrlCPP
-        return if (tUrlCPP.isNotBlank() && tUrlCPP != "null") tUrlCPP else WebViewURL.HOST
+        val hostFinal = if (!tUrlCPP.isNullOrBlank() && tUrlCPP != "null") tUrlCPP else WebViewURL.HOST
+        android.util.Log.d("BuildURLtablet", "Host seleccionado: $hostFinal")
+        return hostFinal
     }
     const val ACTION = "index.php?r=citaRedWeb/crearFichajeExterno"
     const val PARAMS = "&xEntidad=1006" +
@@ -161,10 +165,10 @@ object BuildURLtablet {
 }
 
 object ImagenesTablet {
-    // Permite reutilizar el valor de cTipEmp desde cualquier otro archivo
+    // Permite reutilizar el valor de tLogo desde cualquier otro archivo
     fun getLogoCliente(context: Context): String? {
-        val cTipEmp = AuthManager.getUserCredentials(context).cTipEmp
-        return if (cTipEmp.isNotBlank()) cTipEmp else null
+        val tLogo = AuthManager.getUserCredentials(context).tLogo
+        return if (tLogo.isNotBlank()) tLogo else null
     }
     // Nombres de recursos en drawable
     const val LOGO_DESARROLLADORA = "logo_desarrolladora"
@@ -206,12 +210,10 @@ object ImagenesTablet {
     }
 
     fun cargarLogoClienteEnImageView(context: Context, imageView: ImageView) {
-        val cTipEmp = getLogoCliente(context)
-        if (!cTipEmp.isNullOrBlank()) {
-            imageView.load(cTipEmp) {
-                placeholder(R.drawable.kairos24h)
-                error(R.drawable.kairos24h)
-            }
+        val tLogo = getLogoCliente(context)
+        imageView.load(if (!tLogo.isNullOrBlank() && tLogo != "null") tLogo else R.drawable.kairos24h) {
+            placeholder(R.drawable.kairos24h)
+            error(R.drawable.kairos24h)
         }
     }
 }
