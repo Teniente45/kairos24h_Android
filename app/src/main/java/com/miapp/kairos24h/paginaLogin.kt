@@ -80,14 +80,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Verificamos si es el primer arranque
-        val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val isFirstRun = prefs.getBoolean("first_run", true)
-        if (isFirstRun) {
-            // Limpiamos completamente todas las SharedPreferences usando AuthManager
-            AuthManager.clearAllUserData(this)
-            prefs.edit { putBoolean("first_run", false) }
-        }
 
         // Obtenemos las credenciales almacenadas (usuario, password y xEmpleado)
         val (storedUser, storedPassword, _) = AuthManager.getUserCredentials(this)
@@ -106,8 +98,7 @@ class MainActivity : ComponentActivity() {
                 navigateToFichar(storedUser, storedPassword)
             }
         } else {
-            AuthManager.clearAllUserData(this)
-            android.util.Log.d("SesionDebug", "Credenciales vacías: sesión eliminada")
+            android.util.Log.d("SesionDebug", "Credenciales vacías: se mostrará la pantalla de login")
             // Mostrar pantalla de inicio de sesión
             setContent {
                 MaterialTheme {
@@ -125,9 +116,7 @@ class MainActivity : ComponentActivity() {
                                         return@DisplayLogo
                                     }
 
-                                    // Si el usuario y la contraseña no están vacíos, iniciamos el proceso de autenticación
                                     if (usuario.isNotEmpty() && password.isNotEmpty()) {
-                                        // Ejecuta la autenticación en un hilo de fondo usando coroutine
                                         lifecycleScope.launch(Dispatchers.IO) {
                                             try {
                                                 val (success, xEmpleado) = AuthManager.authenticateUser(
@@ -135,9 +124,7 @@ class MainActivity : ComponentActivity() {
                                                     password
                                                 )
                                                 runOnUiThread {
-                                                    // Si la autenticación es exitosa y se obtiene xEmpleado, se guardan las credenciales y se navega a la pantalla de fichaje
                                                     if (success && xEmpleado != null) {
-                                                        // Añadimos cTipEmp a la llamada a saveUserCredentials
                                                         AuthManager.saveUserCredentials(
                                                             this@MainActivity,
                                                             xEmpleado.usuario,
@@ -163,7 +150,6 @@ class MainActivity : ComponentActivity() {
                                                             navigateToFichar(xEmpleado.usuario, xEmpleado.password)
                                                         }
                                                     } else {
-                                                        // Si no se autentica correctamente, se muestra un mensaje de error al usuario
                                                         Toast.makeText(
                                                             this@MainActivity,
                                                             "Usuario o contraseña incorrectos",
@@ -172,7 +158,6 @@ class MainActivity : ComponentActivity() {
                                                     }
                                                 }
                                             } catch (e: Exception) {
-                                                // Captura errores de red u otros problemas de autenticación y los muestra como un Toast
                                                 runOnUiThread {
                                                     Toast.makeText(
                                                         this@MainActivity,
@@ -183,7 +168,6 @@ class MainActivity : ComponentActivity() {
                                             }
                                         }
                                     } else {
-                                        // Si los campos de usuario o contraseña están vacíos, se muestra un aviso al usuario
                                         Toast.makeText(
                                             this@MainActivity,
                                             "Por favor, completa ambos campos",
@@ -198,7 +182,6 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
-                        // La navegación a Fichar se realiza únicamente mediante navigateToFichar(usuario, password)
                     }
                 }
             }

@@ -28,7 +28,6 @@
             android:exported="true"
             android:theme="@style/Theme.Kairos24h"
             android:screenOrientation="fullSensor"
-            android:launchMode="singleTask"
             android:immersive="true"
             android:lockTaskMode="if_whitelisted"
             android:excludeFromRecents="true"
