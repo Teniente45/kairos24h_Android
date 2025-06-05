@@ -300,8 +300,24 @@ class MainActivityTablet : AppCompatActivity() {
                     e.printStackTrace()
                 }
 
+                // Borrar SharedPreferences manualmente
+                getSharedPreferences("credenciales_usuario", Context.MODE_PRIVATE)
+                    .edit()
+                    .clear()
+                    .apply()
+
                 // Redirigir a MainActivity
-                val intent = Intent(this, MainActivity::class.java)
+                stopLockTask()
+
+                try {
+                    val packageName = applicationContext.packageName
+                    val runtime = Runtime.getRuntime()
+                    runtime.exec("pm clear $packageName")
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+
+                val intent = Intent(this@MainActivityTablet, com.miapp.kairos24h.MainActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 startActivity(intent)
                 finish()
