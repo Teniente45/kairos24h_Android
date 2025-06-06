@@ -1,4 +1,4 @@
-package com.example.relojfichajeskairos24h
+package com.miapp.kairos24h.dataBase
 
 import android.content.ContentValues
 import android.content.Context
@@ -16,6 +16,9 @@ import okhttp3.Response
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 // Clase SQLiteHelper para gestionar la base de datos local fichajes_pendientes
 class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(context, "fichajes_pendientes", null, 2) {
@@ -181,7 +184,7 @@ private fun exportarTablaAArchivoExterno(context: Context): File? {
         cursor.close()
 
         val exportDir = context.getExternalFilesDir(null)
-        val fecha = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+        val fecha = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
         val archivo = File(exportDir, "${tabla}_$fecha.csv")
         archivo.writeText(registros.toString())
 

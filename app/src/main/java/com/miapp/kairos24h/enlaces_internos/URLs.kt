@@ -25,7 +25,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import coil.compose.rememberAsyncImagePainter
 import androidx.compose.ui.res.painterResource
-import com.miapp.kairos24h.enlaces_internos.ImagenesMovil.getLogoClienteXPrograma
 import com.miapp.kairos24h.sesionesYSeguridad.AuthManager
 
 // Este objeto centraliza el acceso a los recursos gráficos usados en la aplicación
@@ -35,7 +34,7 @@ object ImagenesMovil {
     val logoCliente = R.drawable.kairos24h
     fun getLogoClienteXPrograma(context: Context): String? {
         val tLogo = AuthManager.getUserCredentials(context).tLogo
-        return if (!tLogo.isNullOrBlank() && tLogo != "null") tLogo else null
+        return if (tLogo.isNotBlank() && tLogo != "null") tLogo else null
     }
     val lodoDesarrolladora = R.drawable.logo_i3data
 
@@ -96,7 +95,7 @@ object BuildURLmovil {
     // Remove HOST constant and use function instead
     fun getHost(context: Context): String {
         val tUrlCPP = AuthManager.getUserCredentials(context).tUrlCPP
-        val hostFinal = if (!tUrlCPP.isNullOrBlank() && tUrlCPP != "null") tUrlCPP else WebViewURL.HOST
+        val hostFinal = if (tUrlCPP.isNotBlank() && tUrlCPP != "null") tUrlCPP else WebViewURL.HOST
         android.util.Log.d("BuildURLmovil", "Host seleccionado: $hostFinal")
         return hostFinal
     }
@@ -167,7 +166,7 @@ object BuildURLmovil {
 object BuildURLtablet {
     fun getHost(context: Context): String {
         val tUrlCPP = AuthManager.getUserCredentials(context).tUrlCPP
-        val hostFinal = if (!tUrlCPP.isNullOrBlank() && tUrlCPP != "null") tUrlCPP else WebViewURL.HOST
+        val hostFinal = if (tUrlCPP.isNotBlank() && tUrlCPP != "null") tUrlCPP else WebViewURL.HOST
         android.util.Log.d("BuildURLtablet", "Host seleccionado: $hostFinal")
         return hostFinal
     }
@@ -205,24 +204,6 @@ object ImagenesTablet {
         val marginTop: String = "0sp",
         val marginBottom: String = "0sp"
     )
-
-    @Composable
-    fun LogoClienteRemoto(modifier: Modifier = Modifier) {
-        val context = LocalContext.current
-        val logoUrl = ImagenesMovil.getLogoClienteXPrograma(context)
-        val painter = rememberAsyncImagePainter(
-            model = logoUrl,
-            contentScale = ContentScale.Fit,
-            placeholder = painterResource(id = R.drawable.kairos24h),
-            error = painterResource(id = R.drawable.kairos24h)
-        )
-
-        Image(
-            painter = painter,
-            contentDescription = "Logo del cliente",
-            modifier = modifier
-        )
-    }
 
     object Vertical {
         val LOGO_CLIENTE = PropiedadesImagen(

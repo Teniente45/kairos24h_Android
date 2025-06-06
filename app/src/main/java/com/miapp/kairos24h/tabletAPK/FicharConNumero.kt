@@ -31,10 +31,9 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.toColorInt
-import com.example.relojfichajeskairos24h.FichajesSQLiteHelper
-import com.example.relojfichajeskairos24h.iniciarReintentosAutomaticos
+import com.miapp.kairos24h.dataBase.FichajesSQLiteHelper
+import com.miapp.kairos24h.dataBase.iniciarReintentosAutomaticos
 import com.google.gson.Gson
-import com.miapp.kairos24h.MainActivity
 import com.miapp.kairos24h.enlaces_internos.BuildURLtablet
 import com.miapp.kairos24h.enlaces_internos.ImagenesTablet
 import com.miapp.kairos24h.R

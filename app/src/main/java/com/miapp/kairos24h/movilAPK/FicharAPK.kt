@@ -109,8 +109,6 @@ class Fichar : ComponentActivity() {
             navigateToLogin()
             return
         }
-        val usuario = intent.getStringExtra("usuario") ?: storedUser
-        val password = intent.getStringExtra("password") ?: storedPassword
 
         // Creamos el FrameLayout raíz
         val root = FrameLayout(this).apply { id = View.generateViewId() }
