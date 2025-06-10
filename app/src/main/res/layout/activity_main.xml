@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -11,12 +12,15 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Introduce tu código"
-        android:inputType="text"/>
+        android:inputType="text"
+        android:minHeight="48dp"
+        tools:ignore="Autofill,HardcodedText" />
 
     <Button
         android:id="@+id/comprobarButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Comprobar Código"/>
+        android:text="Comprobar Código"
+        tools:ignore="HardcodedText" />
 
 </LinearLayout>

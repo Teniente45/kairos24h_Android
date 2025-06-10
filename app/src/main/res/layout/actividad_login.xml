@@ -11,7 +11,8 @@
         android:layout_height="wrap_content"
         android:autofillHints=""
         android:hint="Usuario"
-        tools:ignore="HardcodedText" />
+        android:minHeight="48dp"
+        tools:ignore="HardcodedText,TextFields" />
 
     <EditText
         android:id="@+id/password"
@@ -20,6 +21,7 @@
         android:autofillHints=""
         android:hint="Contraseña"
         android:inputType="textPassword"
+        android:minHeight="48dp"
         tools:ignore="HardcodedText" />
 
     <Button
