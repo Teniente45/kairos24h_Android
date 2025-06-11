@@ -461,48 +461,52 @@ class MainActivityTablet : AppCompatActivity() {
                     val responseText = stream.bufferedReader().use { it.readText() }
                     Log.d("FichajeApp", "Respuesta del servidor: $responseText")
 
-                    // Guardar respuesta en base de datos si corresponde
+                    // ⚠️ ATENCIÓN: Esta sección es responsable de insertar los datos del fichaje en la base de datos local.
+                    // Verifica que 'insertarFichajeDesdeJson' esté correctamente adaptada para manejar la estructura JSON con campo "data".
+                    // También considera si se requiere insertar en l_pendientes cuando el fichaje no puede sincronizarse inmediatamente.
+                    // ⚠️ ADVERTENCIA: Revisar esta función para asegurar el correcto guardado en la base de datos.
+                    // Actualmente está comentada para evitar conflictos mientras se revisa el formato del JSON.
+                    /*
                     val dbHelper = FichajesSQLiteHelper(this@MainActivityTablet)
-                    val jsonResponse = JSONObject(responseText)
+                    val jsonResponse = JSONObject(responseText).optJSONObject("data") ?: JSONObject()
                     val codigoEmpleado = url.substringAfter("cEmpCppExt=").substringBefore("&").toString()
                     dbHelper.insertarFichajeDesdeJson(jsonResponse, codigoEmpleado)
                     Log.d("SQLite", "Registro insertado: xFichaje=${jsonResponse.optString("xFichaje")}, cTipFic=${jsonResponse.optString("cTipFic")}")
+                    */
 
-                    val respuesta = Gson().fromJson(responseText, RespuestaFichaje::class.java)
+                    val cleanResponseText = responseText.trim().removePrefix("\uFEFF")
+                    val respuesta = Gson().fromJson(cleanResponseText, RespuestaFichajeConData::class.java)
 
                     runOnUiThread {
-                        // Procesar la respuesta y mostrar mensaje visual
                         val codigoEnviado = url.substringAfter("cEmpCppExt=").substringBefore("&")
-                        val esFichajeCorrecto = respuesta.message.isNullOrBlank()
-                        val tipo = respuesta.cTipFic?.uppercase()
+                        if (respuesta?.data != null) {
+                            val tipo = respuesta.data.cTipFic?.uppercase()
+                            val sEmpleado = respuesta.data.sEmpleado ?: "Empleado"
+                            val fHora = respuesta.data.fFichaje?.substringAfter(" ") ?: "?"
 
-                        // Extraer el nombre del empleado para incluirlo en el mensaje de confirmación
-                        val sEmpleado = jsonResponse.optString("sEmpleado", "Empleado")
-                        val mensajeVisual = if (esFichajeCorrecto)
-                            "($codigoEnviado) $sEmpleado $tipo a las ${respuesta.hFichaje}h"
-                        else
-                            "($codigoEnviado) Fichaje Incorrecto"
+                            val mensajeVisual = if (respuesta.code == "1")
+                                "($codigoEnviado) $sEmpleado $tipo a las $fHora"
+                            else
+                                "($codigoEnviado) Fichaje Incorrecto"
 
-                        val nombreAudio = when {
-                            !esFichajeCorrecto -> "codigo_incorrecto"
-                            tipo == "ENTRADA" -> "fichaje_de_entrada"
-                            tipo == "SALIDA" -> "fichaje_de_salida_correcto"
-                            else -> null
+                            mostrarMensajeDinamico(mensajeVisual, COLOR_CORRECTO, tipo?.lowercase())
+                        } else {
+                            mostrarMensajeDinamico("($codigoEnviado) Fichaje Incorrecto", COLOR_INCORRECTO, "no_internet")
                         }
-
-                        val color = if (esFichajeCorrecto) COLOR_CORRECTO else COLOR_INCORRECTO
-                        mostrarMensajeDinamico(mensajeVisual, color, nombreAudio)
                     }
                 }
 
                 connection.disconnect()
             } catch (e: Exception) {
+                /*
+                // ⚠️ Desactivado temporalmente para evitar mostrar mensaje de error genérico
                 e.printStackTrace()
                 runOnUiThread {
                     val codigoEnviado = url.substringAfter("cEmpCppExt=").substringBefore("&")
                     val errorMsgVisual = "($codigoEnviado) Error de conexión al fichar"
                     mostrarMensajeDinamico(errorMsgVisual, COLOR_INCORRECTO, "no_internet")
                 }
+                */
             }
         }.start()
     }
@@ -670,12 +674,16 @@ fun mostrarContenidoDeBaseDeDatos(context: Context) {
 
 
 // Modelo de datos para interpretar la respuesta del servidor al fichar
-data class RespuestaFichaje(
-    val code: Int,
+data class RespuestaFichajeConData(
+    val code: String,
     val message: String?,
-    val xFichaje: String?,
+    val data: DatosFichaje?
+)
+
+data class DatosFichaje(
+    val dEmpleado: String?,
+    val sEmpleado: String?,
     val cTipFic: String?,
-    val fFichaje: String?,
-    val hFichaje: String?
+    val fFichaje: String?
 )
 

@@ -171,7 +171,7 @@ object BuildURLtablet {
         return hostFinal
     }
 
-    const val ACTION = "index.php?r=citaRedWeb/crearFichajeExterno"
+    const val ACTION = "index.php?r=wsExterno/crearFichajeExterno"
 
     fun getParams(context: Context): String {
         val credenciales = AuthManager.getUserCredentials(context)
@@ -180,9 +180,7 @@ object BuildURLtablet {
                 "&cKiosko=TABLET1" +
                 "&cEmpCppExt=" +
                 "&cTipFic=" +
-                "&cFicOri=PUEFIC" +
-                "&tGPSLat=" +
-                "&tGPSLon="
+                "&cFicOri=PUEFIC"
     }
 
     fun getSetFichaje(context: Context): String = getHost(context) + "/" + ACTION + getParams(context)
