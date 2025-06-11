@@ -205,29 +205,23 @@ object ImagenesTablet {
 
     object Vertical {
         val LOGO_CLIENTE = PropiedadesImagen(
-            width = "match_parent",
-            height = "200dp",
+            width = "80%",
+            height = "150dp",
             gravity = "center_horizontal",
-            marginTop = "10sp",
-            marginBottom = "10sp"
         )
         val LOGO_DESARROLLADORA = PropiedadesImagen("match_parent", "wrap_content", "center_horizontal")
     }
 
     object Horizontal {
         val LOGO_CLIENTE = PropiedadesImagen(
-            width = "wrap_content",
+            width = "80%",
             height = "150dp",
             gravity = "center_horizontal",
-            marginTop = "8dp",
-            marginBottom = "8dp"
         )
         val LOGO_DESARROLLADORA = PropiedadesImagen(
-            width = "wrap_content",
-            height = "70dp",
+            width = "60%",
+            height = "60dp",
             gravity = "center_horizontal",
-            marginTop = "4dp",
-            marginBottom = "4dp"
         )
     }
 

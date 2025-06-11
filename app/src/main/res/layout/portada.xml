@@ -47,19 +47,20 @@
             <!-- Botón de Entrada - A la Izquierda -->
             <LinearLayout
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.5"
+                android:orientation="vertical"
+                android:gravity="center"
                 tools:ignore="ExtraText">
 
                 <Button
                     android:id="@+id/btn_entrada"
                     style="?android:attr/buttonBarButtonStyle"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginEnd="25dp"
+                    android:layout_height="wrap_content"
                     android:background="@drawable/round_button"
                     android:contentDescription="@string/btn_entrada"
-                    android:gravity="center"
+                    android:gravity="center_vertical|center_horizontal"
                     android:text="@string/btn_entrada"
                     android:textColor="#FAFAFA"
                     app:autoSizeMaxTextSize="60sp"
@@ -69,21 +70,27 @@
                     tools:ignore="TextContrastCheck" />
             </LinearLayout>
 
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="0.1" />
+
             <!-- Botón de Salida - A la Derecha -->
             <LinearLayout
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1">
+                android:layout_height="wrap_content"
+                android:layout_weight="0.5"
+                android:orientation="vertical"
+                android:gravity="center">
 
                 <Button
                     android:id="@+id/btn_salida"
                     style="?android:attr/buttonBarButtonStyle"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginStart="25dp"
+                    android:layout_height="wrap_content"
                     android:background="@drawable/round_button"
                     android:contentDescription="@string/btn_salida"
-                    android:gravity="center"
+                    android:gravity="center_vertical|center_horizontal"
                     android:text="@string/btn_salida"
                     android:textColor="#FAFAFA"
                     app:autoSizeMaxTextSize="60sp"
@@ -94,21 +101,19 @@
             </LinearLayout>
         </LinearLayout>
 
-        <Space
-            android:layout_width="match_parent"
-            android:layout_height="0dp" />
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:gravity="center_horizontal">
+            android:gravity="center_horizontal"
+            android:layout_marginTop="0dp">
 
-          <EditText
+            <EditText
                 android:id="@+id/campoTexto"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
+                android:layout_height="0dp"
+                android:layout_weight="0.07"
                 android:autofillHints="phone"
                 android:background="@android:drawable/editbox_background_normal"
                 android:focusable="false"
@@ -116,6 +121,7 @@
                 android:hint="@string/hint_ingrese_numeros"
                 android:importantForAccessibility="yes"
                 android:inputType="none"
+                android:minHeight="48dp"
                 android:padding="5dp"
                 android:textColor="#000000"
                 android:textSize="27sp"
@@ -123,7 +129,7 @@
                 app:autoSizeMinTextSize="12sp"
                 app:autoSizeStepGranularity="2sp"
                 app:autoSizeTextType="uniform"
-                tools:ignore="TextContrastCheck" />
+                tools:ignore="NestedWeights,TextContrastCheck,TouchTargetSizeCheck" />
 
             <TextView
                 android:id="@+id/mensajeDinamico"
