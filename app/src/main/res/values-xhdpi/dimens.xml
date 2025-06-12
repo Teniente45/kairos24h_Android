@@ -5,7 +5,7 @@
     <dimen name="buttonNumerico">38sp</dimen>
     <dimen name="layoutWidthEntradaYSalida">60dp</dimen>
     <dimen name="layoutMarginButtonsNumericos">20dp</dimen>
-    <dimen name="layoutMarginButtonsNumericosHorizontal">0dp</dimen>
+    <dimen name="layoutMarginButtonsNumericosHorizontal">10dp</dimen>
     <dimen name="layoutWidthBttNumerico">15dp</dimen>
     <dimen name="layoutHeightLogo">36dp</dimen>
 </resources>

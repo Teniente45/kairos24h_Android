@@ -206,7 +206,7 @@ object ImagenesTablet {
     object Vertical {
         val LOGO_CLIENTE = PropiedadesImagen(
             width = "80%",
-            height = "150dp",
+            height = "10%",
             gravity = "center_horizontal",
         )
         val LOGO_DESARROLLADORA = PropiedadesImagen("match_parent", "wrap_content", "center_horizontal")
@@ -215,7 +215,7 @@ object ImagenesTablet {
     object Horizontal {
         val LOGO_CLIENTE = PropiedadesImagen(
             width = "80%",
-            height = "150dp",
+            height = "10%",
             gravity = "center_horizontal",
         )
         val LOGO_DESARROLLADORA = PropiedadesImagen(
