@@ -108,13 +108,13 @@ class MainActivityTablet : AppCompatActivity() {
         } else {
             @Suppress("DEPRECATION")
             window.decorView.systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                or View.SYSTEM_UI_FLAG_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-            )
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                            or View.SYSTEM_UI_FLAG_FULLSCREEN
+                            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                            or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    )
         }
 
 
@@ -475,6 +475,15 @@ class MainActivityTablet : AppCompatActivity() {
                     */
 
                     val cleanResponseText = responseText.trim().removePrefix("\uFEFF")
+                    // --- [INICIO] VERIFICACIÓN RESPUESTA NO JSON ---
+                    if (!cleanResponseText.trim().startsWith("{")) {
+                        runOnUiThread {
+                            val codigoEnviado = url.substringAfter("cEmpCppExt=").substringBefore("&")
+                            mostrarMensajeDinamico("($codigoEnviado) Fichaje Incorrecto", COLOR_INCORRECTO, "codigo_incorrecto")
+                        }
+                        return@Thread
+                    }
+                    // --- [FIN] VERIFICACIÓN RESPUESTA NO JSON ---
                     val respuesta = Gson().fromJson(cleanResponseText, RespuestaFichajeConData::class.java)
 
                     runOnUiThread {
@@ -484,17 +493,19 @@ class MainActivityTablet : AppCompatActivity() {
                             val sEmpleado = respuesta.data.sEmpleado ?: "Empleado"
                             val fHora = respuesta.data.fFichaje?.substringAfter(" ") ?: "?"
 
-                            val mensajeVisual = if (respuesta.code == "1")
-                                "($codigoEnviado) $sEmpleado $tipo a las $fHora"
-                            else
-                                "($codigoEnviado) Fichaje Incorrecto"
-
-                            val audioNombre = when (tipo?.uppercase()) {
-                                "ENTRADA" -> "fichaje_de_entrada"
-                                "SALIDA" -> "fichaje_de_salida_correcto"
-                                else -> null
+                            // --- BLOQUE MODIFICADO PARA EVALUAR code ---
+                            if (respuesta.code == "1") {
+                                val mensajeVisual = "($codigoEnviado) $sEmpleado $tipo a las $fHora"
+                                val audioNombre = when (tipo?.uppercase()) {
+                                    "ENTRADA" -> "fichaje_de_entrada"
+                                    "SALIDA" -> "fichaje_de_salida_correcto"
+                                    else -> null
+                                }
+                                mostrarMensajeDinamico(mensajeVisual, COLOR_CORRECTO, audioNombre)
+                            } else {
+                                mostrarMensajeDinamico("($codigoEnviado) Fichaje Incorrecto", COLOR_INCORRECTO, "codigo_incorrecto")
                             }
-                            mostrarMensajeDinamico(mensajeVisual, COLOR_CORRECTO, audioNombre)
+                            // --- FIN BLOQUE MODIFICADO ---
                         } else {
                             mostrarMensajeDinamico("($codigoEnviado) Fichaje Incorrecto", COLOR_INCORRECTO, "codigo_incorrecto")
                         }
@@ -548,13 +559,13 @@ class MainActivityTablet : AppCompatActivity() {
             } else {
                 @Suppress("DEPRECATION")
                 window.decorView.systemUiVisibility = (
-                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                    or View.SYSTEM_UI_FLAG_FULLSCREEN
-                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                )
+                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                                or View.SYSTEM_UI_FLAG_FULLSCREEN
+                                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        )
             }
         }
     }
@@ -691,4 +702,5 @@ data class DatosFichaje(
     val cTipFic: String?,
     val fFichaje: String?
 )
+
 
