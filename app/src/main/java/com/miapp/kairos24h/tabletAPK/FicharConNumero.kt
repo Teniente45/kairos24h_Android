@@ -34,9 +34,9 @@ import androidx.core.graphics.toColorInt
 import com.miapp.kairos24h.dataBase.FichajesSQLiteHelper
 import com.miapp.kairos24h.dataBase.iniciarReintentosAutomaticos
 import com.google.gson.Gson
+import com.miapp.kairos24h.R
 import com.miapp.kairos24h.enlaces_internos.BuildURLtablet
 import com.miapp.kairos24h.enlaces_internos.ImagenesTablet
-import com.miapp.kairos24h.R
 import com.miapp.kairos24h.deviceOwner.MyDeviceAdminReceiver
 import com.miapp.kairos24h.sesionesYSeguridad.GPSUtils
 import org.json.JSONObject
@@ -108,13 +108,13 @@ class MainActivityTablet : AppCompatActivity() {
         } else {
             @Suppress("DEPRECATION")
             window.decorView.systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                or View.SYSTEM_UI_FLAG_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-            )
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                            or View.SYSTEM_UI_FLAG_FULLSCREEN
+                            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                            or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    )
         }
 
 
@@ -489,9 +489,14 @@ class MainActivityTablet : AppCompatActivity() {
                             else
                                 "($codigoEnviado) Fichaje Incorrecto"
 
-                            mostrarMensajeDinamico(mensajeVisual, COLOR_CORRECTO, tipo?.lowercase())
+                            val audioNombre = when (tipo?.uppercase()) {
+                                "ENTRADA" -> "fichaje_de_entrada"
+                                "SALIDA" -> "fichaje_de_salida_correcto"
+                                else -> null
+                            }
+                            mostrarMensajeDinamico(mensajeVisual, COLOR_CORRECTO, audioNombre)
                         } else {
-                            mostrarMensajeDinamico("($codigoEnviado) Fichaje Incorrecto", COLOR_INCORRECTO, "no_internet")
+                            mostrarMensajeDinamico("($codigoEnviado) Fichaje Incorrecto", COLOR_INCORRECTO, "codigo_incorrecto")
                         }
                     }
                 }
@@ -543,13 +548,13 @@ class MainActivityTablet : AppCompatActivity() {
             } else {
                 @Suppress("DEPRECATION")
                 window.decorView.systemUiVisibility = (
-                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                    or View.SYSTEM_UI_FLAG_FULLSCREEN
-                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                )
+                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                                or View.SYSTEM_UI_FLAG_FULLSCREEN
+                                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        )
             }
         }
     }
@@ -686,4 +691,5 @@ data class DatosFichaje(
     val cTipFic: String?,
     val fFichaje: String?
 )
+
 
