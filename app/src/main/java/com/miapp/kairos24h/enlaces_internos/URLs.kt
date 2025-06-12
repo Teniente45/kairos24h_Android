@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import com.miapp.kairos24h.R
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import android.widget.ImageView
@@ -25,6 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import coil.compose.rememberAsyncImagePainter
 import androidx.compose.ui.res.painterResource
+import com.miapp.beimancpp.R
 import com.miapp.kairos24h.sesionesYSeguridad.AuthManager
 
 // Este objeto centraliza el acceso a los recursos gráficos usados en la aplicación
@@ -81,7 +81,7 @@ object ImagenesMovil {
 
 // Estás son las URL que se nos mostrarán en el WebView, se usa sólo para logearse desde la APK
 object WebViewURL {
-    const val HOST = "https://controlhorario.kairos24h.es"
+    const val HOST = "https://beimancpp.tucitamedica.es"
     const val ENTRY_POINT = "/index.php"
     const val URL_USADA = "$HOST$ENTRY_POINT"
 
