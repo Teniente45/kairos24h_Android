@@ -145,7 +145,7 @@ class MainActivity : ComponentActivity() {
                                                             android.util.Log.d("Redireccion", "Iniciando MainActivity (modo TABLET)")
                                                             val intent = Intent(this@MainActivity, com.miapp.kairos24h.tabletAPK.MainActivityTablet::class.java)
                                                             startActivity(intent)
-                                                        } else {
+                                                        } else if (cTipEmp == "EMPLEADO" || cTipEmp.isBlank()) {
                                                             android.util.Log.d("Redireccion", "Iniciando Fichar (modo APK)")
                                                             navigateToFichar(xEmpleado.usuario, xEmpleado.password)
                                                         }
