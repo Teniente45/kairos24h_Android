@@ -139,16 +139,16 @@ class MainActivity : ComponentActivity() {
                                                             xEmpleado.tLogo,
                                                             xEmpleado.cTipEmp
                                                         )
-                                                        val cTipEmp = xEmpleado.cTipEmp.uppercase()
-                                                        android.util.Log.d("Redireccion", "Valor de cTipEmp: $cTipEmp")
-                                                        if (cTipEmp == "TABLET") {
-                                                            android.util.Log.d("Redireccion", "Iniciando MainActivity (modo TABLET)")
-                                                            val intent = Intent(this@MainActivity, com.miapp.kairos24h.tabletAPK.MainActivityTablet::class.java)
-                                                            startActivity(intent)
-                                                        } else {
-                                                            android.util.Log.d("Redireccion", "Iniciando Fichar (modo APK)")
-                                                            navigateToFichar(xEmpleado.usuario, xEmpleado.password)
-                                                        }
+                                                    val cTipEmp = xEmpleado.cTipEmp.uppercase()
+                                                    android.util.Log.d("Redireccion", "Valor de cTipEmp: $cTipEmp")
+                                                    if (cTipEmp == "TABLET") {
+                                                        android.util.Log.d("Redireccion", "Iniciando MainActivity (modo TABLET)")
+                                                        val intent = Intent(this@MainActivity, com.miapp.kairos24h.tabletAPK.MainActivityTablet::class.java)
+                                                        startActivity(intent)
+                                                    } else if (cTipEmp == "EMPLEADO" || cTipEmp.isBlank()) {
+                                                        android.util.Log.d("Redireccion", "Iniciando Fichar (modo APK)")
+                                                        navigateToFichar(xEmpleado.usuario, xEmpleado.password)
+                                                    }
                                                     } else {
                                                         Toast.makeText(
                                                             this@MainActivity,
