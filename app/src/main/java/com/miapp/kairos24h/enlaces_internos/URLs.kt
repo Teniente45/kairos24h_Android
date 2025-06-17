@@ -105,7 +105,7 @@ object BuildURLmovil {
     const val ACTION_FORGOTPASS = "r=site/solicitudRestablecerClave"
 
     const val ACTION_LOGIN = "r=site/index"
-    const val ACTION_FICHAJE = "r=explotacion/creaFichaje"
+    const val ACTION_FICHAJE = "r=wsExterno/creaFichaje"
     const val ACTION_CONSULTAR = "r=explotacion/consultarExplotacion"
 
     const val ACTION_CONSULTHORARIO = "r=wsExterno/consultarHorarioExterno"
