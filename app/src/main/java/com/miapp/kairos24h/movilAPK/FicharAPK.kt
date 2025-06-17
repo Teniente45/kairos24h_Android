@@ -32,7 +32,6 @@ import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -766,14 +765,15 @@ fun NavigationButton(text: String, iconResId: Int, onClick: () -> Unit) {
 //============================== CUADRO PARA FICHAR ======================================
 
 // Pantalla de carga que muestra un GIF mientras se carga la vista principal (WebView o datos)
-@RequiresApi(Build.VERSION_CODES.P)
 @Composable
 fun LoadingScreen(isLoading: Boolean) {
     if (isLoading) {
         val context = LocalContext.current
         val imageLoader = ImageLoader.Builder(context)
             .components {
-                add(ImageDecoderDecoder.Factory())
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    add(ImageDecoderDecoder.Factory())
+                }
             }
             .build()
 
