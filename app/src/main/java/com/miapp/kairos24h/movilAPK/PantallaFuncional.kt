@@ -85,9 +85,9 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.miapp.beimancpp.R
 import com.miapp.kairos24h.enlaces_internos.BuildURLmovil
 import com.miapp.kairos24h.enlaces_internos.ImagenesMovil
-import com.miapp.kairos24h.R
 import com.miapp.kairos24h.sesionesYSeguridad.AuthManager
 import com.miapp.kairos24h.sesionesYSeguridad.ManejoDeSesion
 import com.miapp.kairos24h.sesionesYSeguridad.SeguridadUtils

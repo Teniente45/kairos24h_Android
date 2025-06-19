@@ -1,7 +1,6 @@
 package com.miapp.kairos24h.tabletAPK
 
 import android.content.res.Configuration
-import android.text.InputType
 import android.app.ActivityManager
 import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
@@ -34,12 +33,11 @@ import androidx.core.graphics.toColorInt
 import com.miapp.kairos24h.dataBase.FichajesSQLiteHelper
 import com.miapp.kairos24h.dataBase.iniciarReintentosAutomaticos
 import com.google.gson.Gson
-import com.miapp.kairos24h.R
+import com.miapp.beimancpp.R
 import com.miapp.kairos24h.enlaces_internos.BuildURLtablet
 import com.miapp.kairos24h.enlaces_internos.ImagenesTablet
 import com.miapp.kairos24h.deviceOwner.MyDeviceAdminReceiver
 import com.miapp.kairos24h.sesionesYSeguridad.GPSUtils
-import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
@@ -273,6 +271,7 @@ class MainActivityTablet : AppCompatActivity() {
     }
 
     // Mostrar diálogo de confirmación para salir
+    @SuppressLint("UseKtx")
     private fun mostrarDialogoConfirmacionSalida() {
         AlertDialog.Builder(this)
             .setTitle("¿Seguro que quieres salir?")
@@ -300,7 +299,7 @@ class MainActivityTablet : AppCompatActivity() {
                 }
 
                 // Borrar SharedPreferences manualmente
-                getSharedPreferences("credenciales_usuario", Context.MODE_PRIVATE)
+                getSharedPreferences("credenciales_usuario", MODE_PRIVATE)
                     .edit()
                     .clear()
                     .apply()
@@ -323,40 +322,6 @@ class MainActivityTablet : AppCompatActivity() {
             }
             .setNegativeButton("Cancelar", null)
             .show()
-    }
-
-    // Solicitar PIN para confirmar salida de la app
-    private fun solicitarPinParaSalir() {
-        val input = EditText(this)
-        input.inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
-
-        AlertDialog.Builder(this)
-            .setTitle("Introduce el PIN")
-            .setView(input)
-            .setPositiveButton("Aceptar") { dialog, _ ->
-                if (input.text.toString() == "1005") {
-                    dialog.dismiss()
-                    salirAlLauncher()
-                } else {
-                    dialog.dismiss()
-                    AlertDialog.Builder(this)
-                        .setMessage("PIN incorrecto")
-                        .setPositiveButton("Aceptar", null)
-                        .show()
-                }
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
-    }
-
-    // Enviar al launcher principal del dispositivo y salir del modo kiosco si está activo
-    private fun salirAlLauncher() {
-        stopLockTask()
-
-        val intent = Intent(Intent.ACTION_MAIN)
-        intent.addCategory(Intent.CATEGORY_HOME)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        startActivity(intent)
     }
 
     // Mostrar mensaje animado en la interfaz con texto, color y audio
@@ -502,7 +467,7 @@ class MainActivityTablet : AppCompatActivity() {
                 }
 
                 connection.disconnect()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 /*
                 // ⚠️ Desactivado temporalmente para evitar mostrar mensaje de error genérico
                 e.printStackTrace()

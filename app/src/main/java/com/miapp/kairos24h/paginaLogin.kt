@@ -60,7 +60,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
@@ -198,16 +197,6 @@ class MainActivity : ComponentActivity() {
     }
 
 
-    // Borra credenciales almacenadas para forzar nuevo login
-    private fun clearCredentials() {
-        // Borra completamente los datos de la sesión del usuario
-        val userPrefs = getSharedPreferences("UserSession", MODE_PRIVATE)
-        userPrefs.edit().clear().apply()
-
-        // Borra completamente las preferencias generales de la app
-        val appPrefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        appPrefs.edit().clear().apply()
-    }
     // Verifica si el dispositivo tiene conexión a Internet activa, ya sea por WiFi o datos móviles.
     private fun isInternetAvailable(context: Context): Boolean {
         val connectivityManager =
