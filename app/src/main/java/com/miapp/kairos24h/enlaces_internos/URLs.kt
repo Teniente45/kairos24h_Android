@@ -36,7 +36,7 @@ object ImagenesMovil {
         val tLogo = AuthManager.getUserCredentials(context).tLogo
         return if (tLogo.isNotBlank() && tLogo != "null") tLogo else null
     }
-    val lodoDesarrolladora = R.drawable.logo_i3data
+    val lodoDesarrolladora = R.drawable.kairos24h
 
 
 
