@@ -37,6 +37,7 @@ lifecycleRuntimeKtx = "2.8.7"
 composeBom = "2024.10.00"
 #noinspection GradleDependency
 composeMaterial = "1.5.4"
+#noinspection GradleDependency
 googleMaterial = "1.10.0"
 #noinspection GradleDependency
 material3 = "1.3.1"
