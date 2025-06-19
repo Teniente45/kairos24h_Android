@@ -348,7 +348,7 @@ fun FicharScreen(
                     )
                 }
                 Text(
-                    text = cUsuario,
+                    text = cUsuario.uppercase(),
                     color = Color(0xFF7599B6),
                     fontSize = 18.sp
                 )
