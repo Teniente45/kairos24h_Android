@@ -12,6 +12,7 @@ android {
     defaultConfig {
         applicationId = "com.miapp.kairos24h"
         minSdk = 25
+        //noinspection OldTargetApi
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -57,12 +58,13 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
-    implementation("androidx.compose.ui:ui-tooling-preview:1.6.1")
+    //noinspection GradleDependency
+    implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.foundation)
-    implementation("androidx.compose.material:material:1.6.1")
+    implementation(libs.androidx.material)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.appcompat)
-    implementation("com.google.android.material:material:1.11.0")
+    implementation(libs.material)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.animation)
@@ -80,11 +82,13 @@ dependencies {
     implementation(libs.androidx.sqlite.ktx)
 
     // Imagen y multimedia
+    //noinspection UseTomlInstead
     implementation("io.coil-kt:coil:2.4.0")
     implementation(libs.coil.compose.v222)
     implementation(libs.coil.gif)
     implementation(libs.coil.compose)
     implementation(libs.glide)
+    //noinspection KaptUsageInsteadOfKsp
     kapt(libs.compiler)
 
     // Responsive layouts
@@ -98,6 +102,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.ui.test.junit4)
-    debugImplementation("androidx.compose.ui:ui-tooling:1.6.1")
+    //noinspection GradleDependency
+    debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }
