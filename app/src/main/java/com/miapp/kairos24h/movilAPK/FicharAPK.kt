@@ -81,7 +81,7 @@ import coil.compose.AsyncImage
 import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 import com.google.android.gms.location.LocationServices
-import com.miapp.kairos24h.R
+import com.miapp.beimancpp.R
 import com.miapp.kairos24h.enlaces_internos.BuildURLmovil
 import com.miapp.kairos24h.MainActivity
 import com.miapp.kairos24h.sesionesYSeguridad.AuthManager
@@ -348,7 +348,7 @@ fun FicharScreen(
                     )
                 }
                 Text(
-                    text = cUsuario,
+                    text = cUsuario.uppercase(),
                     color = Color(0xFF7599B6),
                     fontSize = 18.sp
                 )
