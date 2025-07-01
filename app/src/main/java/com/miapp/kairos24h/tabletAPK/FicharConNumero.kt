@@ -33,7 +33,7 @@ import androidx.core.graphics.toColorInt
 import com.miapp.kairos24h.dataBase.FichajesSQLiteHelper
 import com.miapp.kairos24h.dataBase.iniciarReintentosAutomaticos
 import com.google.gson.Gson
-import com.miapp.beimancpp.R
+import com.miapp.kairos24h.R
 import com.miapp.kairos24h.enlaces_internos.BuildURLtablet
 import com.miapp.kairos24h.enlaces_internos.ImagenesTablet
 import com.miapp.kairos24h.deviceOwner.MyDeviceAdminReceiver

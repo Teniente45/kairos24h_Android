@@ -24,7 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import coil.compose.rememberAsyncImagePainter
 import androidx.compose.ui.res.painterResource
-import com.miapp.beimancpp.R
+import com.miapp.kairos24h.R
 import com.miapp.kairos24h.sesionesYSeguridad.AuthManager
 
 // Este objeto centraliza el acceso a los recursos gráficos usados en la aplicación
