@@ -84,13 +84,19 @@ object WebViewURL {
     const val HOST_1 = "https://beimancpp.tucitamedica.es"
     const val HOST_2 = "https://controlhorario.kairos24h.es"
 
-    const val HOST = "https://controlhorario.kairos24h.es"
-    const val ENTRY_POINT = "/index.php"
-    const val URL_USADA = "$HOST$ENTRY_POINT"
 
+    var HOST = HOST_1 // Valor inicial provisional; será reemplazado tras login correcto
+
+    fun determinarHostDesdeEntidad(context: Context): String {
+        val tUrlCPP = AuthManager.getUserCredentials(context).tUrlCPP
+        HOST = if (tUrlCPP.contains("beimancpp", ignoreCase = true)) HOST_1 else HOST_2
+        return HOST
+    }
+    const val ENTRY_POINT = "/index.php"
     const val ACTION_LOGIN = "r=wsExterno/loginExterno"
 
-    const val LOGINAPK = "$URL_USADA?$ACTION_LOGIN"
+    fun getURLUsada(): String = "$HOST$ENTRY_POINT"
+    fun getLoginAPK(): String = getURLUsada() + "?" + ACTION_LOGIN
 }
 
 // Esta será la URL que construiremos cuando desde el login de nuestra APK introduzcamos el Usuario y la Contraseña
