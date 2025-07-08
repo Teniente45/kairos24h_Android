@@ -6,7 +6,8 @@
  * Proyecto académico de desarrollo Android.
  */
 
-package com.miapp.kairos24h.enlaces_internos
+/**
+package com.miapp.kairos24h.Comentado
 
 import android.content.Context
 import androidx.annotation.DrawableRes
@@ -25,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import coil.compose.rememberAsyncImagePainter
 import androidx.compose.ui.res.painterResource
 import com.miapp.kairos24h.R
+import com.miapp.kairos24h.enlaces_internos.WebViewURL
 import com.miapp.kairos24h.sesionesYSeguridad.AuthManager
 
 // Este objeto centraliza el acceso a los recursos gráficos usados en la aplicación
@@ -81,13 +83,22 @@ object ImagenesMovil {
 
 // Estás son las URL que se nos mostrarán en el WebView, se usa sólo para logearse desde la APK
 object WebViewURL {
-    const val HOST = "https://democontrolhorario.kairos24h.es"
-    const val ENTRY_POINT = "/index.php"
-    const val URL_USADA = "$HOST$ENTRY_POINT"
+    const val HOST_1 = "https://beimancpp.tucitamedica.es"
+    const val HOST_2 = "https://controlhorario.kairos24h.es"
 
+
+    var HOST = HOST_1 // Valor inicial provisional; será reemplazado tras login correcto
+
+    fun determinarHostDesdeEntidad(context: Context): String {
+        val tUrlCPP = AuthManager.getUserCredentials(context).tUrlCPP
+        HOST = if (tUrlCPP.contains("beimancpp", ignoreCase = true)) HOST_1 else HOST_2
+        return HOST
+    }
+    const val ENTRY_POINT = "/index.php"
     const val ACTION_LOGIN = "r=wsExterno/loginExterno"
 
-    const val LOGINAPK = "$URL_USADA?$ACTION_LOGIN"
+    fun getURLUsada(): String = "$HOST$ENTRY_POINT"
+    fun getLoginAPK(): String = getURLUsada() + "?" + ACTION_LOGIN
 }
 
 // Esta será la URL que construiremos cuando desde el login de nuestra APK introduzcamos el Usuario y la Contraseña
@@ -233,3 +244,4 @@ object ImagenesTablet {
         }
     }
 }
+ */

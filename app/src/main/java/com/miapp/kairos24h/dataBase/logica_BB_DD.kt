@@ -1,26 +1,31 @@
-package com.example.kairos24h
+package com.miapp.kairos24h.dataBase
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
-class TabletEmpleadosPendientesHelper(context: Context) : SQLiteOpenHelper(
+// Crear base de datos
+@Suppress("DEPRECATION")
+class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
     context,
     "tablet_empleados_pendientes",
     null,
     1
 ) {
 
+    // Crear la tabla para los fichajes hechos offline
     override fun onCreate(db: SQLiteDatabase) {
         val createTableQuery = """
-            CREATE TABLE IF NOT EXISTS teblet_pendientes (
+            CREATE TABLE IF NOT EXISTS tablet_pendientes (
                 xEntidad TEXT,
-                lEstado TEXT CHECK(lEstado IN ('Pendiente', 'No Pendiente')),
                 cKiosko TEXT,
-                f_fichaje DATE,
+                cEmpCppExt TEXT,
+                cTipFic TEXT CHECK(cTipFic IN ('ENTRADA', 'SALIDA')),
+                fFichajeOffline TEXT,
+                hFichaje TEXT,
                 lGpsLat REAL,
                 lGpsLon REAL,
-                xEmpleado TEXT
+                lInformado TEXT CHECK(lInformado IN ('SI', 'NO')) DEFAULT 'NO'
             );
         """.trimIndent()
 
@@ -30,4 +35,152 @@ class TabletEmpleadosPendientesHelper(context: Context) : SQLiteOpenHelper(
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         // No hay lógica de actualización por ahora
     }
+
+    fun insertarFichajePendiente(
+        xEntidad: String,
+        cKiosko: String,
+        cEmpCppExt: String,
+        cTipFic: String,
+        fFichajeOffline: String,
+        hFichaje: String,
+        lGpsLat: Double,
+        lGpsLon: Double,
+        lInformado: String = "NO"
+    ) {
+        val db = writableDatabase
+        val insertQuery = """
+            INSERT INTO tablet_pendientes (
+                xEntidad, cKiosko, cEmpCppExt, cTipFic, fFichajeOffline, hFichaje, lGpsLat, lGpsLon, lInformado
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """.trimIndent()
+
+        val statement = db.compileStatement(insertQuery)
+        statement.bindString(1, xEntidad)
+        statement.bindString(2, cKiosko)
+        statement.bindString(3, cEmpCppExt)
+        statement.bindString(4, cTipFic)
+        statement.bindString(5, fFichajeOffline)
+        statement.bindString(6, hFichaje)
+        statement.bindDouble(7, lGpsLat)
+        statement.bindDouble(8, lGpsLon)
+        statement.bindString(9, lInformado)
+
+        statement.executeInsert()
+        statement.close()
+        db.close()
+    }
+    fun enviarFichajesPendientes(context: Context) {
+        val fichajes = obtenerFichajesPendientesNoInformados()
+        val client = okhttp3.OkHttpClient()
+
+        for (fichaje in fichajes) {
+            val host = com.miapp.kairos24h.enlaces_internos.BuildURLmovil.getHost(context)
+            val url = "$host/index.php?r=wsExterno/crearFichajeExterno" +
+                "&xEntidad=${fichaje.xEntidad}" +
+                "&cKiosko=${fichaje.cKiosko}" +
+                "&cEmpCppExt=${fichaje.cEmpCppExt}" +
+                "&cTipFic=${fichaje.cTipFic}" +
+                "&fFichaje=${fichaje.fFichajeOffline}" +
+                "&hFichaje=${fichaje.hFichaje}" +
+                "&tGpsLat=${fichaje.lGpsLat}" +
+                "&tGpsLon=${fichaje.lGpsLon}" +
+                "&lInformado=NO" +
+                "&cFicOri=PUEFIC"
+
+            val request = okhttp3.Request.Builder().url(url).build()
+
+            try {
+                val response = client.newCall(request).execute()
+                val body = response.body?.string()
+                val json = org.json.JSONObject(body ?: "")
+                val code = json.optString("code", "0")
+
+                if (code == "1") {
+                    val db = writableDatabase
+                    val update = db.compileStatement(
+                        "UPDATE tablet_pendientes SET lInformado = 'SI' WHERE rowid = ?"
+                    )
+                    update.bindLong(1, fichaje.id)
+                    update.executeUpdateDelete()
+                    update.close()
+                    db.close()
+                }
+            } catch (_: Exception) {
+                // Fallo, se reintentará después
+            }
+        }
+    }
+
+    fun registrarNetworkCallback(context: Context) {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+
+        val networkCallback = object : android.net.ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: android.net.Network) {
+                super.onAvailable(network)
+                enviarFichajesPendientes(context)
+            }
+        }
+
+        val request = android.net.NetworkRequest.Builder()
+            .addCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .build()
+
+        connectivityManager.registerNetworkCallback(request, networkCallback)
+    }
+    fun enviarFichajesPendientesSiHayInternet(context: Context) {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+        val isConnected = connectivityManager.activeNetworkInfo?.isConnected == true
+
+        if (isConnected) {
+            enviarFichajesPendientes(context)
+        }
+    }
+
+    fun obtenerFichajesPendientesNoInformados(): List<FichajePendiente> {
+        val db = readableDatabase
+        val cursor = db.rawQuery("SELECT rowid, * FROM tablet_pendientes WHERE lInformado = 'NO'", null)
+        val lista = mutableListOf<FichajePendiente>()
+
+        while (cursor.moveToNext()) {
+            val id = cursor.getLong(cursor.getColumnIndexOrThrow("rowid"))
+            val xEntidad = cursor.getString(cursor.getColumnIndexOrThrow("xEntidad"))
+            val cKiosko = cursor.getString(cursor.getColumnIndexOrThrow("cKiosko"))
+            val cEmpCppExt = cursor.getString(cursor.getColumnIndexOrThrow("cEmpCppExt"))
+            val cTipFic = cursor.getString(cursor.getColumnIndexOrThrow("cTipFic"))
+            val fFichaje = cursor.getString(cursor.getColumnIndexOrThrow("fFichajeOffline"))
+            val hFichaje = cursor.getString(cursor.getColumnIndexOrThrow("hFichaje"))
+            val lGpsLat = cursor.getDouble(cursor.getColumnIndexOrThrow("lGpsLat"))
+            val lGpsLon = cursor.getDouble(cursor.getColumnIndexOrThrow("lGpsLon"))
+
+            lista.add(
+                FichajePendiente(
+                    id = id,
+                    xEntidad = xEntidad,
+                    cKiosko = cKiosko,
+                    cEmpCppExt = cEmpCppExt,
+                    cTipFic = cTipFic,
+                    fFichajeOffline = fFichaje,
+                    hFichaje = hFichaje,
+                    lGpsLat = lGpsLat,
+                    lGpsLon = lGpsLon
+                )
+            )
+        }
+
+        cursor.close()
+        db.close()
+        return lista
+    }
 }
+
+data class FichajePendiente(
+    val id: Long,
+    val xEntidad: String,
+    val cKiosko: String,
+    val cEmpCppExt: String,
+    val cTipFic: String,
+    val fFichajeOffline: String,
+    val hFichaje: String,
+    val lGpsLat: Double,
+    val lGpsLon: Double
+)

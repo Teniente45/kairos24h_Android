@@ -31,7 +31,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.toColorInt
 import com.miapp.kairos24h.dataBase.FichajesSQLiteHelper
-import com.miapp.kairos24h.dataBase.iniciarReintentosAutomaticos
 import com.google.gson.Gson
 import com.miapp.kairos24h.R
 import com.miapp.kairos24h.enlaces_internos.BuildURLtablet
@@ -122,7 +121,6 @@ class MainActivityTablet : AppCompatActivity() {
         if (modoKioscoActivo) {
             val activityManager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
             if (activityManager.lockTaskModeState == ActivityManager.LOCK_TASK_MODE_NONE) {
-                @Suppress("DEPRECATION")
                 startLockTask()
                 Log.d("MainActivity", "Modo kiosco iniciado tras reinicio.")
             }
@@ -263,11 +261,16 @@ class MainActivityTablet : AppCompatActivity() {
 
         // Activar temporizador de limpieza de inactividad
         resetearInactividad()
+        /**
         iniciarReintentosAutomaticos(this) // Activa la lógica de reintento cada 10 segundos
         Log.d("MainActivity", "Lógica de reintento automático iniciada correctamente.")
+        */
 
-        // Mostrar contenido de la base de datos 'informado' en Logcat
-        mostrarContenidoDeBaseDeDatos(this)
+        // Lanzar sincronización automática de fichajes pendientes si hay internet
+        FichajesSQLiteHelper(this).enviarFichajesPendientesSiHayInternet(this)
+        // Registrar callback de red para detectar cambios de conectividad y enviar pendientes automáticamente
+        FichajesSQLiteHelper(this).registrarNetworkCallback(this)
+
     }
 
     // Mostrar diálogo de confirmación para salir
@@ -370,6 +373,24 @@ class MainActivityTablet : AppCompatActivity() {
             } else {
                 mostrarMensajeDinamico("No estás conectado a Internet", COLOR_INCORRECTO, "no_internet")
                 Log.d("FichajeApp", "No hay conexión. Fichaje guardado localmente.")
+                val latitud = GPSUtils.obtenerLatitud(this)
+                val longitud = GPSUtils.obtenerLongitud(this)
+                val fechaActual = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+                val horaActual = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+
+                // Guardar exactamente los valores igual que en la base de datos, incluyendo cEmpCppExt
+                val dbHelper = FichajesSQLiteHelper(this)
+                dbHelper.insertarFichajePendiente(
+                    xEntidad = getSharedPreferences("credenciales_usuario", Context.MODE_PRIVATE)
+                        .getString("xEntidad", "") ?: "",
+                    cKiosko = "TABLET1",
+                    fFichajeOffline = fechaActual,
+                    hFichaje = horaActual,
+                    lGpsLat = latitud,
+                    lGpsLon = longitud,
+                    cTipFic = tipo,
+                    cEmpCppExt = it.toString(),
+                )
             }
         } ?: mostrarMensajeDinamico("Código incorrecto", COLOR_INCORRECTO)
     }
@@ -460,6 +481,8 @@ class MainActivityTablet : AppCompatActivity() {
                                 else -> null
                             }
                             mostrarMensajeDinamico(mensajeVisual, COLOR_CORRECTO, audioNombre)
+                            // Borra los fichajes correctamente enviados y vuelve a intentar enviar pendientes si hay internet
+                            FichajesSQLiteHelper(this).enviarFichajesPendientesSiHayInternet(this)
                         } else {
                             mostrarMensajeDinamico("($codigoEnviado) Fichaje Incorrecto", COLOR_INCORRECTO, "codigo_incorrecto")
                         }
@@ -615,31 +638,6 @@ class MainActivityTablet : AppCompatActivity() {
     }
 }
 
-// Muestra todos los registros actuales de la tabla 'l_informados' en Logcat
-fun mostrarContenidoDeBaseDeDatos(context: Context) {
-    val db = FichajesSQLiteHelper(context).readableDatabase
-    val cursor = db.rawQuery("SELECT * FROM l_informados", null)
-
-    Log.d("DB_DUMP", "---- Comprobando registros en l_informados ----")
-    if (cursor.count == 0) {
-        Log.d("DB_DUMP", "No hay registros en la tabla 'l_informados'")
-    } else {
-        while (cursor.moveToNext()) {
-            val id = cursor.getInt(cursor.getColumnIndexOrThrow("id"))
-            val cEmpCppExt = cursor.getString(cursor.getColumnIndexOrThrow("cEmpCppExt"))
-            val xFichaje = cursor.getString(cursor.getColumnIndexOrThrow("xFichaje"))
-            val cTipFic = cursor.getString(cursor.getColumnIndexOrThrow("cTipFic"))
-            val fFichaje = cursor.getString(cursor.getColumnIndexOrThrow("fFichaje"))
-            val hFichaje = cursor.getString(cursor.getColumnIndexOrThrow("hFichaje"))
-            val lInformado = cursor.getString(cursor.getColumnIndexOrThrow("L_INFORMADO"))
-
-            // Este log muestra todos los campos de la tabla 'l_informados', útil para depuración completa del estado actual de fichajes almacenados
-            Log.d("DB_DUMP", "id=$id | cEmpCppExt=$cEmpCppExt | xFichaje=$xFichaje | cTipFic=$cTipFic | fFichaje=$fFichaje | hFichaje=$hFichaje | L_INFORMADO=$lInformado")
-        }
-    }
-
-    cursor.close()
-}
 
 
 
@@ -656,5 +654,3 @@ data class DatosFichaje(
     val cTipFic: String?,
     val fFichaje: String?
 )
-
-

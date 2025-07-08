@@ -6,13 +6,14 @@
  * Proyecto académico de desarrollo Android.
  */
 
+/**
 @file:Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
 
 package com.miapp.kairos24h.sesionesYSeguridad
 
 import android.content.Context
 import android.util.Log
-import com.miapp.kairos24h.enlaces_internos.WebViewURL
+import com.miapp.kairos24h.Comentado.WebViewURL
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
@@ -110,54 +111,76 @@ object AuthManager {
     }
 
     // Método para realizar el login y obtener el xEmpleado y otros flags
-    fun authenticateUser(usuario: String, password: String): Pair<Boolean, UserCredentials?> {
+    fun authenticateUser(context: Context, usuario: String, password: String): Pair<Boolean, UserCredentials?> {
         val client = OkHttpClient()
-        // Se usa cUsuario y tPassword en la URL
-        val url = WebViewURL.LOGINAPK +
-                "&cUsuario=$usuario" +
-                "&tPassword=$password"
 
-        Log.d("AuthManager", "URL: $url")
+        fun intentarLogin(context: Context, host: String): Pair<Boolean, UserCredentials?> {
+            val url = WebViewURL.getLoginAPK() +
+                    "&cUsuario=$usuario" +
+                    "&tPassword=$password"
 
-        val request = Request.Builder()
-            .url(url)
-            .build()
+            Log.d("AuthManager", "Intentando login en: $host")
 
-        return try {
-            val response = client.newCall(request).execute()
-            if (response.isSuccessful) {
-                val responseBody = response.body?.string()
-                Log.d("AuthManager", "Response Body: $responseBody")
-                val jsonResponse = JSONObject(responseBody)
-                val code = jsonResponse.optInt("code", -1)
-                val xEmpleado = jsonResponse.optString("xEmpleado", null) // Extraer xEmpleado del JSON
-                if (code == 1) {
-                    val lComGPS = jsonResponse.optString("lComGPS", "S")
-                    val lComIP = jsonResponse.optString("lComIP", "S")
-                    val lBotonesFichajeMovil = jsonResponse.optString("lBotonesFichajeMovil", "S")
-                    val xEntidad = jsonResponse.optString("xEntidad", null)
-                    val sEmpleado = jsonResponse.optString("sEmpleado", "")
-                    val tUrlCPP = jsonResponse.optString("tUrlCPP", "")
-                    val tLogo = jsonResponse.optString("tLogo", "")
-                    val cTipEmp = jsonResponse.optString("cTipEmp", "")
-                    val credentials = UserCredentials(
-                        usuario, password, xEmpleado,
-                        lComGPS, lComIP, lBotonesFichajeMovil, xEntidad,
-                        sEmpleado, tUrlCPP, tLogo, cTipEmp
-                    )
-                    Pair(true, credentials)
+            val request = Request.Builder().url(url).build()
+
+            return try {
+                val response = client.newCall(request).execute()
+                if (response.isSuccessful) {
+                    val responseBody = response.body?.string()
+                    Log.d("AuthManager", "Response Body: $responseBody")
+
+                    if (!responseBody.isNullOrEmpty()) {
+                        val jsonResponse = JSONObject(responseBody)
+                        val code = jsonResponse.optInt("code", -1)
+                        val xEmpleado = jsonResponse.optString("xEmpleado", null)
+
+                        if (code == 1 && xEmpleado != null) {
+                            val credentials = UserCredentials(
+                                usuario = usuario,
+                                password = password,
+                                xEmpleado = xEmpleado,
+                                lComGPS = jsonResponse.optString("lComGPS", "S"),
+                                lComIP = jsonResponse.optString("lComIP", "S"),
+                                lBotonesFichajeMovil = jsonResponse.optString("lBotonesFichajeMovil", "S"),
+                                xEntidad = jsonResponse.optString("xEntidad", null),
+                                sEmpleado = jsonResponse.optString("sEmpleado", ""),
+                                tUrlCPP = jsonResponse.optString("tUrlCPP", ""),
+                                tLogo = jsonResponse.optString("tLogo", ""),
+                                cTipEmp = jsonResponse.optString("cTipEmp", "")
+                            )
+                            return Pair(true, credentials)
+                        } else {
+                            return Pair(false, null)
+                        }
+                    } else {
+                        return Pair(false, null)
+                    }
                 } else {
-                    Pair(false, null)
+                    Log.w("AuthManager", "Respuesta no exitosa: ${response.code}")
+                    return Pair(false, null)
                 }
-            } else {
-                Log.d("AuthManager", "Request failed with status: ${response.code}")
-                Pair(false, null)
+            } catch (e: Exception) {
+                Log.e("AuthManager", "Error de login en $host", e)
+                return Pair(false, null)
             }
-        } catch (e: Exception) {
-            Log.e("AuthManager", "Error de autenticación: ", e)
-            Pair(false, null)
         }
+
+        val resultadoHost1 = intentarLogin(context, WebViewURL.HOST_1)
+        if (resultadoHost1.first) {
+            WebViewURL.HOST = WebViewURL.HOST_1
+            return resultadoHost1
+        }
+
+        val resultadoHost2 = intentarLogin(context, WebViewURL.HOST_2)
+        if (resultadoHost2.first) {
+            WebViewURL.HOST = WebViewURL.HOST_2
+            return resultadoHost2
+        }
+
+        return Pair(false, null)
     }
+
+
     // Borrar completamente los datos de usuario almacenados en SharedPreferences
     fun clearAllUserData(context: Context) {
         val userPrefs = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
@@ -167,3 +190,4 @@ object AuthManager {
         appPrefs.edit().clear().apply()
     }
 }
+*/
