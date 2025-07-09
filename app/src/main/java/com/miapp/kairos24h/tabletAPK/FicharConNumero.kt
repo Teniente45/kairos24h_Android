@@ -286,6 +286,9 @@ class MainActivityTablet : AppCompatActivity() {
         // Registrar callback de red para detectar cambios de conectividad y enviar pendientes automáticamente
         FichajesSQLiteHelper(this).registrarNetworkCallback(this)
 
+        // Mostrar todos los fichajes pendientes (debug/log)
+        FichajesSQLiteHelper(this).mostrarTodosLosFichajes()
+
     }
 
     // Mostrar diálogo de confirmación para salir
@@ -482,7 +485,28 @@ class MainActivityTablet : AppCompatActivity() {
                     runOnUiThread {
                         val codigoEnviado = url.substringAfter("cEmpCppExt=").substringBefore("&")
                         if (respuesta?.data != null) {
-                            val tipo = respuesta.data.cTipFic?.uppercase()
+                            // Guardar en base de datos todos los fichajes exitosos
+                            val credenciales = AuthManager.getUserCredentials(this)
+                            val xEntidad = credenciales?.xEntidad ?: ""
+                            val fechaActual = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+                            val horaActual = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+                            val tipoFichaje = respuesta.data.cTipFic ?: ""
+                            val latitudBD = GPSUtils.obtenerLatitud(this)
+                            val longitudBD = GPSUtils.obtenerLongitud(this)
+
+                            val dbHelper = FichajesSQLiteHelper(this)
+                            dbHelper.insertarFichajePendiente(
+                                xEntidad = xEntidad,
+                                cKiosko = "TABLET1",
+                                fFichajeOffline = fechaActual,
+                                hFichaje = horaActual,
+                                lGpsLat = latitudBD,
+                                lGpsLon = longitudBD,
+                                cTipFic = tipoFichaje,
+                                cEmpCppExt = codigoEnviado
+                            )
+
+                            val tipo = tipoFichaje.uppercase()
                             val sEmpleado = respuesta.data.sEmpleado ?: "Empleado"
                             val fHora = respuesta.data.fFichaje?.substringAfter(" ") ?: "?"
 
@@ -491,7 +515,7 @@ class MainActivityTablet : AppCompatActivity() {
                             else
                                 "($codigoEnviado) Fichaje Incorrecto"
 
-                            val audioNombre = when (tipo?.uppercase()) {
+                            val audioNombre = when (tipo.uppercase()) {
                                 "ENTRADA" -> "fichaje_de_entrada"
                                 "SALIDA" -> "fichaje_de_salida_correcto"
                                 else -> null

@@ -100,6 +100,7 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
     fun enviarFichajesPendientes(context: Context) {
         val fichajes = obtenerFichajesPendientesNoInformados()
         val client = okhttp3.OkHttpClient()
+        val db = writableDatabase
 
         for (fichaje in fichajes) {
             val host = com.miapp.kairos24h.enlaces_internos.BuildURLmovil.getHost(context)
@@ -119,28 +120,38 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
 
             val request = okhttp3.Request.Builder().url(url).build()
 
-            try {
-                val response = client.newCall(request).execute()
-                val body = response.body?.string()
-                val json = org.json.JSONObject(body ?: "")
-                val code = json.optString("code", "0")
+            Thread {
+                try {
+                    val response = client.newCall(request).execute()
+                    val responseBody = response.body?.string()?.trim()
+                    android.util.Log.d("DEBUG_SQLITE", "Respuesta del servidor: '$responseBody'")
 
-                android.util.Log.d("DEBUG_ENVIO", "Fichaje con ID ${fichaje.id} enviado correctamente.")
-
-                if (code == "1") {
-                    val db = writableDatabase
-                    val update = db.compileStatement(
-                        "UPDATE tablet_pendientes SET lInformado = 'SI' WHERE rowid = ?"
-                    )
-                    update.bindLong(1, fichaje.id)
-                    update.executeUpdateDelete()
-                    update.close()
-                    db.close()
+                    if (!responseBody.isNullOrBlank() && responseBody.startsWith("{")) {
+                        val responseJson = org.json.JSONObject(responseBody)
+                        val estado = responseJson.optString("estado", "")
+                        if (estado == "1") {
+                            actualizarEstadoFichaje(db, fichaje.id)
+                            android.util.Log.d("DEBUG_SQLITE", "Fichaje con ID ${fichaje.id} enviado y marcado como informado")
+                        } else {
+                            android.util.Log.d("DEBUG_SQLITE", "Respuesta recibida pero sin éxito, estado: $estado")
+                        }
+                    } else {
+                        // Consideramos que si no es JSON, pero no está vacío, el servidor respondió éxito
+                        actualizarEstadoFichaje(db, fichaje.id)
+                        android.util.Log.d("DEBUG_SQLITE", "Fichaje con ID ${fichaje.id} enviado con respuesta no JSON: '$responseBody'")
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("DEBUG_SQLITE", "Excepción al enviar fichaje con ID ${fichaje.id}", e)
                 }
-            } catch (e: Exception) {
-                android.util.Log.e("DEBUG_SQLITE", "Excepción al enviar fichaje con ID ${fichaje.id}", e)
-            }
+            }.start()
         }
+    }
+
+    fun actualizarEstadoFichaje(db: SQLiteDatabase, id: Long) {
+        val values = android.content.ContentValues().apply {
+            put("lInformado", "SI")
+        }
+        db.update("tablet_pendientes", values, "rowid=?", arrayOf(id.toString()))
     }
 
     fun registrarNetworkCallback(context: Context) {
@@ -169,7 +180,7 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
     }
 
     fun obtenerFichajesPendientesNoInformados(): List<FichajePendiente> {
-        val db = readableDatabase
+        val db = this.readableDatabase
         val cursor = db.rawQuery("SELECT rowid, * FROM tablet_pendientes WHERE lInformado = 'NO'", null)
         val lista = mutableListOf<FichajePendiente>()
 
@@ -183,6 +194,7 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
             val hFichaje = cursor.getString(cursor.getColumnIndexOrThrow("hFichaje"))
             val lGpsLat = cursor.getDouble(cursor.getColumnIndexOrThrow("lGpsLat"))
             val lGpsLon = cursor.getDouble(cursor.getColumnIndexOrThrow("lGpsLon"))
+            val lInformado = cursor.getString(cursor.getColumnIndexOrThrow("lInformado"))
 
             lista.add(
                 FichajePendiente(
@@ -194,12 +206,13 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
                     fFichajeOffline = fFichaje,
                     hFichaje = hFichaje,
                     lGpsLat = lGpsLat,
-                    lGpsLon = lGpsLon
+                    lGpsLon = lGpsLon,
+                    lInformado = lInformado
                 )
             )
         }
 
-        android.util.Log.d("DEBUG_SQLITE", "Registros en tablet_pendientes:")
+        android.util.Log.d("DEBUG_SQLITE", "REGISTROS TODAVIA PENDIENTES POR ENVIAR:")
         for ((index, fichaje) in lista.withIndex()) {
             android.util.Log.d("DEBUG_SQLITE", "$index: $fichaje")
         }
@@ -207,6 +220,48 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
         cursor.close()
         db.close()
         return lista
+    }
+
+    fun mostrarTodosLosFichajes() {
+        val db = this.readableDatabase
+        val cursor = db.rawQuery("SELECT rowid, * FROM tablet_pendientes", null)
+        val lista = mutableListOf<FichajePendiente>()
+
+        while (cursor.moveToNext()) {
+            val id = cursor.getLong(cursor.getColumnIndexOrThrow("rowid"))
+            val xEntidad = cursor.getString(cursor.getColumnIndexOrThrow("xEntidad"))
+            val cKiosko = cursor.getString(cursor.getColumnIndexOrThrow("cKiosko"))
+            val cEmpCppExt = cursor.getString(cursor.getColumnIndexOrThrow("cEmpCppExt"))
+            val cTipFic = cursor.getString(cursor.getColumnIndexOrThrow("cTipFic"))
+            val fFichaje = cursor.getString(cursor.getColumnIndexOrThrow("fFichajeOffline"))
+            val hFichaje = cursor.getString(cursor.getColumnIndexOrThrow("hFichaje"))
+            val lGpsLat = cursor.getDouble(cursor.getColumnIndexOrThrow("lGpsLat"))
+            val lGpsLon = cursor.getDouble(cursor.getColumnIndexOrThrow("lGpsLon"))
+            val lInformado = cursor.getString(cursor.getColumnIndexOrThrow("lInformado"))
+
+            lista.add(
+                FichajePendiente(
+                    id = id,
+                    xEntidad = xEntidad,
+                    cKiosko = cKiosko,
+                    cEmpCppExt = cEmpCppExt,
+                    cTipFic = cTipFic,
+                    fFichajeOffline = fFichaje,
+                    hFichaje = hFichaje,
+                    lGpsLat = lGpsLat,
+                    lGpsLon = lGpsLon,
+                    lInformado = lInformado
+                )
+            )
+        }
+
+        android.util.Log.d("DEBUG_SQLITE", "TODOS LOS REGISTROS ENVIADOS CORRECTAMENTE AL SERVIDOR:")
+        for ((index, fichaje) in lista.withIndex()) {
+            android.util.Log.d("DEBUG_SQLITE", "$index: $fichaje")
+        }
+
+        cursor.close()
+        db.close()
     }
 }
 
@@ -219,5 +274,6 @@ data class FichajePendiente(
     val fFichajeOffline: String,
     val hFichaje: String,
     val lGpsLat: Double,
-    val lGpsLon: Double
+    val lGpsLon: Double,
+    val lInformado: String
 )
