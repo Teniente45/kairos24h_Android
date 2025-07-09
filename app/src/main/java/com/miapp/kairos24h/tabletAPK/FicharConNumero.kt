@@ -36,6 +36,7 @@ import com.miapp.kairos24h.R
 import com.miapp.kairos24h.enlaces_internos.BuildURLtablet
 import com.miapp.kairos24h.enlaces_internos.ImagenesTablet
 import com.miapp.kairos24h.deviceOwner.MyDeviceAdminReceiver
+import com.miapp.kairos24h.sesionesYSeguridad.AuthManager
 import com.miapp.kairos24h.sesionesYSeguridad.GPSUtils
 import java.net.HttpURLConnection
 import java.net.URL
@@ -392,11 +393,12 @@ class MainActivityTablet : AppCompatActivity() {
                 val fechaActual = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
                 val horaActual = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
 
-                // Guardar exactamente los valores igual que en la base de datos, incluyendo cEmpCppExt
+                val credenciales = AuthManager.getUserCredentials(this)
+                val xEntidad = credenciales?.xEntidad ?: ""
+
                 val dbHelper = FichajesSQLiteHelper(this)
                 dbHelper.insertarFichajePendiente(
-                    xEntidad = getSharedPreferences("credenciales_usuario", Context.MODE_PRIVATE)
-                        .getString("xEntidad", "") ?: "",
+                    xEntidad = xEntidad,
                     cKiosko = "TABLET1",
                     fFichajeOffline = fechaActual,
                     hFichaje = horaActual,
