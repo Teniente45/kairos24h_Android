@@ -6,6 +6,28 @@
  * Proyecto académico de desarrollo Android.
  */
 
+
+/* === GUÍA DE LOGS EN ESTE ARCHIVO ===
+ * Log.d("BuildURLmovil", "Host seleccionado: $hostFinal")
+ *    → Muestra el host final elegido en función de tUrlCPP o el valor por defecto.
+ *
+ * Log.d("URL_Fichaje", "URL generada: $url")
+ *    → URL final construida para consultar fichaje desde el móvil.
+ *
+ * Log.d("URL_Incidencia", "URL generada: $url")
+ *    → URL final construida para consultar incidencias desde el móvil.
+ *
+ * Log.d("URL_Horarios", "URL generada: $url")
+ *    → URL final construida para consultar horarios desde el móvil.
+ *
+ * Log.d("URL_Solicitudes", "URL generada: $url")
+ *    → URL final construida para consultar solicitudes desde el móvil.
+ *
+ * Log.d("BuildURLtablet", "Host seleccionado: $hostFinal")
+ *    → Muestra el host final elegido para la versión de tablet.
+ */
+
+
 package com.miapp.kairos24h.enlaces_internos
 
 import android.content.Context

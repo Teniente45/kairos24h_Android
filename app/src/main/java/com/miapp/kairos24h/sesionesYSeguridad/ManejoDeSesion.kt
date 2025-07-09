@@ -19,6 +19,25 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/*
+ * ──────────────── GUÍA DE LOGS - ManejoDeSesion.kt ────────────────
+ * Log.d("ManejoDeSesion", "Aplicación en pausa")
+ *     → Se muestra cuando la app entra en pausa (onPause)
+ *
+ * Log.d("ManejoDeSesion", "Aplicación detenida")
+ *     → Se lanza cuando la app se detiene (onStop), activa JS de inactividad
+ *
+ * Log.d("ManejoDeSesion", "Aplicación reanudada")
+ *     → Se lanza al reanudar la app (onResume), activa JS de reactivación
+ *
+ * Log.d("ManejoDeSesion", "Simulando actividad en WebView después de $sessionTimeoutMillis ms de inactividad")
+ *     → Muestra la simulación de actividad periódica en el WebView
+ *
+ * Log.e("FechaInternet", "Error al obtener fecha: ...")
+ *     → Indica un fallo al recuperar la fecha desde Internet (Google)
+ * ───────────────────────────────────────────────────────────────────
+ */
+
 object ManejoDeSesion {
 
     // Marca el estado de la app como en pausa. Ideal para logging y control de sesión.

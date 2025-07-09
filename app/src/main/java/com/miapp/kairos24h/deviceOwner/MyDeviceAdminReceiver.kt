@@ -14,3 +14,4 @@ class MyDeviceAdminReceiver : DeviceAdminReceiver() {
         Toast.makeText(context, "Modo dispositivo desactivado", Toast.LENGTH_SHORT).show()
     }
 }
+

@@ -1,9 +1,49 @@
+
 /*
  * Copyright (c) 2025 Juan López
  * Todos los derechos reservados.
  *
  * Este archivo forma parte de la aplicación Kairos24h.
  * Proyecto académico de desarrollo Android.
+ */
+
+/**
+ * ============================ GUÍA DE LOGS FicharAPK.kt ============================
+ *
+ * Fichar - onCreate iniciado:
+ *   - Descripción: Indica que se ha iniciado la actividad Fichar.
+ *
+ * Fichar - No se cuenta con el permiso ACCESS_FINE_LOCATION:
+ *   - Descripción: El usuario no ha concedido permisos de ubicación.
+ *
+ * Fichar - Ubicación inválida, no se enviará el fichaje:
+ *   - Descripción: Las coordenadas GPS son 0.0, lo cual se considera inválido.
+ *
+ * Fichar - URL que se va a enviar desde WebView:
+ *   - Descripción: Muestra la URL de fichaje que se está ejecutando en WebView.
+ *
+ * Seguridad - lComGPS / lComIP / lBotonesFichajeMovil:
+ *   - Descripción: Muestra los valores de control de seguridad obtenidos desde AuthManager.
+ *
+ * Fichar - No se cuenta con los permisos de ubicación:
+ *   - Descripción: Verificación de permisos fallida antes de obtener la localización.
+ *
+ * Fichar - GPS desactivado:
+ *   - Descripción: El GPS está apagado en el dispositivo.
+ *
+ * Fichar - No se pudo obtener la ubicación:
+ *   - Descripción: El dispositivo no pudo determinar una localización válida.
+ *
+ * Fichar - Ubicación falsa detectada:
+ *   - Descripción: Se ha detectado uso de ubicación simulada (mock).
+ *
+ * Fichar - Error obteniendo ubicación:
+ *   - Descripción: Error inesperado al solicitar la ubicación.
+ *
+ * Fichar - Alerta: {mensaje}:
+ *   - Descripción: Muestra el tipo de alerta capturada por onShowAlert.
+ *
+ * ================================================================================
  */
 
 @file:Suppress("DEPRECATION")

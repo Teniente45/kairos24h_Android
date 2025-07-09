@@ -8,6 +8,12 @@
 
 package com.miapp.kairos24h
 
+// ──────────────────────────────── GUÍA DE LOGS ────────────────────────────────
+// SesionDebug         → Muestra las credenciales almacenadas localmente (usuario, password).
+// Redireccion         → Indica hacia qué pantalla se redirige al usuario (TABLET o EMPLEADO).
+//                      También muestra el valor de cTipEmp devuelto desde el backend.
+// ─────────────────────────────────────────────────────────────────────────────
+
 import android.Manifest
 import android.content.Context
 import android.content.Intent

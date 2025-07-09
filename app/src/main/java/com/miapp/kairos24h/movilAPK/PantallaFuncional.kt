@@ -6,6 +6,25 @@
  * Proyecto académico de desarrollo Android.
  */
 
+
+/**
+ * ============================ GUÍA DE LOGS GPS.kt ============================
+ *
+ * DEBUG_GPS_LATLON:
+ *   - Descripción: Muestra la latitud y longitud obtenidas por GPS.
+ *   - Ubicación: En las funciones `obtenerLatitud()` y `obtenerLongitud()`.
+ *
+ * DEBUG_GPS_PROVIDER:
+ *   - Descripción: Muestra si el proveedor de ubicación está habilitado.
+ *   - Ubicación: Funciones que usan `LocationManager`.
+ *
+ * DEBUG_GPS_EXCEPTION:
+ *   - Descripción: Muestra cualquier error al intentar obtener la ubicación.
+ *   - Ubicación: En bloques try-catch en funciones GPS.
+ *
+ * ============================================================================
+ */
+
 package com.miapp.kairos24h.movilAPK
 
 import android.annotation.SuppressLint

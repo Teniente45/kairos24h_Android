@@ -39,7 +39,21 @@ import com.miapp.kairos24h.deviceOwner.MyDeviceAdminReceiver
 import com.miapp.kairos24h.sesionesYSeguridad.GPSUtils
 import java.net.HttpURLConnection
 import java.net.URL
+
 import java.net.URLEncoder
+
+// ─────────────────────────────────────────────────────────────
+// GUÍA DE LOGS EN FicharConNumero.kt
+// ─────────────────────────────────────────────────────────────
+// "MainActivity" → Activación de modo quiosco y reinicio
+// "LogoCliente" → Carga dinámica del logo del cliente
+// "FichajeApp" →
+//    - URL generada para fichaje online
+//    - Resultado del envío de fichaje al servidor
+//    - Fichaje guardado localmente si no hay internet
+// "SQLite" → Insertado de fichaje (desactivado en bloque comentado)
+// "Audio" → Carga o error al reproducir archivo de audio
+// ─────────────────────────────────────────────────────────────
 
 // Actividad principal de la aplicación de fichaje Kairos24h
 class MainActivityTablet : AppCompatActivity() {

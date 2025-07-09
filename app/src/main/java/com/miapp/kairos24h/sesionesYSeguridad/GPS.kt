@@ -1,3 +1,12 @@
+/*
+ ===================== GUÍA DE LOGS GPS.kt =====================
+ [GPSUtils] Error al obtener latitud: [mensaje]
+   → Se muestra si ocurre una excepción al intentar acceder a la latitud del dispositivo.
+
+ [GPSUtils] Error al obtener longitud: [mensaje]
+   → Se muestra si ocurre una excepción al intentar acceder a la longitud del dispositivo.
+ ==============================================================
+*/
 package com.miapp.kairos24h.sesionesYSeguridad
 
 import android.annotation.SuppressLint

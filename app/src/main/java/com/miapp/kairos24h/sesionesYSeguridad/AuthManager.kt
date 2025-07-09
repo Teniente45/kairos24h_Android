@@ -6,6 +6,34 @@
  * Proyecto académico de desarrollo Android.
  */
 
+
+/*
+=====================================
+ GUÍA DE LOGS - AuthManager.kt
+=====================================
+
+🔐 saveUserCredentials:
+    → Guarda las credenciales del usuario en SharedPreferences.
+    → Log: Muestra los valores que se están guardando.
+
+🔑 getUserCredentials:
+    → Recupera las credenciales del usuario desde SharedPreferences.
+    → Log: Muestra los valores que se están recuperando.
+
+🌐 authenticateUser:
+    → Realiza una petición al backend para autenticar al usuario.
+    → Log:
+        - "URL": URL generada para la petición.
+        - "Response Body": respuesta completa del servidor.
+        - "Request failed with status": si la petición falla.
+        - "Error de autenticación": si ocurre una excepción.
+
+🧹 clearAllUserData:
+    → Borra todos los datos del usuario en SharedPreferences.
+
+*/
+
+
 @file:Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
 
 package com.miapp.kairos24h.sesionesYSeguridad

@@ -1,5 +1,6 @@
 package com.miapp.kairos24h.deviceOwner
 
+
 import android.app.ActivityManager
 import android.content.BroadcastReceiver
 import android.content.Context

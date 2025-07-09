@@ -8,6 +8,17 @@
 
 @file:Suppress("DEPRECATION")
 
+// ─────────────────────────────────────────────────────
+// 🧭 GUÍA DE LOGS EN SeguridadUtils.kt
+// "Seguridad" - Logs generales de validaciones GPS/VPN/IP.
+// "onLocationResult recibido" - Se recibe una ubicación del proveedor.
+// "onLocationAvailability" - Se verifica disponibilidad de localización.
+// "Ubicación simulada detectada" - GPS simulado (falsificado).
+// "Ubicación válida detectada" - GPS real o aceptable.
+// "PROBLEMA GPS" - Alertas al usuario si hay fallo de permisos o señal.
+// "VPN DETECTADA" - Se detecta conexión por VPN, bloquea fichaje.
+// ─────────────────────────────────────────────────────
+
 package com.miapp.kairos24h.sesionesYSeguridad
 
 import com.google.android.gms.location.LocationServices

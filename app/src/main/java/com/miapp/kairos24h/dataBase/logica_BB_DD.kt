@@ -1,3 +1,29 @@
+/*
+ * Copyright (c) 2025 Juan López
+ * Todos los derechos reservados.
+ *
+ * Este archivo forma parte de la aplicación Kairos24h.
+ * Proyecto académico de desarrollo Android.
+ */
+
+// ==========================
+// GUÍA DE LOGS EN ESTE ARCHIVO
+// ==========================
+// DEBUG_SQLITE
+// - Muestra todos los registros actuales en la tabla `tablet_pendientes`.
+// - También muestra errores al intentar enviar fichajes desde SQLite.
+//
+// DEBUG_URL
+// - Muestra la URL que se ha construido con los datos de un fichaje pendiente para ser enviada al servidor.
+//
+// DEBUG_ENVIO
+// - Informa que un fichaje se ha enviado correctamente al servidor.
+//
+// DEBUG_SQLITE (error)
+// - Captura y muestra la excepción lanzada si ocurre un error durante el envío de un fichaje.
+//
+// ==========================
+
 package com.miapp.kairos24h.dataBase
 
 import android.content.Context
@@ -69,6 +95,8 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
         statement.close()
         db.close()
     }
+
+
     fun enviarFichajesPendientes(context: Context) {
         val fichajes = obtenerFichajesPendientesNoInformados()
         val client = okhttp3.OkHttpClient()
@@ -87,6 +115,8 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
                 "&lInformado=NO" +
                 "&cFicOri=PUEFIC"
 
+            android.util.Log.d("DEBUG_URL", "URL formada: $url")
+
             val request = okhttp3.Request.Builder().url(url).build()
 
             try {
@@ -94,6 +124,8 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
                 val body = response.body?.string()
                 val json = org.json.JSONObject(body ?: "")
                 val code = json.optString("code", "0")
+
+                android.util.Log.d("DEBUG_ENVIO", "Fichaje con ID ${fichaje.id} enviado correctamente.")
 
                 if (code == "1") {
                     val db = writableDatabase
@@ -105,8 +137,8 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
                     update.close()
                     db.close()
                 }
-            } catch (_: Exception) {
-                // Fallo, se reintentará después
+            } catch (e: Exception) {
+                android.util.Log.e("DEBUG_SQLITE", "Excepción al enviar fichaje con ID ${fichaje.id}", e)
             }
         }
     }
@@ -165,6 +197,11 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
                     lGpsLon = lGpsLon
                 )
             )
+        }
+
+        android.util.Log.d("DEBUG_SQLITE", "Registros en tablet_pendientes:")
+        for ((index, fichaje) in lista.withIndex()) {
+            android.util.Log.d("DEBUG_SQLITE", "$index: $fichaje")
         }
 
         cursor.close()
