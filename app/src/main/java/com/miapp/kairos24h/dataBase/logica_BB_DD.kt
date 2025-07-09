@@ -51,7 +51,8 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
                 hFichaje TEXT,
                 lGpsLat REAL,
                 lGpsLon REAL,
-                lInformado TEXT CHECK(lInformado IN ('SI', 'NO')) DEFAULT 'NO'
+                lInformado TEXT CHECK(lInformado IN ('SI', 'NO')) DEFAULT 'NO',
+                code1 TEXT DEFAULT 'NO'
             );
         """.trimIndent()
 
@@ -59,7 +60,14 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // No hay lógica de actualización por ahora
+        // Añadir columna 'code1' si no existe
+        try {
+            db.execSQL("ALTER TABLE tablet_pendientes ADD COLUMN code1 TEXT DEFAULT 'NO'")
+            android.util.Log.d("DEBUG_SQLITE", "Columna 'code1' añadida a tablet_pendientes")
+        } catch (e: Exception) {
+            android.util.Log.d("DEBUG_SQLITE", "La columna 'code1' ya existe o fallo al añadirla: ${e.message}")
+        }
+        // Aquí puedes añadir más lógica de actualización si se agregan otras columnas en el futuro.
     }
 
     fun insertarFichajePendiente(
@@ -71,13 +79,14 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
         hFichaje: String,
         lGpsLat: Double,
         lGpsLon: Double,
-        lInformado: String = "NO"
+        lInformado: String = "NO",
+        code1: String = "NO"
     ) {
         val db = writableDatabase
         val insertQuery = """
             INSERT INTO tablet_pendientes (
-                xEntidad, cKiosko, cEmpCppExt, cTipFic, fFichajeOffline, hFichaje, lGpsLat, lGpsLon, lInformado
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                xEntidad, cKiosko, cEmpCppExt, cTipFic, fFichajeOffline, hFichaje, lGpsLat, lGpsLon, lInformado, code1
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """.trimIndent()
 
         val statement = db.compileStatement(insertQuery)
@@ -90,6 +99,7 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
         statement.bindDouble(7, lGpsLat)
         statement.bindDouble(8, lGpsLon)
         statement.bindString(9, lInformado)
+        statement.bindString(10, code1)
 
         statement.executeInsert()
         statement.close()
@@ -113,7 +123,7 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
                 "&hFichaje=${fichaje.hFichaje}" +
                 "&tGpsLat=${fichaje.lGpsLat}" +
                 "&tGpsLon=${fichaje.lGpsLon}" +
-                "&lInformado=NO" +
+                "&code1=NO" +
                 "&cFicOri=PUEFIC"
 
             android.util.Log.d("DEBUG_URL", "URL formada: $url")
@@ -128,17 +138,32 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
 
                     if (!responseBody.isNullOrBlank() && responseBody.startsWith("{")) {
                         val responseJson = org.json.JSONObject(responseBody)
-                        val estado = responseJson.optString("estado", "")
-                        if (estado == "1") {
-                            actualizarEstadoFichaje(db, fichaje.id)
-                            android.util.Log.d("DEBUG_SQLITE", "Fichaje con ID ${fichaje.id} enviado y marcado como informado")
+                        val codeVal: Int? = try {
+                            if (responseJson.has("code")) {
+                                val codeAny = responseJson.get("code")
+                                when (codeAny) {
+                                    is Int -> codeAny
+                                    is String -> codeAny.toIntOrNull()
+                                    else -> null
+                                }
+                            } else null
+                        } catch (e: Exception) { null }
+
+                        if (codeVal == 1) {
+                            android.util.Log.d("DEBUG_SQLITE", "✅ Fichaje con ID ${fichaje.id} enviado correctamente.")
+                            actualizarEstadoFichajeCode1(fichaje.id, "SI")
                         } else {
-                            android.util.Log.d("DEBUG_SQLITE", "Respuesta recibida pero sin éxito, estado: $estado")
+                            android.util.Log.d("DEBUG_SQLITE", "❌ Código inválido recibido. Eliminando ID ${fichaje.id}")
+                            eliminarFichajePorId(db, fichaje.id)
                         }
                     } else {
-                        // Consideramos que si no es JSON, pero no está vacío, el servidor respondió éxito
-                        actualizarEstadoFichaje(db, fichaje.id)
-                        android.util.Log.d("DEBUG_SQLITE", "Fichaje con ID ${fichaje.id} enviado con respuesta no JSON: '$responseBody'")
+                        if (!responseBody.isNullOrBlank() && Regex("\"code\"\\s*:\\s*\"?1\"?").containsMatchIn(responseBody)) {
+                            android.util.Log.d("DEBUG_SQLITE", "✅ Fichaje con ID ${fichaje.id} enviado correctamente (no JSON).")
+                            actualizarEstadoFichajeCode1(fichaje.id, "SI")
+                        } else {
+                            android.util.Log.d("DEBUG_SQLITE", "❌ Respuesta inválida del servidor. Eliminando ID ${fichaje.id}")
+                            eliminarFichajePorId(db, fichaje.id)
+                        }
                     }
                 } catch (e: Exception) {
                     android.util.Log.e("DEBUG_SQLITE", "Excepción al enviar fichaje con ID ${fichaje.id}", e)
@@ -147,11 +172,15 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
         }
     }
 
-    fun actualizarEstadoFichaje(db: SQLiteDatabase, id: Long) {
+    // Actualiza solo code1 (y lInformado opcionalmente)
+    fun actualizarEstadoFichajeCode1(id: Long, code1: String = "SI") {
+        val db = this.writableDatabase
         val values = android.content.ContentValues().apply {
+            put("code1", code1)
             put("lInformado", "SI")
         }
         db.update("tablet_pendientes", values, "rowid=?", arrayOf(id.toString()))
+        db.close()
     }
 
     fun registrarNetworkCallback(context: Context) {
@@ -181,7 +210,7 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
 
     fun obtenerFichajesPendientesNoInformados(): List<FichajePendiente> {
         val db = this.readableDatabase
-        val cursor = db.rawQuery("SELECT rowid, * FROM tablet_pendientes WHERE lInformado = 'NO'", null)
+        val cursor = db.rawQuery("SELECT rowid, * FROM tablet_pendientes WHERE code1 = 'NO'", null)
         val lista = mutableListOf<FichajePendiente>()
 
         while (cursor.moveToNext()) {
@@ -195,6 +224,7 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
             val lGpsLat = cursor.getDouble(cursor.getColumnIndexOrThrow("lGpsLat"))
             val lGpsLon = cursor.getDouble(cursor.getColumnIndexOrThrow("lGpsLon"))
             val lInformado = cursor.getString(cursor.getColumnIndexOrThrow("lInformado"))
+            val code1 = cursor.getString(cursor.getColumnIndexOrThrow("code1"))
 
             lista.add(
                 FichajePendiente(
@@ -207,7 +237,8 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
                     hFichaje = hFichaje,
                     lGpsLat = lGpsLat,
                     lGpsLon = lGpsLon,
-                    lInformado = lInformado
+                    lInformado = lInformado,
+                    code1 = code1
                 )
             )
         }
@@ -238,6 +269,7 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
             val lGpsLat = cursor.getDouble(cursor.getColumnIndexOrThrow("lGpsLat"))
             val lGpsLon = cursor.getDouble(cursor.getColumnIndexOrThrow("lGpsLon"))
             val lInformado = cursor.getString(cursor.getColumnIndexOrThrow("lInformado"))
+            val code1 = cursor.getString(cursor.getColumnIndexOrThrow("code1"))
 
             lista.add(
                 FichajePendiente(
@@ -250,7 +282,8 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
                     hFichaje = hFichaje,
                     lGpsLat = lGpsLat,
                     lGpsLon = lGpsLon,
-                    lInformado = lInformado
+                    lInformado = lInformado,
+                    code1 = code1
                 )
             )
         }
@@ -275,5 +308,9 @@ data class FichajePendiente(
     val hFichaje: String,
     val lGpsLat: Double,
     val lGpsLon: Double,
-    val lInformado: String
+    val lInformado: String,
+    val code1: String
 )
+    fun eliminarFichajePorId(db: SQLiteDatabase, id: Long) {
+        db.delete("tablet_pendientes", "rowid=?", arrayOf(id.toString()))
+    }
