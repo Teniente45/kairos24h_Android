@@ -103,7 +103,7 @@ object ImagenesMovil {
 
 // Estás son las URL que se nos mostrarán en el WebView, se usa sólo para logearse desde la APK
 object WebViewURL {
-    const val HOST = "https://democontrolhorario.kairos24h.es"
+    const val HOST = "https://controlhorario.kairos24h.es"
     const val ENTRY_POINT = "/index.php"
     const val URL_USADA = "$HOST$ENTRY_POINT"
 

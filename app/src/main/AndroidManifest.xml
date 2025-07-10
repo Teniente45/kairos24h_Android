@@ -77,5 +77,6 @@
             </intent-filter>
         </receiver>
 
-    </application>
+</application>
+    <uses-feature android:name="android.hardware.camera.ar" android:required="false" />
 </manifest>
