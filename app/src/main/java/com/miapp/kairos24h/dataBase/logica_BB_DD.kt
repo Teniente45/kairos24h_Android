@@ -52,7 +52,7 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
                 hFichaje TEXT,
                 lGpsLat REAL,
                 lGpsLon REAL,
-                code1 TEXT CHECK(code1 IN ('SI', 'NO')) DEFAULT 'NO'
+                code1 TEXT CHECK(code1 IN ('SI', 'NO', '')) DEFAULT ''
                 , lInformado TEXT DEFAULT 'NO'
             );
         """.trimIndent()
@@ -79,6 +79,7 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
     }
 
     fun insertarFichajePendiente(
+        context: Context,
         xEntidad: String,
         cKiosko: String,
         cEmpCppExt: String,
@@ -87,11 +88,15 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
         hFichaje: String,
         lGpsLat: Double,
         lGpsLon: Double,
-        code1: String = "NO",
+        code1: String = "",
         lInformado: String = "NO"
     ) {
         // Todos los fichajes se guardan en SQLite, incluso si se hacen online.
         // La clave de deduplicación debe estar en controlar el flujo de guardado según el resultado del servidor.
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+        val isConnected = connectivityManager.activeNetworkInfo?.isConnected == true
+        val finalCode1 = if (code1.isNotBlank()) code1 else if (isConnected) "SI" else "NO"
+
         val db = writableDatabase
         val insertQuery = """
             INSERT INTO tablet_pendientes (
@@ -108,7 +113,7 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
         statement.bindString(6, hFichaje)
         statement.bindDouble(7, lGpsLat)
         statement.bindDouble(8, lGpsLon)
-        statement.bindString(9, code1)
+        statement.bindString(9, finalCode1)
         statement.bindString(10, lInformado)
 
         statement.executeInsert()

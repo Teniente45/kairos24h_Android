@@ -401,6 +401,7 @@ class MainActivityTablet : AppCompatActivity() {
 
                 val dbHelper = FichajesSQLiteHelper(this)
                 dbHelper.insertarFichajePendiente(
+                    this@MainActivityTablet,
                     xEntidad = xEntidad,
                     cKiosko = "TABLET1",
                     fFichajeOffline = fechaActual,
@@ -496,6 +497,7 @@ class MainActivityTablet : AppCompatActivity() {
 
                             val dbHelper = FichajesSQLiteHelper(this)
                             dbHelper.insertarFichajePendiente(
+                                this@MainActivityTablet,
                                 xEntidad = xEntidad,
                                 cKiosko = "TABLET1",
                                 fFichajeOffline = fechaActual,
