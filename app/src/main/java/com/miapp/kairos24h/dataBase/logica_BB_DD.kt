@@ -87,7 +87,7 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
         hFichaje: String,
         lGpsLat: Double,
         lGpsLon: Double,
-        code1: String = "SI",
+        code1: String = "NO",
         lInformado: String = "NO"
     ) {
         // Todos los fichajes se guardan en SQLite, incluso si se hacen online.
@@ -126,16 +126,16 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
             val host = com.miapp.kairos24h.enlaces_internos.BuildURLmovil.getHost(context)
             // Construcción de la URL con todos los parámetros, incluyendo lInformado
             val url = "$host/index.php?r=wsExterno/crearFichajeExterno" +
-                "&xEntidad=${fichaje.xEntidad}" +
-                "&cKiosko=${fichaje.cKiosko}" +
-                "&cEmpCppExt=${fichaje.cEmpCppExt}" +
-                "&cTipFic=${fichaje.cTipFic}" +
-                "&fFichaje=${fichaje.fFichajeOffline}" +
-                "&hFichaje=${fichaje.hFichaje}" +
-                "&tGpsLat=${fichaje.lGpsLat}" +
-                "&tGpsLon=${fichaje.lGpsLon}" +
-                "&cFicOri=PUEFIC" +
-                "&lInformado=${fichaje.lInformado}"
+                    "&xEntidad=${fichaje.xEntidad}" +
+                    "&cKiosko=${fichaje.cKiosko}" +
+                    "&cEmpCppExt=${fichaje.cEmpCppExt}" +
+                    "&cTipFic=${fichaje.cTipFic}" +
+                    "&fFichaje=${fichaje.fFichajeOffline}" +
+                    "&hFichaje=${fichaje.hFichaje}" +
+                    "&tGpsLat=${fichaje.lGpsLat}" +
+                    "&tGpsLon=${fichaje.lGpsLon}" +
+                    "&cFicOri=PUEFIC" +
+                    "&lInformado=${fichaje.lInformado}"
 
             Log.d("DEBUG_URL", "URL formada: $url")
 
@@ -144,7 +144,7 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
             Thread {
                 try {
                     val response = client.newCall(request).execute()
-                    val responseBody = response.body?.string()?.trim()
+                    val responseBody = response.body?.string()?.replace("\uFEFF", "")?.trim()
                     Log.d("DEBUG_SQLITE", "Respuesta del servidor: '$responseBody'")
 
                     if (!responseBody.isNullOrBlank() && responseBody.startsWith("{")) {
@@ -154,14 +154,13 @@ class FichajesSQLiteHelper(context: Context) : SQLiteOpenHelper(
                             Log.d("DEBUG_SQLITE", "Fichaje con ID ${fichaje.id} confirmado con éxito por el servidor.")
                             val lInformado = responseJson.optJSONObject("data")?.optString("lInformado") ?: "NO"
                             db.execSQL("UPDATE tablet_pendientes SET lInformado = ? WHERE rowid = ?", arrayOf(lInformado, fichaje.id.toString()))
+                            actualizarEstadoFichaje(db, fichaje.id)
                         } else {
                             eliminarFichaje(db, fichaje.id)
                             Log.d("DEBUG_SQLITE", "Fichaje con ID ${fichaje.id} eliminado por respuesta inválida")
                         }
                     } else {
-                        // Consideramos que si no es JSON, pero no está vacío, el servidor respondió éxito
-                        actualizarEstadoFichaje(db, fichaje.id)
-                        Log.d("DEBUG_SQLITE", "Fichaje con ID ${fichaje.id} enviado con respuesta no JSON: '$responseBody'")
+                        Log.d("DEBUG_SQLITE", "Fichaje con ID ${fichaje.id} no procesado: respuesta no válida del servidor -> '$responseBody'")
                         return@Thread
                     }
                 } catch (e: Exception) {
